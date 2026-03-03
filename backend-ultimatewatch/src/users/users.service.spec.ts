@@ -16,7 +16,7 @@ describe('UsersService', () => {
       providers: [
         UsersService,
         {
-          provide: getRepositoryToken(User), // <--- Esto simula la tabla User
+          provide: getRepositoryToken(User),
           useValue: mockRepository,
         },
       ],

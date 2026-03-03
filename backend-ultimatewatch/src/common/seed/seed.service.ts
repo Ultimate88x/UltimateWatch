@@ -31,7 +31,7 @@ export class SeedService implements OnApplicationBootstrap {
       username: 'admin',
       email: 'admin@watch.com',
       password: await bcrypt.hash('123456', 10),
-      imagePath: 'default.png',
+      imagePath: 'https://ui-avatars.com/api/?name=admin&background=random',
     });
 
     await this.userRepository.save(testUser);

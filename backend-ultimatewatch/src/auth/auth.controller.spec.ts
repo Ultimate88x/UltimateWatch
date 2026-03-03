@@ -10,6 +10,7 @@ describe('AuthController', () => {
 
   const mockAuthService = {
     authenticate: jest.fn(),
+    signUp: jest.fn(),
   };
 
   const mockAuthGuard = {
@@ -60,6 +61,29 @@ describe('AuthController', () => {
       const result = controller.getUserInfo(mockRequest);
 
       expect(result).toEqual({ userId: 1, username: 'testuser' });
+    });
+  });
+
+  describe('signUp', () => {
+    it('should call authService.signUp and return the result', async () => {
+      const signUpDto = {
+        username: 'newuser',
+        email: 'test@test.com',
+        password: 'password123',
+      };
+
+      const expectedResult = {
+        accessToken: 'token-after-signup',
+        userId: 1,
+        username: 'newuser',
+      };
+
+      mockAuthService.signUp.mockResolvedValue(expectedResult);
+
+      const result = await controller.signUp(signUpDto);
+
+      expect(authService.signUp).toHaveBeenCalledWith(signUpDto);
+      expect(result).toEqual(expectedResult);
     });
   });
 });

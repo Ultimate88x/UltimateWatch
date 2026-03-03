@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { UsersService } from 'src/users/users.service';
@@ -17,6 +16,7 @@ describe('AuthService', () => {
 
   const mockUsersService = {
     findByUsername: jest.fn(),
+    create: jest.fn(),
   };
 
   const mockJwtService = {
@@ -42,9 +42,7 @@ describe('AuthService', () => {
       const mockUser = { id: 1, username: 'user1', password: 'hashedPassword' };
 
       mockUsersService.findByUsername.mockResolvedValue(mockUser);
-      jest
-        .spyOn(bcrypt, 'compare' as never)
-        .mockImplementation(() => Promise.resolve(true as never));
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
       const result = await service.validateUser({
         username: 'user1',
@@ -57,9 +55,7 @@ describe('AuthService', () => {
 
     it('should return null if password is incorrect', async () => {
       mockUsersService.findByUsername.mockResolvedValue({ password: 'hash' });
-      jest
-        .spyOn(bcrypt, 'compare' as never)
-        .mockImplementation(() => Promise.resolve(false as never));
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       const result = await service.validateUser({
         username: 'user1',
@@ -96,6 +92,36 @@ describe('AuthService', () => {
       });
 
       expect(result).toEqual(authResult);
+    });
+  });
+
+  describe('signUp', () => {
+    it('should create a user and return an AuthResult (auto-login)', async () => {
+      const createUserDto = {
+        username: 'newuser',
+        email: 'test@test.com',
+        password: 'password123',
+      };
+
+      const mockCreatedUser = {
+        id: 1,
+        username: 'newuser',
+      };
+
+      const expectedAuthResult = {
+        accessToken: 'signed-token',
+        userId: 1,
+        username: 'newuser',
+      };
+
+      mockUsersService.create.mockResolvedValue(mockCreatedUser);
+
+      mockJwtService.signAsync.mockResolvedValue('signed-token');
+
+      const result = await service.signUp(createUserDto);
+
+      expect(usersService['create']).toHaveBeenCalledWith(createUserDto);
+      expect(result).toEqual(expectedAuthResult);
     });
   });
 });

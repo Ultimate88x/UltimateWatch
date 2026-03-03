@@ -1,13 +1,12 @@
-# Nestjs specific
-/dist
-/node_modules
-/build
-/tmp
+# Backend
+/backend-ultimatewatch/node_modules
+/backend-ultimatewatch/dist
+/backend-ultimatewatch/build
 
 # Frontend
 /frontend-ultimatewatch/node_modules
-/frontend-ultimatewatch/frontend/dist
-/frontend-ultimatewatch/frontend/build
+/frontend-ultimatewatch/dist
+/frontend-ultimatewatch/build
 
 # Logs
 logs

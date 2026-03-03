@@ -4,6 +4,11 @@
 /build
 /tmp
 
+# Frontend
+/frontend-ultimatewatch/node_modules
+/frontend-ultimatewatch/frontend/dist
+/frontend-ultimatewatch/frontend/build
+
 # Logs
 logs
 *.log

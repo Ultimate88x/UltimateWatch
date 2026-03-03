@@ -16,12 +16,12 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-body {
+html, body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  padding: 0;
+  min-height: 100%;
+  overflow-y: auto; 
+  overflow-x: hidden;
 }
 
 @media (prefers-color-scheme: light) {

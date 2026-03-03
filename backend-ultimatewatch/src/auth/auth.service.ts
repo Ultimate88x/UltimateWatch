@@ -1,5 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
 
 import { UsersService } from 'src/users/users.service';
 
@@ -8,8 +12,8 @@ type AuthInput = {
   password: string;
 };
 type SignInData = {
-  userId: number;
-  username: string;
+  userId?: number;
+  username?: string;
 };
 type AuthResult = {
   accessToken: string;
@@ -37,13 +41,21 @@ export class AuthService {
   async validateUser(input: AuthInput): Promise<SignInData | null> {
     const user = await this.userService.findByUsername(input.username);
 
-    if (user && user.password === input.password) {
-      return { userId: user.id, username: user.username };
+    const isMatch = user
+      ? await bcrypt.compare(input.password, user.password)
+      : false;
+
+    if (isMatch) {
+      return { userId: user?.id, username: user?.username };
     }
     return null;
   }
 
   async signIn(user: SignInData): Promise<AuthResult> {
+    if (!user.userId || !user.username) {
+      throw new UnauthorizedException('Invalid user data');
+    }
+
     const tokenPayload = { sub: user.userId, username: user.username };
 
     const accessToken = await this.jwtService.signAsync(tokenPayload);

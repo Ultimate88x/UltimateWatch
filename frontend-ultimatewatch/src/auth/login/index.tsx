@@ -64,7 +64,7 @@ export default function Login() {
 					onSubmit={handleSubmit}
 					className="relative mt-10 flex flex-col justify-start items-center gap-4">
 						<img 
-							className="w-48 h-auto rounded-full shadow-2xl" 
+							className="w-40 h-40 rounded-full shadow-2xl mb-2 object-cover border-4 border-white/10 transition-all duration-300 group-hover:opacity-70" 
 							src={"https://cdn-icons-png.flaticon.com/512/149/149071.png"} 
 							alt="Profile" 
 						/>

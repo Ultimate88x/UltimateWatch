@@ -1,15 +1,19 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, UploadCloud } from "lucide-react";
 
 export default function SignUp() {
   const navigate = useNavigate();
+	const fileInputRef = useRef<HTMLInputElement>(null);
   const [showPassword, setShowPassword] = useState(false);
+	const [imagePreview, setImagePreview] = useState<string | null>(null);
+
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+		imagePath: null as File | null,
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -18,6 +22,22 @@ export default function SignUp() {
       ...formData,
       [name]: value
     });
+  };
+
+	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFormData({
+        ...formData,
+        imagePath: file
+      });
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -29,17 +49,18 @@ export default function SignUp() {
     }
     
     try {
-      const response = await fetch('http://localhost:3000/auth/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: formData.username,
-          email: formData.email,
-          password: formData.password,
-        }),
-      });
+			const response = await fetch('http://localhost:3000/auth/signup', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					username: formData.username,
+					email: formData.email,
+					password: formData.password,
+					imagePath: formData.imagePath,
+				}),
+			});
 
       const data = await response.json();
 
@@ -72,15 +93,33 @@ export default function SignUp() {
         onSubmit={handleSubmit}
         className="relative mt-8 flex flex-col justify-start items-center gap-4"
       >
-				<img 
-					className="w-48 h-auto rounded-full shadow-2xl" 
-					src={
-						formData.username 
-							? `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.username)}&background=random&color=random` 
-							: "https://cdn-icons-png.flaticon.com/512/149/149071.png"
-					}
-					alt="Profile" 
-				/>
+        <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+          <img 
+            className="w-40 h-40 rounded-full shadow-2xl mb-2 object-cover border-4 border-white/10 transition-all duration-300 group-hover:opacity-70" 
+            src={
+              imagePreview
+                ? imagePreview 
+                : formData.username
+                  ? `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.username)}&background=6D28D9&color=fff` 
+                  : "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+            } 
+            alt="Profile Preview" 
+          />
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center rounded-full">
+            <UploadCloud size={48} className="text-white mb-2" />
+            <span className="px-2 py-1 bg-black/50 rounded text-xs text-white font-bold">Change picture</span>
+          </div>
+        </div>
+
+        <input 
+          type="file"
+          name="image"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          accept="image/*"
+          className="hidden"
+        />
+
         <div className="relative w-lg flex flex-col justify-start items-start gap-1">
           <label className="relative font-inter font-medium text-white/90 ml-2 text-sm">Username</label>
           <input

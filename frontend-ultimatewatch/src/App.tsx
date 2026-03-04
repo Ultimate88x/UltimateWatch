@@ -1,7 +1,8 @@
 import { Route, Routes } from "react-router-dom";
-import Login from "./auth/login";
 import Navbar from "./components/NavBar";
 import Footer from "./components/Footer";
+import Login from "./auth/login";
+import SignUp from "./auth/signup";
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
       <main className="flex-1"> 
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<SignUp />} />
         </Routes>
       </main>
 

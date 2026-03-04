@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 
 export default function Login() {
@@ -112,7 +112,7 @@ export default function Login() {
 			</form>
 
 			<p className="mt-8 text-center text-sm text-white/85">
-				Don't have an account? <span className="text-white font-bold cursor-pointer hover:underline">Sign Up</span>
+				Don't have an account?  <Link to="/signup" className="text-white font-bold cursor-pointer hover:underline">Sign Up</Link>
 			</p>
 		</div>
 	)

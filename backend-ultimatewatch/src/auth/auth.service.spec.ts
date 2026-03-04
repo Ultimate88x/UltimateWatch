@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { UsersService } from 'src/users/users.service';
@@ -64,6 +63,18 @@ describe('AuthService', () => {
 
       expect(result).toBeNull();
     });
+
+    it('should return null if user does not exist', async () => {
+      mockUsersService.findByUsername.mockResolvedValue(null);
+
+      const result = await service.validateUser({
+        username: 'nonexistent',
+        password: 'anyPassword',
+      });
+
+      expect(result).toBeNull();
+      expect(bcrypt.compare).not.toHaveBeenCalled();
+    });
   });
 
   describe('authenticate', () => {
@@ -95,6 +106,49 @@ describe('AuthService', () => {
     });
   });
 
+  describe('signIn', () => {
+    it('should return an AuthResult if user data is valid', async () => {
+      const signInData = { userId: 1, username: 'testuser' };
+      const expectedToken = 'signed-jwt-token';
+
+      mockJwtService.signAsync.mockResolvedValue(expectedToken);
+
+      const result = await service.signIn(signInData);
+
+      expect(result).toEqual({
+        accessToken: expectedToken,
+        userId: 1,
+        username: 'testuser',
+      });
+      expect(mockJwtService.signAsync).toHaveBeenCalledWith({
+        sub: 1,
+        username: 'testuser',
+      });
+    });
+
+    it('should throw UnauthorizedException if userId is missing', async () => {
+      const incompleteUser = { username: 'testuser' } as Partial<{
+        userId: number;
+        username: string;
+      }>;
+
+      await expect(service.signIn(incompleteUser)).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('should throw UnauthorizedException if username is missing', async () => {
+      const incompleteUser = { userId: 1 } as Partial<{
+        userId: number;
+        username: string;
+      }>;
+
+      await expect(service.signIn(incompleteUser)).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+  });
+
   describe('signUp', () => {
     it('should create a user and return an AuthResult (auto-login)', async () => {
       const createUserDto = {
@@ -123,5 +177,10 @@ describe('AuthService', () => {
       expect(usersService['create']).toHaveBeenCalledWith(createUserDto);
       expect(result).toEqual(expectedAuthResult);
     });
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+    jest.restoreAllMocks();
   });
 });

@@ -20,6 +20,7 @@ describe('AuthController (e2e)', () => {
     app = moduleFixture.createNestApplication();
     await app.init();
     const userRepository = moduleFixture.get(getRepositoryToken(User));
+    await userRepository.delete({ username: 'testuser' });
     await userRepository.delete({ username: 'newuser_e2e' });
   });
 
@@ -35,6 +36,27 @@ describe('AuthController (e2e)', () => {
         expect(res.body).toHaveProperty('accessToken');
         expect(res.body.username).toBe('admin');
       });
+  });
+
+  it('/auth/profile (GET) - Should return 200 and user data with valid token', async () => {
+    const loginResponse = await request(app.getHttpServer())
+      .post('/auth/signup')
+      .send({
+        username: 'testuser',
+        email: 'test@profile.com',
+        password: 'password123',
+      })
+      .expect(HttpStatus.CREATED);
+
+    const token = loginResponse.body.accessToken;
+
+    const profileResponse = await request(app.getHttpServer())
+      .get('/auth/profile')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(HttpStatus.OK);
+
+    expect(profileResponse.body).toHaveProperty('username', 'testuser');
+    expect(profileResponse.body).not.toHaveProperty('password');
   });
 
   it('/auth/profile (GET) - Should return 401 without token', () => {

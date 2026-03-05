@@ -31,7 +31,7 @@ export class UsersService {
 
   async findOne(id: number) {
     return await this.userRepository.findOne({
-      where: { id: id },
+      where: { id },
     });
   }
 

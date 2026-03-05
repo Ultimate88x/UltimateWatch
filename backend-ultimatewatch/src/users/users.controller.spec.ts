@@ -2,7 +2,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
-import { AuthGuard } from '../auth/guards/auth.guard';
+import { AuthGuard } from '../common/guards/auth.guard';
 
 describe('UsersController', () => {
   let controller: UsersController;

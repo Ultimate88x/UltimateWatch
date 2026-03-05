@@ -5,6 +5,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import * as bcrypt from 'bcrypt';
+import { ResourceNotOwnedException } from 'src/common/exceptions/resource-not-owned-exception';
 
 @Injectable()
 export class UsersService {
@@ -39,8 +40,14 @@ export class UsersService {
     return `This action updates a #${id} user`;
   }
 
-  async remove(id: number) {
-    return await this.userRepository.delete(id);
+  async remove(id: number, userId: number) {
+    if (id !== userId) {
+      throw new ResourceNotOwnedException('User');
+    }
+
+    await this.userRepository.delete(id);
+
+    return { message: 'Account deleted successfully' };
   }
 
   async findByUsername(username: string): Promise<User | null> {

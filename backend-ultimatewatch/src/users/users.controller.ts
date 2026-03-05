@@ -11,7 +11,8 @@ import {
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { AuthGuard } from 'src/auth/guards/auth.guard';
+import { AuthGuard } from 'src/common/guards/auth.guard';
+import { GetUser } from 'src/common/decorators/get-user.decorator';
 
 @Controller('users')
 export class UsersController {
@@ -39,7 +40,8 @@ export class UsersController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
+  @UseGuards(AuthGuard)
+  remove(@Param('id') id: string, @GetUser('userId') userId: number) {
+    return this.usersService.remove(+id, userId);
   }
 }

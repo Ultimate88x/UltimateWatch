@@ -40,6 +40,7 @@ html, body {
 @theme {
   --color-blue-background: #0B1020;
   --color-purple-main: #8B5CF6;
+  --color-red-danger: #FF3131;
 
   --font-inter: "Inter", inter; 
 }

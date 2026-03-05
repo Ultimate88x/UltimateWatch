@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 type UserProfile = {
   id: number;
@@ -24,6 +25,8 @@ export default function UserDetails() {
   const userData = userString ? JSON.parse(userString) : null;
   const userId = userData?.id;
   
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const [user, setUser] = useState<UserProfile | null>(null);
 
   const MOCK_MOVIES: Movie[] = [
@@ -110,6 +113,25 @@ export default function UserDetails() {
     window.location.href = '/'; 
   }
 
+  const handleDeleteAccount = async () => {
+    try {
+      const response = await fetch(`http://localhost:3000/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete account');
+      }
+
+      logout();
+    } catch (error) {
+      console.error("Error deleting account", error);
+    }
+  };
+
   return (
     <div className="relative w-full bg-cover bg-blue-background flex justify-start items-start overflow-x-hidden">
       <div className="relative mt-8 w-1/3 h-fit flex flex-col justify-start items-center">
@@ -124,11 +146,28 @@ export default function UserDetails() {
       </div>
         <button
           onClick={logout}
-          className="relative mt-4 px-20 py-3 bg-purple-main rounded-md cursor-pointer font-medium text-white hover:bg-purple-main/90 transition-colors duration-300"
+          className="relative mt-4 w-60 py-3 bg-purple-main rounded-md cursor-pointer font-medium text-white hover:bg-purple-main/90 transition-colors duration-300"
         >
           Sign Out
         </button>
+
+      <div className="mt-12 pt-8 border-t border-white/10 w-60">
+        <div className="flex flex-col items-start gap-2">
+          <h3 className="text-xl font-bold text-red-danger uppercase tracking-widest">
+            Danger Zone
+          </h3>
+          <p className="text-sm text-gray-400 leading-relaxed">
+            Once you delete your account, there is no going back. Please be certain.
+          </p>
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="mt-2 w-full py-2 bg-transparent border border-red-danger/50 cursor-pointer text-lg text-red-danger font-bold rounded hover:bg-red-danger hover:text-white transition-all duration-300 uppercase tracking-tighter"
+          >
+            Delete Account
+          </button>
+        </div>
       </div>
+    </div>
 
       <div className="relative mt-8 max-w-2/3 flex flex-1 flex-col justify-start items-start gap-8">
         <div className="relative h-fit flex flex-col justify-start items-start gap-4">
@@ -207,6 +246,52 @@ export default function UserDetails() {
           </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 p-4 flex items-center justify-center z-50">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsModalOpen(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            />
+
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative max-w-md w-full bg-blue-background shadow-2xl border rounded-2xl border-white/10 p-8 "
+            >
+              <div className="text-center">
+                <div className="mx-auto mb-4 h-16 w-16 bg-red-danger/10 rounded-full flex justify-center items-center">
+                  <span className="text-3xl text-red-danger">!</span>
+                </div>
+                <h3 className="mb-2 text-2xl font-bold text-white uppercase font-inter">Confirm Deletion</h3>
+                <p className="mb-8 text-gray-400">
+                  This action is permanent. Are you sure you want to proceed?
+                </p>
+                
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => setIsModalOpen(false)}
+                    className="py-3 px-4 bg-purple-main/75 rounded-lg cursor-pointer hover:bg-purple-main/45 flex-1 text-white font-semibold transition-colors"
+                  >
+                    Keep Account
+                  </button>
+                  <button
+                    onClick={handleDeleteAccount}
+                    className="flex-1 py-3 px-4 bg-red-danger text-white font-bold rounded-lg hover:bg-red-700 transition-shadow shadow-[0_0_20px_rgba(239,68,68,0.4)] cursor-pointer"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

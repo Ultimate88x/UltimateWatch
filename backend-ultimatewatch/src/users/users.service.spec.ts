@@ -16,9 +16,16 @@ describe('UsersService', () => {
   let service: UsersService;
   let repository: MockRepository<User>;
 
+  const mockQueryBuilder = {
+    addSelect: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    getOne: jest.fn(),
+  };
+
   const createMockRepository = (): MockRepository<User> => ({
     findOne: jest.fn(),
     save: jest.fn(),
+    createQueryBuilder: jest.fn(() => mockQueryBuilder),
   });
 
   beforeEach(async () => {
@@ -38,20 +45,25 @@ describe('UsersService', () => {
 
   describe('findByUsername', () => {
     it('should return a user if found', async () => {
-      const mockUser = { id: 1, username: 'testuser' } as User;
-      repository.findOne?.mockResolvedValue(mockUser);
+      const mockUser = {
+        id: 1,
+        username: 'testuser',
+        password: 'hashed_password',
+      } as User;
+
+      mockQueryBuilder.getOne.mockResolvedValue(mockUser);
 
       const result = await service.findByUsername('testuser');
 
-      expect(repository.findOne).toHaveBeenCalledWith({
-        where: { username: 'testuser' },
-      });
       expect(result).toEqual(mockUser);
+      expect(repository.createQueryBuilder).toHaveBeenCalledWith('user');
     });
 
     it('should return null if user not found', async () => {
-      repository.findOne?.mockResolvedValue(null);
+      mockQueryBuilder.getOne.mockResolvedValue(null);
+
       const result = await service.findByUsername('nonexistent');
+
       expect(result).toBeNull();
     });
   });

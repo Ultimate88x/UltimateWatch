@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { Test, TestingModule } from '@nestjs/testing';
 import { SeedService } from './seed.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -52,9 +50,7 @@ describe('SeedService', () => {
       mockUserRepository.create.mockReturnValue(mockUserData);
       mockUserRepository.save.mockResolvedValue(mockUserData);
 
-      jest
-        .spyOn(bcrypt, 'hash' as never)
-        .mockImplementation(() => Promise.resolve('hashedPassword' as never));
+      jest.spyOn(bcrypt, 'hash').mockResolvedValue('hashedPassword' as never);
 
       await service.runSeed();
 

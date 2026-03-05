@@ -13,6 +13,7 @@ describe('SeedService', () => {
     count: jest.fn(),
     create: jest.fn(),
     save: jest.fn(),
+    query: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -27,6 +28,7 @@ describe('SeedService', () => {
     }).compile();
 
     service = module.get<SeedService>(SeedService);
+    jest.clearAllMocks();
   });
 
   it('should be defined', () => {
@@ -34,29 +36,29 @@ describe('SeedService', () => {
   });
 
   describe('runSeed', () => {
-    it('should not seed if users already exist', async () => {
-      mockUserRepository.count.mockResolvedValue(1);
+    it('should truncate the table and create the admin user', async () => {
+      mockUserRepository.query.mockResolvedValue(undefined);
 
-      await service.runSeed();
-
-      expect(mockUserRepository.create).not.toHaveBeenCalled();
-      expect(mockUserRepository.save).not.toHaveBeenCalled();
-    });
-
-    it('should seed admin user if database is empty', async () => {
-      mockUserRepository.count.mockResolvedValue(0);
-
-      const mockUserData = { username: 'admin', email: 'admin@watch.com' };
+      const mockUserData = { id: 1, username: 'admin' };
       mockUserRepository.create.mockReturnValue(mockUserData);
       mockUserRepository.save.mockResolvedValue(mockUserData);
 
-      jest.spyOn(bcrypt, 'hash').mockResolvedValue('hashedPassword' as never);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
 
       await service.runSeed();
 
-      expect(mockUserRepository.count).toHaveBeenCalled();
+      expect(mockUserRepository.query).toHaveBeenCalledWith(
+        'TRUNCATE TABLE "users" RESTART IDENTITY CASCADE',
+      );
+
       expect(bcrypt.hash).toHaveBeenCalledWith('123456', 10);
-      expect(mockUserRepository.create).toHaveBeenCalled();
+
+      expect(mockUserRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 1,
+          username: 'admin',
+        }),
+      );
       expect(mockUserRepository.save).toHaveBeenCalledWith(mockUserData);
     });
   });

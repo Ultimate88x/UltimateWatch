@@ -31,7 +31,7 @@ export class UsersService {
 
   async findOne(id: number) {
     return await this.userRepository.findOne({
-      where: { id: id },
+      where: { id },
     });
   }
 
@@ -45,7 +45,7 @@ export class UsersService {
 
   async findByUsername(username: string): Promise<User | null> {
     return await this.userRepository.findOne({
-      where: { username: username },
+      where: { username },
     });
   }
 }

@@ -85,4 +85,32 @@ describe('UsersService', () => {
       bcryptSpy.mockRestore();
     });
   });
+
+  describe('findOne', () => {
+    it('should return a user if found', async () => {
+      const mockUser = {
+        id: 1,
+        username: 'testuser',
+        email: 'test@test.com',
+      } as User;
+
+      repository.findOne?.mockResolvedValue(mockUser);
+      const result = await service.findOne(1);
+
+      expect(repository.findOne).toHaveBeenCalledWith({
+        where: { id: 1 },
+      });
+      expect(result).toEqual(mockUser);
+    });
+
+    it('should return null if user is not found', async () => {
+      repository.findOne?.mockResolvedValue(null);
+      const result = await service.findOne(999);
+
+      expect(repository.findOne).toHaveBeenCalledWith({
+        where: { id: 999 },
+      });
+      expect(result).toBeNull();
+    });
+  });
 });

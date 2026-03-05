@@ -103,9 +103,17 @@ export default function UserDetails() {
     fetchUser();
   }, [userId]);
 
+  const logout = () => {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('user'); 
+    
+    window.location.href = '/'; 
+  }
+
   return (
     <div className="relative w-full bg-cover bg-blue-background flex justify-start items-start overflow-x-hidden">
       <div className="relative mt-8 w-1/3 h-fit flex flex-col justify-start items-center">
+      <div className="relative flex flex-col justify-start items-center">
         <img 
           className="mb-2 w-65 h-auto shadow-2xl object-cover border-4 rounded-full border-white/10 transition-all duration-300 group-hover:opacity-70" 
           src={user?.imagePath || "https://cdn-icons-png.flaticon.com/512/149/149071.png"} 
@@ -113,6 +121,13 @@ export default function UserDetails() {
         />
         <h2 className="relative text-4xl text-white font-bold font-inter">{user?.username || 'Guest'}</h2>
         <a className="relative text-lg text-white font-medium font-inter">{user?.email || 'No email provided'}</a>
+      </div>
+        <button
+          onClick={logout}
+          className="relative mt-4 px-20 py-3 bg-purple-main rounded-md cursor-pointer font-medium text-white hover:bg-purple-main/90 transition-colors duration-300"
+        >
+          Sign Out
+        </button>
       </div>
 
       <div className="relative mt-8 max-w-2/3 flex flex-1 flex-col justify-start items-start gap-8">

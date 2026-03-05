@@ -5,6 +5,7 @@ import { User } from './entities/user.entity';
 import { Repository } from 'typeorm/browser/repository/Repository.js';
 import * as bcrypt from 'bcrypt';
 import { ObjectLiteral } from 'typeorm';
+import { ResourceNotOwnedException } from 'src/common/exceptions/resource-not-owned-exception';
 
 jest.mock('bcrypt');
 
@@ -26,6 +27,7 @@ describe('UsersService', () => {
     findOne: jest.fn(),
     save: jest.fn(),
     createQueryBuilder: jest.fn(() => mockQueryBuilder),
+    delete: jest.fn(),
   });
 
   beforeEach(async () => {
@@ -123,6 +125,31 @@ describe('UsersService', () => {
         where: { id: 999 },
       });
       expect(result).toBeNull();
+    });
+  });
+
+  describe('remove', () => {
+    it('should delete the user if the id matches the userId (Success)', async () => {
+      const idToDelete = 1;
+      const authenticatedUserId = 1;
+
+      repository.delete?.mockResolvedValue({ affected: 1 });
+
+      const result = await service.remove(idToDelete, authenticatedUserId);
+
+      expect(result).toEqual({ message: 'Account deleted successfully' });
+      expect(repository.delete).toHaveBeenCalledWith(idToDelete);
+    });
+
+    it('should throw ResourceNotOwnedException if id does not match userId (Failure)', async () => {
+      const idToDelete = 5;
+      const authenticatedUserId = 1;
+
+      await expect(
+        service.remove(idToDelete, authenticatedUserId),
+      ).rejects.toThrow(ResourceNotOwnedException);
+
+      expect(repository.delete).not.toHaveBeenCalled();
     });
   });
 });

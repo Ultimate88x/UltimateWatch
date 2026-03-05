@@ -10,6 +10,7 @@ describe('UsersController', () => {
 
   const mockUsersService = {
     findOne: jest.fn(),
+    remove: jest.fn(),
   };
 
   const mockAuthGuard = {
@@ -62,6 +63,36 @@ describe('UsersController', () => {
 
       expect(service.findOne).toHaveBeenCalledWith(99);
       expect(result).toBeNull();
+    });
+  });
+
+  describe('remove', () => {
+    it('should call usersService.remove with numeric id and authenticated userId', async () => {
+      const idParam = '10';
+      const userIdFromToken = 10;
+      const expectedResponse = { message: 'Account deleted successfully' };
+
+      mockUsersService.remove = jest.fn().mockResolvedValue(expectedResponse);
+
+      const result = await controller.remove(idParam, userIdFromToken);
+
+      expect(service.remove).toHaveBeenCalledWith(10, userIdFromToken);
+      expect(result).toEqual(expectedResponse);
+    });
+
+    it('should propagate exceptions from the service (e.g., ResourceNotOwnedException)', async () => {
+      const idParam = '20';
+      const userIdFromToken = 10;
+
+      mockUsersService.remove.mockRejectedValue(
+        new Error('ResourceNotOwnedException'),
+      );
+
+      await expect(controller.remove(idParam, userIdFromToken)).rejects.toThrow(
+        'ResourceNotOwnedException',
+      );
+
+      expect(service.remove).toHaveBeenCalledWith(20, 10);
     });
   });
 });

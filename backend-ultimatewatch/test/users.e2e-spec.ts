@@ -22,9 +22,6 @@ describe('UsersController (e2e)', () => {
     app = moduleFixture.createNestApplication();
     await app.init();
 
-    const userRepository = moduleFixture.get(getRepositoryToken(User));
-    await userRepository.delete({ username: 'user_e2e_target' });
-
     const signupRes = await request(app.getHttpServer())
       .post('/auth/signup')
       .send({
@@ -66,6 +63,42 @@ describe('UsersController (e2e)', () => {
             expect(res.body.id).not.toBe(9999);
           }
         });
+    });
+  });
+
+  describe('/users/:id (DELETE)', () => {
+    it('should return 401 Unauthorized if no token is provided', () => {
+      return request(app.getHttpServer())
+        .delete(`/users/${createdUserId}`)
+        .expect(HttpStatus.UNAUTHORIZED);
+    });
+
+    it('should return 403 Forbidden if trying to delete another user', async () => {
+      const response = await request(app.getHttpServer())
+        .delete('/users/999')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(HttpStatus.FORBIDDEN);
+
+      expect(response.body.message).toContain(
+        'You are not the owner of this resource',
+      );
+    });
+
+    it('should return 200 and delete the user if it is the owner', async () => {
+      const response = await request(app.getHttpServer())
+        .delete(`/users/${createdUserId}`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(HttpStatus.OK);
+
+      expect(response.body.message).toBe('Account deleted successfully');
+
+      await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({
+          username: 'user_e2e_target',
+          password: 'password123',
+        })
+        .expect(HttpStatus.UNAUTHORIZED);
     });
   });
 

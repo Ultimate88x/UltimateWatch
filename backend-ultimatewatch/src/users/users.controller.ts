@@ -48,7 +48,7 @@ export class UsersController {
     @Param('id') id: string,
     @GetUser('userId') userId: number,
     @Body() updateUserDto: UpdateUserDto,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file?: Express.Multer.File,
   ) {
     if (file) {
       const user = await this.usersService.findOne(+id);

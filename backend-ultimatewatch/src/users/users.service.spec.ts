@@ -43,6 +43,8 @@ describe('UsersService', () => {
 
     service = module.get<UsersService>(UsersService);
     repository = module.get<MockRepository<User>>(getRepositoryToken(User));
+
+    jest.clearAllMocks();
   });
 
   describe('findByUsername', () => {
@@ -150,6 +152,78 @@ describe('UsersService', () => {
       ).rejects.toThrow(ResourceNotOwnedException);
 
       expect(repository.delete).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('update', () => {
+    it('should throw ResourceNotOwnedException if id does not match userId', async () => {
+      const id = 1;
+      const userId = 2;
+      const dto = { username: 'newname' };
+
+      await expect(service.update(id, userId, dto)).rejects.toThrow(
+        ResourceNotOwnedException,
+      );
+      expect(repository.save).not.toHaveBeenCalled();
+    });
+
+    it('should hash password and update user when password is provided', async () => {
+      const id = 1;
+      const userId = 1;
+      const dto = {
+        username: 'updatedUser',
+        password: 'newPassword123',
+      };
+
+      const hashedPassword = 'hashed_password';
+      const savedUser = { ...dto, id, password: hashedPassword };
+
+      repository.save?.mockResolvedValue(savedUser);
+      const saltSpy = jest
+        .spyOn(bcrypt, 'genSalt')
+        .mockResolvedValue('salt' as never);
+      const hashSpy = jest
+        .spyOn(bcrypt, 'hash')
+        .mockResolvedValue(hashedPassword as never);
+
+      const result = await service.update(id, userId, dto);
+
+      expect(saltSpy).toHaveBeenCalledWith(10);
+      expect(hashSpy).toHaveBeenCalledWith('newPassword123', 'salt');
+
+      expect(repository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id,
+          username: dto.username,
+          password: hashedPassword,
+        }),
+      );
+      expect(result).toEqual(savedUser);
+
+      saltSpy.mockRestore();
+      hashSpy.mockRestore();
+    });
+
+    it('should update user without hashing when password is not provided', async () => {
+      const id = 1;
+      const userId = 1;
+      const dto = { username: 'onlyNameUpdate' };
+      const savedUser = { ...dto, id };
+
+      repository.save?.mockResolvedValue(savedUser);
+
+      const hashSpy = jest.spyOn(bcrypt, 'hash');
+
+      const result = await service.update(id, userId, dto);
+
+      expect(hashSpy).not.toHaveBeenCalled();
+      expect(repository.save).toHaveBeenCalledWith({
+        id,
+        ...dto,
+      });
+      expect(result).toEqual(savedUser);
+
+      hashSpy.mockRestore();
     });
   });
 });

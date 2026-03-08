@@ -41,6 +41,12 @@ export class UsersService {
       throw new ResourceNotOwnedException('User');
     }
 
+    if (updateUserDto.password) {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(updateUserDto.password, salt);
+      updateUserDto.password = hashedPassword;
+    }
+
     return await this.userRepository.save({ id, ...updateUserDto });
   }
 

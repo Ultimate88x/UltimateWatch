@@ -3,4 +3,5 @@ export class CreateUserDto {
   email: string;
   password: string;
   imagePath?: string;
+  imagePublicId?: string;
 }

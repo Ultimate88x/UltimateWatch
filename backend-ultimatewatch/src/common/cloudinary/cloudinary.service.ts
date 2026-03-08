@@ -31,4 +31,22 @@ export class CloudinaryService {
       stream.pipe(upload);
     });
   }
+
+  async deleteImage(publicId: string): Promise<any> {
+    try {
+      const result = (await cloudinary.uploader.destroy(publicId)) as {
+        result: string;
+      };
+
+      if (result.result !== 'ok' && result.result !== 'not_found') {
+        throw new Error('Cloudinary delete failed');
+      }
+
+      return result;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Cloudinary delete failed';
+      throw new Error(message);
+    }
+  }
 }

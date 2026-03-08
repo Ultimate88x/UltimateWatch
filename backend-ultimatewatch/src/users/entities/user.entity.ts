@@ -14,6 +14,7 @@ export class User {
   @Column({ select: false })
   password: string;
 
+  @Column()
   imagePath: string;
 
   @Column({ nullable: true })

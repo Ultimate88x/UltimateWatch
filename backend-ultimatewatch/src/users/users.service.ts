@@ -36,8 +36,12 @@ export class UsersService {
     });
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async update(id: number, userId: number, updateUserDto: UpdateUserDto) {
+    if (id !== userId) {
+      throw new ResourceNotOwnedException('User');
+    }
+
+    return await this.userRepository.save({ id, ...updateUserDto });
   }
 
   async remove(id: number, userId: number) {

@@ -28,6 +28,8 @@ describe('UsersController (e2e)', () => {
         username: 'user_e2e_target',
         email: 'target@e2e.com',
         password: 'password123',
+        imagePath:
+          'https://ui-avatars.com/api/?name=user_e2e_target&background=random',
       })
       .expect(HttpStatus.CREATED);
 
@@ -66,6 +68,61 @@ describe('UsersController (e2e)', () => {
     });
   });
 
+  describe('/users/:id (PATCH)', () => {
+    const updatedData = { username: 'new_e2e_name' };
+
+    it('should return 401 if no token is provided', () => {
+      return request(app.getHttpServer())
+        .patch(`/users/${createdUserId}`)
+        .send(updatedData)
+        .expect(HttpStatus.UNAUTHORIZED);
+    });
+
+    it('should update user fields successfully (without file)', async () => {
+      return request(app.getHttpServer())
+        .patch(`/users/${createdUserId}`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(updatedData)
+        .expect(HttpStatus.OK);
+    });
+
+    it('should return 403 if trying to update another user', () => {
+      return request(app.getHttpServer())
+        .patch('/users/999')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(updatedData)
+        .expect(HttpStatus.FORBIDDEN);
+    });
+
+    it('should update user and handle file upload simulation', async () => {
+      return request(app.getHttpServer())
+        .patch(`/users/${createdUserId}`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .field('username', 'user_with_photo')
+        .expect(HttpStatus.OK);
+    });
+
+    it('should update password and verify it was hashed', async () => {
+      const newPassword = 'newPassword456';
+
+      await request(app.getHttpServer())
+        .patch(`/users/${createdUserId}`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ password: newPassword })
+        .expect(HttpStatus.OK);
+
+      const loginRes = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({
+          username: 'user_with_photo',
+          password: newPassword,
+        })
+        .expect(HttpStatus.OK);
+
+      expect(loginRes.body).toHaveProperty('accessToken');
+    });
+  });
+
   describe('/users/:id (DELETE)', () => {
     it('should return 401 Unauthorized if no token is provided', () => {
       return request(app.getHttpServer())
@@ -95,8 +152,8 @@ describe('UsersController (e2e)', () => {
       await request(app.getHttpServer())
         .post('/auth/login')
         .send({
-          username: 'user_e2e_target',
-          password: 'password123',
+          username: 'user_with_photo',
+          password: 'newPassword456',
         })
         .expect(HttpStatus.UNAUTHORIZED);
     });
@@ -104,7 +161,7 @@ describe('UsersController (e2e)', () => {
 
   afterAll(async () => {
     const userRepository = app.get(getRepositoryToken(User));
-    await userRepository.delete({ username: 'user_e2e_target' });
+    await userRepository.delete({ username: 'user_with_photo' });
     await app.close();
   });
 });

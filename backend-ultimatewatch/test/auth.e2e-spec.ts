@@ -45,6 +45,8 @@ describe('AuthController (e2e)', () => {
         username: 'testuser',
         email: 'test@profile.com',
         password: 'password123',
+        imagePath:
+          'https://ui-avatars.com/api/?name=testuser&background=random',
       })
       .expect(HttpStatus.CREATED);
 
@@ -72,6 +74,8 @@ describe('AuthController (e2e)', () => {
         username: 'newuser_e2e',
         email: 'e2e@test.com',
         password: 'password123',
+        imagePath:
+          'https://ui-avatars.com/api/?name=newuser_e2e&background=random',
       })
       .expect(HttpStatus.CREATED)
       .expect((res) => {

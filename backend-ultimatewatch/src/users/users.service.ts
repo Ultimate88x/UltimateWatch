@@ -41,13 +41,21 @@ export class UsersService {
       throw new ResourceNotOwnedException('User');
     }
 
+    const user = await this.userRepository.findOneBy({ id });
+
+    if (!user) {
+      return null;
+    }
+
     if (updateUserDto.password) {
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(updateUserDto.password, salt);
       updateUserDto.password = hashedPassword;
     }
 
-    return await this.userRepository.save({ id, ...updateUserDto });
+    const updatedUser = this.userRepository.merge(user, updateUserDto);
+
+    return this.userRepository.save(updatedUser);
   }
 
   async remove(id: number, userId: number) {

@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { SquarePen, UploadCloud, Eye, EyeOff, LogOut } from "lucide-react";
 
 type UserProfile = {
   id: number;
@@ -24,8 +25,21 @@ export default function UserDetails() {
   const userString = localStorage.getItem('user');
   const userData = userString ? JSON.parse(userString) : null;
   const userId = userData?.id;
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  const [formData, setFormData] = useState({
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    imagePath: null as File | null,
+  });
   
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const [user, setUser] = useState<UserProfile | null>(null);
 
@@ -132,42 +146,271 @@ export default function UserDetails() {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    
+    if ((formData.password || formData.confirmPassword) && formData.password !== formData.confirmPassword) {
+      alert("Passwords do not match!");
+      return;
+    }
+
+    const finalData = new FormData();
+
+    if (formData.username) finalData.append('username', formData.username);
+    if (formData.email) finalData.append('email', formData.email);
+    if (formData.password) finalData.append('password', formData.password);
+    
+    if (formData.imagePath instanceof File) {
+      finalData.append('file', formData.imagePath);
+    }
+    
+    try {
+			const response = await fetch(`http://localhost:3000/users/${userId}`, {
+				method: 'PATCH',
+				headers: {
+					'Authorization': `Bearer ${localStorage.getItem('token')}`
+				},
+				body: finalData,
+			});
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Profile Update failed');
+      }
+
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+
+      const updatedUser = {
+        ...currentUser,
+        id: data.id,
+        username: data.username
+      };
+
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      
+      setUser(data); 
+      setIsUpdating(false);
+      alert("Profile updated!");
+
+    } catch (error: Error | unknown) {
+      const message = error instanceof Error ? error.message : 'An unexpected error occurred';
+      alert(message); 
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value
+    });
+  };
+
+	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFormData({
+        ...formData,
+        imagePath: file
+      });
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCancelUpdate = () => {
+    setIsUpdating(false);
+    setFormData({
+      username: user?.username || '',
+      email: user?.email || '',
+      password: '',
+      confirmPassword: '',
+      imagePath: null
+    });
+    setImagePreview(null);
+  };
+
+  const profileInfo = () => {
+    if (isUpdating) {
+      return (
+        <form 
+          onSubmit={handleSubmit}
+          className="relative w-2/3 flex flex-col justify-start items-center gap-4"
+        >
+          <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+            <img 
+              className="mb-2 w-65 h-65 shadow-2xl object-cover border-4 rounded-full border-white/10 transition-all duration-300 group-hover:opacity-70" 
+              src={
+                imagePreview
+                  ? imagePreview 
+                  : user?.imagePath || "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+              } 
+              alt="Profile Preview" 
+            />
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center rounded-full">
+              <UploadCloud size={64} className="text-white mb-2" />
+              <span className="px-2 py-1 bg-black/50 rounded text-lg text-white font-bold">Change picture</span>
+            </div>
+          </div>
+
+          <input 
+            type="file"
+            name="image"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept="image/*"
+            className="hidden"
+          />
+
+          <div className="relative w-full flex flex-col justify-start items-start gap-1">
+            <label className="relative font-inter font-medium text-white/90 ml-2 text-sm">Username</label>
+            <input
+              required
+              name="username"
+              value={formData.username? formData.username : user?.username || ''}
+              onChange={handleChange}
+              type="text" 
+              placeholder="Username" 
+              className="w-full px-4 py-3 bg-white/10 shadow-lg border-2 rounded-2xl border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-main focus:bg-white/20 transition-all"
+            />
+          </div>
+
+          <div className="relative w-full flex flex-col justify-start items-start gap-1">
+            <label className="relative font-inter font-medium text-white/90 ml-2 text-sm">Email</label>
+            <input
+              required
+              name="email"
+              value={formData.email? formData.email : user?.email || ''}
+              onChange={handleChange}
+              type="email" 
+              placeholder="your@email.com" 
+              className="w-full px-4 py-3 bg-white/10 shadow-lg border-2 rounded-2xl border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-main focus:bg-white/20 transition-all"
+            />
+          </div>
+
+          <div className="relative w-full flex flex-col justify-start items-start gap-1">
+            <label className="relative font-inter font-medium text-white/90 ml-2 text-sm">New Password</label>
+            <div className="relative w-full">
+              <input
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                type={showPassword ? "text" : "password"}
+                placeholder="New Password" 
+                className="w-full px-4 py-3 bg-white/10 shadow-lg border-2 rounded-2xl border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-main focus:bg-white/20 transition-all"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
+              >
+                {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
+              </button>
+            </div>
+          </div>
+
+          <div className="relative w-full flex flex-col justify-start items-start gap-1">
+            <label className="relative font-inter font-medium text-white/90 ml-2 text-sm">Verify Password</label>
+            <div className="relative w-full">
+              <input
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                type={showPassword ? "text" : "password"}
+                placeholder="Repeat your new password" 
+                className={`w-full px-4 py-3 bg-white/10 shadow-lg border-2 rounded-2xl transition-all focus:outline-none focus:bg-white/20 ${
+                  formData.confirmPassword && formData.password !== formData.confirmPassword 
+                  ? "border-red-500/50" 
+                  : "border-white/20 focus:border-purple-main"
+                }`}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-12.5 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
+            >
+              {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
+            </button>
+            {(formData.password || formData.confirmPassword) && formData.password !== formData.confirmPassword && (
+              <span className="text-red-400 text-xs ml-2 mt-1">Passwords do not match yet</span>
+            )}
+          </div>
+
+          <div className="w-full flex justify-end items-center gap-4 mt-4">
+            <button 
+              type="button"
+              onClick={handleCancelUpdate}
+              className="mt-6 w-60 py-4 bg-gray-500 rounded-xl text-white font-bold cursor-pointer active:scale-95 hover:bg-gray-600 transition-all shadow-xl flex justify-center items-center gap-2"
+            >
+              CANCEL
+            </button>
+            <button 
+              type="submit"
+              className="mt-6 w-60 py-4 bg-purple-main rounded-xl text-white font-bold cursor-pointer active:scale-95 hover:bg-purple-main/90 transition-all shadow-xl flex justify-center items-center gap-2"
+            >
+              UPDATE PROFILE
+            </button>
+          </div>
+        </form>
+      )
+    } else {
+      return (
+        <>
+          <button className="absolute right-1/4 cursor-pointer" onClick={() => setIsUpdating(!isUpdating)}>
+            {!isUpdating && <SquarePen size={24} />}
+          </button>
+          <img 
+            className="mb-2 w-65 h-auto shadow-2xl object-cover border-4 rounded-full border-white/10 transition-all duration-300 group-hover:opacity-70" 
+            src={user?.imagePath || "https://cdn-icons-png.flaticon.com/512/149/149071.png"} 
+            alt="Profile" 
+          />
+          <h2 className="relative text-4xl text-white font-bold font-inter">{user?.username || 'Guest'}</h2>
+          <a className="relative text-lg text-white font-medium font-inter">{user?.email || 'No email provided'}</a>
+
+          <button
+            onClick={logout}
+            className="relative mt-6 w-60 py-3 overflow-hidden rounded-xl cursor-pointer bg-white/5 font-inter font-semibold text-white hover:bg-red-500/20 hover:text-red-400 border border-white/10 hover:border-red-500/50 flex items-center justify-center gap-2 group transition-all duration-300"
+          >
+            <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/5 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
+            
+            <LogOut size={20} className="transition-transform duration-300 group-hover:-translate-x-1" />
+            <span>Log Out</span>
+          </button>
+        </>
+      )
+    }
+  }
+
   return (
     <div className="relative w-full bg-cover bg-blue-background flex justify-start items-start overflow-x-hidden">
       <div className="relative mt-8 w-1/3 h-fit flex flex-col justify-start items-center">
-      <div className="relative flex flex-col justify-start items-center">
-        <img 
-          className="mb-2 w-65 h-auto shadow-2xl object-cover border-4 rounded-full border-white/10 transition-all duration-300 group-hover:opacity-70" 
-          src={user?.imagePath || "https://cdn-icons-png.flaticon.com/512/149/149071.png"} 
-          alt="Profile" 
-        />
-        <h2 className="relative text-4xl text-white font-bold font-inter">{user?.username || 'Guest'}</h2>
-        <a className="relative text-lg text-white font-medium font-inter">{user?.email || 'No email provided'}</a>
-      </div>
-        <button
-          onClick={logout}
-          className="relative mt-4 w-60 py-3 bg-purple-main rounded-md cursor-pointer font-medium text-white hover:bg-purple-main/90 transition-colors duration-300"
-        >
-          Sign Out
-        </button>
+        <div className="relative w-full flex flex-col justify-start items-center">
+          {profileInfo()}
+        </div>
 
-      <div className="mt-12 pt-8 border-t border-white/10 w-60">
-        <div className="flex flex-col items-start gap-2">
-          <h3 className="text-xl font-bold text-red-danger uppercase tracking-widest">
-            Danger Zone
-          </h3>
-          <p className="text-sm text-gray-400 leading-relaxed">
-            Once you delete your account, there is no going back. Please be certain.
-          </p>
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="mt-2 w-full py-2 bg-transparent border border-red-danger/50 cursor-pointer text-lg text-red-danger font-bold rounded hover:bg-red-danger hover:text-white transition-all duration-300 uppercase tracking-tighter"
-          >
-            Delete Account
-          </button>
+        <div className="absolute top-213.5 pt-8 border-t border-white/10 w-60">
+          <div className="flex flex-col items-start gap-2">
+            <h3 className="text-xl font-bold text-red-danger uppercase tracking-widest">
+              Danger Zone
+            </h3>
+            <p className="text-sm text-gray-400 leading-relaxed">
+              Once you delete your account, there is no going back. Please be certain.
+            </p>
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="mt-2 w-full py-2 bg-transparent border border-red-danger/50 cursor-pointer text-lg text-red-danger font-bold rounded hover:bg-red-danger hover:text-white transition-all duration-300 uppercase tracking-tighter"
+            >
+              Delete Account
+            </button>
+          </div>
         </div>
       </div>
-    </div>
 
       <div className="relative mt-8 max-w-2/3 flex flex-1 flex-col justify-start items-start gap-8">
         <div className="relative h-fit flex flex-col justify-start items-start gap-4">

@@ -11,6 +11,8 @@ import {
 import { AuthService } from './auth.service';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
+import { ForgotPasswordDto } from './dto/forgot-password-dto';
+import { ResetPasswordDto } from './dto/reset-password-dto';
 
 type User = {
   userId: number;
@@ -40,5 +42,18 @@ export class AuthController {
   @Get('profile')
   getUserInfo(@Request() request: RequestWithUser): User {
     return request.user;
+  }
+
+  @Post('forgot-password')
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    return await this.authService.forgotPassword(forgotPasswordDto.email);
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    return await this.authService.resetPasswordWithToken(
+      resetPasswordDto.token,
+      resetPasswordDto.newPassword,
+    );
   }
 }

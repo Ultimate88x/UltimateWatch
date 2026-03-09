@@ -27,6 +27,7 @@
     "@nestjs/mapped-types": "*",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/typeorm": "^11.0.0",
+    "@sendgrid/mail": "^8.1.6",
     "bcrypt": "^6.0.0",
     "pg": "^8.19.0",
     "reflect-metadata": "^0.2.2",

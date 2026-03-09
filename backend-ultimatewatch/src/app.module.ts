@@ -6,6 +6,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { SeedModule } from './common/seed/seed.module';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { SeedModule } from './common/seed/seed.module';
     UsersModule,
     AuthModule,
     SeedModule,
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

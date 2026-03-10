@@ -84,6 +84,66 @@ describe('AuthController (e2e)', () => {
       });
   });
 
+  describe('Password Recovery (e2e)', () => {
+    const recoveryEmail = 'admin@watch.com';
+    let resetToken: string;
+
+    it('/auth/forgot-password (POST) - Should return success message if email exists', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/forgot-password')
+        .send({ email: recoveryEmail })
+        .expect(HttpStatus.CREATED);
+
+      expect(response.body.message).toContain('recovery email has been sent');
+    });
+
+    it('/auth/reset-password (POST) - Should reset password with a valid token', async () => {
+      const userRepository = app.get(getRepositoryToken(User));
+      const user = await userRepository.findOneBy({
+        email: recoveryEmail,
+      });
+      resetToken = user.resetToken;
+
+      expect(resetToken).toBeDefined();
+
+      await request(app.getHttpServer())
+        .post('/auth/reset-password')
+        .send({
+          token: resetToken,
+          newPassword: 'new_secure_password_123',
+        })
+        .expect(HttpStatus.CREATED);
+
+      await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({
+          username: 'admin',
+          password: 'new_secure_password_123',
+        })
+        .expect(HttpStatus.OK);
+    });
+
+    it('/auth/reset-password (POST) - Should return 401 with invalid token', () => {
+      return request(app.getHttpServer())
+        .post('/auth/reset-password')
+        .send({
+          token: 'invalid-token-random',
+          newPassword: 'somePassword123',
+        })
+        .expect(HttpStatus.UNAUTHORIZED);
+    });
+
+    it('/auth/reset-password (POST) - Should return 401 with empty token', () => {
+      return request(app.getHttpServer())
+        .post('/auth/reset-password')
+        .send({
+          token: '',
+          newPassword: 'somePassword123',
+        })
+        .expect(HttpStatus.UNAUTHORIZED);
+    });
+  });
+
   afterAll(async () => {
     await app.close();
   });

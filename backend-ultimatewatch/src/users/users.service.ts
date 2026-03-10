@@ -75,4 +75,45 @@ export class UsersService {
       .where('user.username = :username', { username })
       .getOne();
   }
+
+  async findByEmail(email: string) {
+    return await this.userRepository.findOne({
+      where: { email },
+    });
+  }
+
+  async findByResetToken(resetToken: string) {
+    return await this.userRepository.findOne({
+      where: { resetToken },
+    });
+  }
+
+  async updateResetToken(userId: number, token: string) {
+    const expiryDate = new Date();
+    expiryDate.setHours(expiryDate.getHours() + 1);
+
+    const result = await this.userRepository.update(userId, {
+      resetToken: token,
+      resetTokenExpires: expiryDate,
+    });
+
+    return result;
+  }
+
+  async updatePassword(userId: number, password: string) {
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const user = await this.findOne(userId);
+
+    if (!user) {
+      return null;
+    }
+
+    const updatedUser = this.userRepository.merge(user, {
+      password: hashedPassword,
+    });
+
+    return await this.userRepository.save(updatedUser);
+  }
 }

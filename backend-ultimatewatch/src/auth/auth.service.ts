@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { EmailService } from 'src/email/email.service';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 
 import { UsersService } from 'src/users/users.service';
@@ -23,6 +24,7 @@ type AuthResult = {
 export class AuthService {
   constructor(
     private userService: UsersService,
+    private emailService: EmailService,
     private jwtService: JwtService,
   ) {}
 
@@ -69,5 +71,41 @@ export class AuthService {
     const user = await this.userService.create(input);
 
     return this.signIn({ userId: user.id, username: user.username });
+  }
+
+  async forgotPassword(email: string) {
+    const user = await this.userService.findByEmail(email);
+
+    if (user) {
+      const token = Math.random().toString(36).substring(2);
+      await this.userService.updateResetToken(user.id, token);
+
+      await this.emailService.sendPasswordRecoveryEmail(
+        user.email,
+        user.username,
+        token,
+      );
+    }
+
+    return { message: 'If an account exists, a recovery email has been sent.' };
+  }
+
+  async resetPasswordWithToken(token: string, newPassword: string) {
+    if (token === '') {
+      throw new UnauthorizedException('Invalid token');
+    }
+
+    const user = await this.userService.findByResetToken(token);
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid token');
+    }
+
+    const now = new Date();
+    if (user.resetTokenExpires && now > user.resetTokenExpires) {
+      throw new UnauthorizedException('The reset link has expired');
+    }
+
+    return await this.userService.updatePassword(user.id, newPassword);
   }
 }

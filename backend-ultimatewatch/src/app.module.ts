@@ -7,6 +7,7 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { SeedModule } from './common/seed/seed.module';
 import { CloudinaryModule } from './common/cloudinary/cloudinary.module';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { CloudinaryModule } from './common/cloudinary/cloudinary.module';
     AuthModule,
     SeedModule,
     CloudinaryModule,
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

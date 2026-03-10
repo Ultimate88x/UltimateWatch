@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { UsersService } from 'src/users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { EmailService } from 'src/email/email.service';
 
 jest.mock('bcrypt');
 
@@ -16,10 +18,18 @@ describe('AuthService', () => {
   const mockUsersService = {
     findByUsername: jest.fn(),
     create: jest.fn(),
+    findByEmail: jest.fn(),
+    updateResetToken: jest.fn(),
+    findByResetToken: jest.fn(),
+    updatePassword: jest.fn(),
   };
 
   const mockJwtService = {
     signAsync: jest.fn(),
+  };
+
+  const mockEmailService = {
+    sendPasswordRecoveryEmail: jest.fn().mockResolvedValue(true),
   };
 
   beforeEach(async () => {
@@ -28,6 +38,7 @@ describe('AuthService', () => {
         AuthService,
         { provide: UsersService, useValue: mockUsersService },
         { provide: JwtService, useValue: mockJwtService },
+        { provide: EmailService, useValue: mockEmailService },
       ],
     }).compile();
 
@@ -176,6 +187,94 @@ describe('AuthService', () => {
 
       expect(usersService['create']).toHaveBeenCalledWith(createUserDto);
       expect(result).toEqual(expectedAuthResult);
+    });
+  });
+
+  describe('forgotPassword', () => {
+    const email = 'test@example.com';
+    const mockUser = { id: 1, email: 'test@example.com', username: 'testuser' };
+
+    it('should send an email if the user exists', async () => {
+      mockUsersService.findByEmail.mockResolvedValue(mockUser);
+      mockUsersService.updateResetToken.mockResolvedValue(true);
+
+      const result = await service.forgotPassword(email);
+
+      expect(usersService.findByEmail).toHaveBeenCalledWith(email);
+      expect(usersService.updateResetToken).toHaveBeenCalledWith(
+        mockUser.id,
+        expect.any(String),
+      );
+      expect(mockEmailService.sendPasswordRecoveryEmail).toHaveBeenCalledWith(
+        mockUser.email,
+        mockUser.username,
+        expect.any(String),
+      );
+      expect(result).toEqual({
+        message: 'If an account exists, a recovery email has been sent.',
+      });
+    });
+
+    it('should return the same message even if user does not exist (security best practice)', async () => {
+      mockUsersService.findByEmail.mockResolvedValue(null);
+
+      const result = await service.forgotPassword('nonexistent@test.com');
+
+      expect(mockEmailService.sendPasswordRecoveryEmail).not.toHaveBeenCalled();
+      expect(result).toEqual({
+        message: 'If an account exists, a recovery email has been sent.',
+      });
+    });
+  });
+
+  describe('resetPasswordWithToken', () => {
+    const token = 'valid-token';
+    const newPassword = 'newPassword123';
+
+    it('should throw UnauthorizedException if token is empty', async () => {
+      await expect(
+        service.resetPasswordWithToken('', newPassword),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should throw UnauthorizedException if token is invalid or not found', async () => {
+      mockUsersService.findByResetToken.mockResolvedValue(null);
+
+      await expect(
+        service.resetPasswordWithToken('invalid', newPassword),
+      ).rejects.toThrow(new UnauthorizedException('Invalid token'));
+    });
+
+    it('should throw UnauthorizedException if the token has expired', async () => {
+      const expiredDate = new Date();
+      expiredDate.setHours(expiredDate.getHours() - 2);
+
+      mockUsersService.findByResetToken.mockResolvedValue({
+        id: 1,
+        resetTokenExpires: expiredDate,
+      });
+
+      await expect(
+        service.resetPasswordWithToken(token, newPassword),
+      ).rejects.toThrow(
+        new UnauthorizedException('The reset link has expired'),
+      );
+    });
+
+    it('should update the password if token is valid and not expired', async () => {
+      const futureDate = new Date();
+      futureDate.setHours(futureDate.getHours() + 1);
+
+      mockUsersService.findByResetToken.mockResolvedValue({
+        id: 1,
+        resetTokenExpires: futureDate,
+      });
+      mockUsersService.updatePassword.mockResolvedValue({ affected: 1 });
+
+      const result = await service.resetPasswordWithToken(token, newPassword);
+
+      expect(usersService.updatePassword).toHaveBeenCalledWith(1, newPassword);
+      expect(result).toEqual({ affected: 1 });
     });
   });
 

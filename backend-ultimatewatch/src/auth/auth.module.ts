@@ -5,10 +5,12 @@ import { AuthController } from './auth.controller';
 import { JwtModule } from '@nestjs/jwt';
 
 import { UsersModule } from 'src/users/users.module';
+import { EmailModule } from 'src/email/email.module';
 
 @Module({
   imports: [
     UsersModule,
+    EmailModule,
     JwtModule.registerAsync({
       global: true,
       imports: [ConfigModule],

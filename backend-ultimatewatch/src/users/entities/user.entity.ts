@@ -19,4 +19,10 @@ export class User {
 
   @Column({ nullable: true })
   imagePublicId: string;
+
+  @Column({ nullable: true })
+  resetToken: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  resetTokenExpires: Date;
 }

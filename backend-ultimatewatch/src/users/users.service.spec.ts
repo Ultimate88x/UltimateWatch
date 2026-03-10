@@ -30,6 +30,7 @@ describe('UsersService', () => {
     delete: jest.fn(),
     findOneBy: jest.fn(),
     merge: jest.fn(),
+    update: jest.fn(),
   });
 
   beforeEach(async () => {
@@ -259,6 +260,117 @@ describe('UsersService', () => {
       findOneBySpy.mockRestore();
       mergeSpy.mockRestore();
       hashSpy.mockRestore();
+    });
+  });
+
+  describe('findByEmail', () => {
+    it('should return a user if email exists', async () => {
+      const mockUser = { id: 1, email: 'test@tfg.com' } as User;
+      repository.findOne?.mockResolvedValue(mockUser);
+
+      const result = await service.findByEmail('test@tfg.com');
+
+      expect(repository.findOne).toHaveBeenCalledWith({
+        where: { email: 'test@tfg.com' },
+      });
+      expect(result).toEqual(mockUser);
+    });
+
+    it('should return null if email does not exist', async () => {
+      repository.findOne?.mockResolvedValue(null);
+      const result = await service.findByEmail('notfound@test.com');
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('findByResetToken', () => {
+    it('should return a user if resetToken is valid', async () => {
+      const mockUser = { id: 1, resetToken: 'valid-token' } as User;
+      repository.findOne?.mockResolvedValue(mockUser);
+
+      const result = await service.findByResetToken('valid-token');
+
+      expect(repository.findOne).toHaveBeenCalledWith({
+        where: { resetToken: 'valid-token' },
+      });
+      expect(result).toEqual(mockUser);
+    });
+  });
+
+  describe('updateResetToken', () => {
+    it('should update the reset token and expiry date', async () => {
+      const userId = 1;
+      const token = 'new-secret-token';
+      const mockUpdateResult = { affected: 1 };
+
+      repository.update?.mockResolvedValue(mockUpdateResult);
+      const result = await service.updateResetToken(userId, token);
+
+      expect(repository.update).toHaveBeenCalledWith(
+        userId,
+        expect.objectContaining({
+          resetToken: token,
+          resetTokenExpires: expect.any(Date) as Date,
+        }),
+      );
+      expect(result).toEqual(mockUpdateResult);
+    });
+  });
+
+  describe('updatePassword', () => {
+    const userId = 1;
+    const newPassword = 'newSecretPassword';
+    const hashedPassword = 'new_hashed_password';
+    const mockUser = {
+      id: 1,
+      username: 'testuser',
+      password: 'old_password',
+    } as User;
+
+    it('should return null if user to update is not found', async () => {
+      jest.spyOn(service, 'findOne').mockResolvedValue(null);
+
+      const result = await service.updatePassword(userId, newPassword);
+
+      expect(result).toBeNull();
+    });
+
+    it('should hash the password and save the user using merge', async () => {
+      const saltSpy = jest
+        .spyOn(bcrypt, 'genSalt')
+        .mockResolvedValue('salt' as never);
+      const hashSpy = jest
+        .spyOn(bcrypt, 'hash')
+        .mockResolvedValue(hashedPassword as never);
+
+      jest.spyOn(service, 'findOne').mockResolvedValue(mockUser);
+
+      const mergeSpy = jest
+        .spyOn(repository, 'merge' as any)
+        .mockImplementation(
+          (u: User, changes: Partial<User>): User => ({
+            ...u,
+            ...changes,
+          }),
+        );
+      repository.save?.mockResolvedValue({
+        ...mockUser,
+        password: hashedPassword,
+      });
+
+      const result = await service.updatePassword(userId, newPassword);
+
+      expect(saltSpy).toHaveBeenCalledWith(10);
+      expect(hashSpy).toHaveBeenCalledWith(newPassword, 'salt');
+      expect(mergeSpy).toHaveBeenCalledWith(mockUser, {
+        password: hashedPassword,
+      });
+      expect(repository.save).toHaveBeenCalled();
+      expect(result?.password).toBe(hashedPassword);
+
+      saltSpy.mockRestore();
+      hashSpy.mockRestore();
+      mergeSpy.mockRestore();
     });
   });
 });

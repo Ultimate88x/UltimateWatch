@@ -101,7 +101,7 @@ export default function Login() {
 						</div>
 
 						<p className="text-center text-sm text-white/85">
-							Don't have an account? Click <span className="text-white font-bold cursor-pointer hover:underline">here</span> to reset it
+							Don't have an account? Click <Link to="/forgot-password" className="text-white font-bold cursor-pointer hover:underline" >here</Link> to reset it
 						</p>
 
 						<button 

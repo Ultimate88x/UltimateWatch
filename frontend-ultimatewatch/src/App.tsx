@@ -4,6 +4,7 @@ import Footer from "./components/Footer";
 import Login from "./auth/login";
 import SignUp from "./auth/signup";
 import UserDetails from "./user/userDetails";
+import ForgotPassword from "./auth/forgotPassword";
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/profile" element={<UserDetails />} />
         </Routes>
       </main>

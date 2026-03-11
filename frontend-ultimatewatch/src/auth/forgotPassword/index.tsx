@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom";
 import { Mail } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function ForgotPassword() {
 	const navigate = useNavigate();
@@ -17,31 +18,30 @@ export default function ForgotPassword() {
 	};
 
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-			e.preventDefault();
+		e.preventDefault();
+		const loadToast = toast.loading('Sending email...');
+
+		try {
+			console.log(formData.email)
+			const response = await fetch('http://localhost:3000/auth/forgot-password', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					email: formData.email,
+				}),
+			})
 			
-			try {
-        const response = await fetch('http://localhost:3000/auth/forgot-password', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                email: formData.email,
-            }),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.message || 'Recovery email dispatch failed');
-        }
-
-        navigate('/');
-
-	} catch (error: Error | unknown) {
-		const message = error instanceof Error ? error.message : 'An unexpected error occurred';
-		alert(message); 
-	}
+			if (response.ok) {
+				toast.success('Email sent successfully!', { id: loadToast });
+			} else {
+				toast.error('Could not send email', { id: loadToast });
+			}
+		} catch (error) {
+			const message = error instanceof Error ? error.message : 'An unexpected error occurred';
+			toast.error(message, { id: loadToast });
+		}
 	};
 
 	return (

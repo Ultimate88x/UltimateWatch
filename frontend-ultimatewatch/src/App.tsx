@@ -5,10 +5,29 @@ import Login from "./auth/login";
 import SignUp from "./auth/signup";
 import UserDetails from "./user/userDetails";
 import ForgotPassword from "./auth/forgotPassword";
+import ResetPassword from "./auth/resetPassword";
+import { Toaster } from "react-hot-toast";
 
 function App() {
   return (
     <div className="flex flex-col bg-blue-background min-h-screen">
+      <Toaster 
+        position="top-center"
+        toastOptions={{
+          style: {
+            background: '#1a1a1a',
+            color: '#fff',
+            border: '1px solid rgba(255,255,255,0.1)'
+          },
+          success: {
+            iconTheme: {
+              primary: '#6D28D9',
+              secondary: '#fff',
+            },
+          },
+        }} 
+      />
+      
       <Navbar />
       
       <main className="flex-1"> 
@@ -16,6 +35,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/profile" element={<UserDetails />} />
         </Routes>
       </main>

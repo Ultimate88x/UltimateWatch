@@ -14,9 +14,12 @@ export class UsersService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  async create(dto: CreateUserDto) {
+  async create(dto: CreateUserDto): Promise<User> {
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(dto.password, salt);
+    const hashedPassword = (await bcrypt.hash(
+      dto.password as string,
+      salt,
+    )) as unknown as string;
 
     const newUser = await this.userRepository.save({
       ...dto,

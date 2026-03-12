@@ -46,7 +46,7 @@ export class AuthService {
       : false;
 
     if (isMatch) {
-      return { userId: user?.id, username: user?.username };
+      return { userId: user?.id, username: user?.username } as SignInData;
     }
     return null;
   }
@@ -70,7 +70,10 @@ export class AuthService {
   async signUp(input: CreateUserDto): Promise<AuthResult> {
     const user = await this.userService.create(input);
 
-    return this.signIn({ userId: user.id, username: user.username });
+    return this.signIn({
+      userId: user.id,
+      username: user.username,
+    } as SignInData);
   }
 
   async forgotPassword(email: string) {

@@ -1,12 +1,13 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Eye, EyeOff, UploadCloud } from "lucide-react";
+import { Eye, EyeOff, UploadCloud, X } from "lucide-react";
 
 export default function SignUp() {
   const navigate = useNavigate();
 	const fileInputRef = useRef<HTMLInputElement>(null);
   const [showPassword, setShowPassword] = useState(false);
 	const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imagePath, setImagePath] = useState<string>("https://cdn-icons-png.flaticon.com/512/149/149071.png");
 
   const [formData, setFormData] = useState({
     username: '',
@@ -15,6 +16,10 @@ export default function SignUp() {
     confirmPassword: '',
 		imagePath: null as File | null,
   });
+
+  useEffect(() => {
+    setImagePath(`https://ui-avatars.com/api/?name=${encodeURIComponent(formData.username)}&background=6D28D9&color=fff`)
+  }, [formData.username]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -40,6 +45,18 @@ export default function SignUp() {
     }
   };
 
+  const handleRemoveImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setImagePreview(null);
+    setFormData({
+      ...formData,
+      imagePath: null
+    });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
@@ -47,19 +64,23 @@ export default function SignUp() {
       alert("Passwords do not match!");
       return;
     }
+
+    const finalData = new FormData();
+
+    if (formData.username) finalData.append('username', formData.username);
+    if (formData.email) finalData.append('email', formData.email);
+    if (formData.password) finalData.append('password', formData.password);
+    
+    if (formData.imagePath instanceof File) {
+        finalData.append('file', formData.imagePath);
+    } else {
+      finalData.append('imagePath', imagePath);
+    }
     
     try {
 			const response = await fetch('http://localhost:3000/auth/signup', {
 				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					username: formData.username,
-					email: formData.email,
-					password: formData.password,
-					imagePath: formData.imagePath,
-				}),
+				body: finalData
 			});
 
       const data = await response.json();
@@ -100,7 +121,7 @@ export default function SignUp() {
               imagePreview
                 ? imagePreview 
                 : formData.username
-                  ? `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.username)}&background=6D28D9&color=fff` 
+                  ? imagePath
                   : "https://cdn-icons-png.flaticon.com/512/149/149071.png"
             } 
             alt="Profile Preview" 
@@ -109,6 +130,17 @@ export default function SignUp() {
             <UploadCloud size={48} className="text-white mb-2" />
             <span className="px-2 py-1 bg-black/50 rounded text-xs text-white font-bold">Change picture</span>
           </div>
+
+          {imagePreview && (
+            <button
+              type="button"
+              onClick={handleRemoveImage}
+              className="absolute top-0 -right-5 p-1 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-transform hover:scale-110 active:scale-90 z-10"
+              title="Remove image"
+            >
+              <X size={20} />
+            </button>
+          )}
         </div>
 
         <input 

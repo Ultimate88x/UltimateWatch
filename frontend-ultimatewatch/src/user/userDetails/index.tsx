@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { SquarePen, UploadCloud, Eye, EyeOff, LogOut } from "lucide-react";
+import { SquarePen, UploadCloud, Eye, EyeOff, LogOut, X } from "lucide-react";
 
 type UserProfile = {
   id: number;
@@ -29,6 +29,7 @@ export default function UserDetails() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imagePath, setImagePath] = useState<string>("https://cdn-icons-png.flaticon.com/512/149/149071.png");
 
   const [formData, setFormData] = useState({
     username: '',
@@ -42,7 +43,7 @@ export default function UserDetails() {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const [user, setUser] = useState<UserProfile | null>(null);
-
+  
   const MOCK_MOVIES: Movie[] = [
     {
       id: 1,
@@ -120,6 +121,26 @@ export default function UserDetails() {
     fetchUser();
   }, [userId]);
 
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        username: user.username,
+        email: user.email,
+      }));
+    
+    setImagePath(user.imagePath || getBaseImagePath(user.username));
+    }
+  }, [user]);
+
+  useEffect(() => {
+    setImagePath(getBaseImagePath(formData.username))
+  }, [formData.username]);
+
+  const getBaseImagePath = (username: string) => {
+    return username !== "" ? `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=6D28D9&color=fff` : "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+  }
+
   const logout = () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('user'); 
@@ -161,7 +182,9 @@ export default function UserDetails() {
     if (formData.password) finalData.append('password', formData.password);
     
     if (formData.imagePath instanceof File) {
-      finalData.append('file', formData.imagePath);
+        finalData.append('file', formData.imagePath);
+    } else {
+      finalData.append('imagePath', imagePath);
     }
     
     try {
@@ -223,6 +246,19 @@ export default function UserDetails() {
     }
   };
 
+  const handleRemoveImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setImagePreview(null);
+    setImagePath(getBaseImagePath(formData.username))
+    setFormData({
+      ...formData,
+      imagePath: null
+    });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleCancelUpdate = () => {
     setIsUpdating(false);
     setFormData({
@@ -233,10 +269,13 @@ export default function UserDetails() {
       imagePath: null
     });
     setImagePreview(null);
+    setImagePath(user?.imagePath || getBaseImagePath(formData.username));
   };
 
   const profileInfo = () => {
     if (isUpdating) {
+      const currentImageToShow = imagePreview ? imagePreview : imagePath
+
       return (
         <form 
           onSubmit={handleSubmit}
@@ -245,17 +284,24 @@ export default function UserDetails() {
           <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
             <img 
               className="mb-2 w-65 h-65 shadow-2xl object-cover border-4 rounded-full border-white/10 transition-all duration-300 group-hover:opacity-70" 
-              src={
-                imagePreview
-                  ? imagePreview 
-                  : user?.imagePath || "https://cdn-icons-png.flaticon.com/512/149/149071.png"
-              } 
+              src={currentImageToShow} 
               alt="Profile Preview" 
             />
             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center rounded-full">
               <UploadCloud size={64} className="text-white mb-2" />
               <span className="px-2 py-1 bg-black/50 rounded text-lg text-white font-bold">Change picture</span>
             </div>
+
+            {(imagePreview || user?.imagePath) && (
+              <button
+                type="button"
+                onClick={handleRemoveImage}
+                className="absolute top-0 -right-5 p-1 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-transform hover:scale-110 active:scale-90 z-10"
+                title="Remove image"
+              >
+                <X size={20} />
+              </button>
+            )}
           </div>
 
           <input 

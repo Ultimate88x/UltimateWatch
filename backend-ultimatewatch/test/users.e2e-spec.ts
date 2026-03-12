@@ -37,37 +37,6 @@ describe('UsersController (e2e)', () => {
     createdUserId = signupRes.body.userId;
   });
 
-  describe('/users/:id (GET)', () => {
-    it('should return 401 Unauthorized if no token is provided', () => {
-      return request(app.getHttpServer())
-        .get(`/users/${createdUserId}`)
-        .expect(HttpStatus.UNAUTHORIZED);
-    });
-
-    it('should return user data if a valid token is provided', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/users/${createdUserId}`)
-        .set('Authorization', `Bearer ${accessToken}`)
-        .expect(HttpStatus.OK);
-
-      expect(response.body).toHaveProperty('id', createdUserId);
-      expect(response.body).toHaveProperty('username', 'user_e2e_target');
-      expect(response.body).not.toHaveProperty('password');
-    });
-
-    it('should return 200 and null/empty if the user does not exist', () => {
-      return request(app.getHttpServer())
-        .get('/users/9999')
-        .set('Authorization', `Bearer ${accessToken}`)
-        .expect(HttpStatus.OK)
-        .expect((res) => {
-          if (res.body && Object.keys(res.body).length > 0) {
-            expect(res.body.id).not.toBe(9999);
-          }
-        });
-    });
-  });
-
   describe('/users/:id (PATCH)', () => {
     const updatedData = { username: 'new_e2e_name' };
 

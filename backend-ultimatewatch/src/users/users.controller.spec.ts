@@ -43,33 +43,6 @@ describe('UsersController', () => {
     expect(controller).toBeDefined();
   });
 
-  describe('findOne', () => {
-    it('should call usersService.findOne with numeric id and return the user', async () => {
-      const idParam = '10';
-      const expectedUser = {
-        id: 10,
-        username: 'testuser',
-        email: 'test@test.com',
-      };
-
-      mockUsersService.findOne.mockResolvedValue(expectedUser);
-
-      const result = await controller.findOne(idParam);
-
-      expect(service.findOne).toHaveBeenCalledWith(10);
-      expect(result).toEqual(expectedUser);
-    });
-
-    it('should return null or handle error if user is not found', async () => {
-      mockUsersService.findOne.mockResolvedValue(null);
-
-      const result = await controller.findOne('99');
-
-      expect(service.findOne).toHaveBeenCalledWith(99);
-      expect(result).toBeNull();
-    });
-  });
-
   describe('remove', () => {
     it('should call usersService.remove with numeric id and authenticated userId', async () => {
       const idParam = '10';

@@ -126,9 +126,9 @@ describe('UsersController', () => {
         undefined,
       );
 
-      expect(mockUsersService.findOne).not.toHaveBeenCalled();
       expect(mockCloudinaryService.updateDtoImage).not.toHaveBeenCalled();
 
+      expect(mockUsersService.findOne).toHaveBeenCalledWith(1);
       expect(mockUsersService.update).toHaveBeenCalledWith(
         1,
         userIdFromToken,

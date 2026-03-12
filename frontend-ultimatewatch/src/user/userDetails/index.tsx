@@ -30,7 +30,8 @@ export default function UserDetails() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const [serverError, setServerError] = useState<{ field: string; message: string } | null>(null);
+  const [error, setError] = useState<{ field: string; message: string } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [showPassword, setShowPassword] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -121,7 +122,9 @@ export default function UserDetails() {
       } catch (error) {
         const message = error instanceof Error ? error.message : 'An unexpected error occurred';
         toast.error(message);
-      }
+      } finally {
+        setTimeout(() => setIsLoading(false), 500);
+    }
     };
 
     fetchUser();
@@ -175,12 +178,12 @@ export default function UserDetails() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setServerError(null);
+    setError(null);
     
     const result = updateUserSchema.safeParse(formData);
     if (!result.success) {
       const error = result.error.issues[0];
-      setServerError({ 
+      setError({ 
         field: error.path[0] as string, 
         message: error.message 
       });
@@ -230,7 +233,7 @@ export default function UserDetails() {
 
     } catch (error: Error | unknown) {
       const message = error instanceof Error ? error.message : 'An unexpected error occurred';
-      setServerError({ field: 'general', message: message});
+      setError({ field: 'general', message: message});
     }
   };
 
@@ -241,8 +244,8 @@ export default function UserDetails() {
       [name]: value
     });
 
-    if (serverError?.field === name) {
-      setServerError(null);
+    if (error?.field === name) {
+      setError(null);
     }
   };
 
@@ -340,9 +343,9 @@ export default function UserDetails() {
               placeholder="Username" 
               className="w-full px-4 py-3 bg-white/10 shadow-lg border-2 rounded-2xl border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-main focus:bg-white/20 transition-all"
             />
-            {serverError?.field === "username" && (
+            {error?.field === "username" && (
               <span className="text-red-400 text-xs ml-2 mt-1 animate-in fade-in slide-in-from-top-1">
-                {serverError.message}
+                {error.message}
               </span>
             )}
           </div>
@@ -358,9 +361,9 @@ export default function UserDetails() {
               placeholder="your@email.com" 
               className="w-full px-4 py-3 bg-white/10 shadow-lg border-2 rounded-2xl border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-main focus:bg-white/20 transition-all"
             />
-            {serverError?.field === "email" && (
+            {error?.field === "email" && (
               <span className="text-red-400 text-xs ml-2 mt-1 animate-in fade-in slide-in-from-top-1">
-                {serverError.message}
+                {error.message}
               </span>
             )}            
           </div>
@@ -384,9 +387,9 @@ export default function UserDetails() {
                 {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
               </button>
             </div>
-            {serverError?.field === "password" && (
+            {error?.field === "password" && (
               <span className="text-red-400 text-xs ml-2 mt-1 animate-in fade-in slide-in-from-top-1">
-                {serverError.message}
+                {error.message}
               </span>
             )}            
           </div>
@@ -414,9 +417,9 @@ export default function UserDetails() {
             >
               {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
             </button>
-            {serverError?.field === "confirmPassword" && (
+            {error?.field === "confirmPassword" && (
               <span className="text-red-400 text-xs ml-2 mt-1 animate-in fade-in slide-in-from-top-1 font-medium">
-                {serverError.message}
+                {error.message}
               </span>
             )}
           </div>
@@ -464,6 +467,31 @@ export default function UserDetails() {
         </>
       )
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 bg-blue-background flex flex-col items-center justify-center">
+        <motion.div
+          animate={{
+            rotate: [0, 360],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="relative"
+        >
+          <div className="w-20 h-20 border-4 border-purple-main/20 border-t-purple-main rounded-full" />
+        </motion.div>
+        <motion.p
+          className="mt-6 text-white font-inter font-bold tracking-widest uppercase text-sm"
+        >
+          Loading Profile...
+        </motion.p>
+      </div>
+    );
   }
 
   return (

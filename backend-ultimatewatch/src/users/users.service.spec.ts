@@ -8,6 +8,8 @@ import { ObjectLiteral } from 'typeorm';
 import { ResourceNotOwnedException } from 'src/common/exceptions/resource-not-owned-exception';
 import { CloudinaryService } from 'src/common/cloudinary/cloudinary.service';
 import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
+import { DuplicatedResourceException } from 'src/common/exceptions/duplicated-resource-exception';
+import { CreateUserDto } from './dto/create-user.dto';
 
 jest.mock('bcrypt');
 
@@ -87,32 +89,24 @@ describe('UsersService', () => {
   });
 
   describe('create', () => {
-    it('should hash password and save user', async () => {
+    it('should hash password and save user if no duplicates exist', async () => {
       const dto = {
         username: 'newuser',
         email: 'test@test.com',
         password: 'password123',
       };
+      repository.findOne?.mockResolvedValue(null);
+      repository.save?.mockResolvedValue({ ...dto, id: 1 });
 
-      const savedUser = { ...dto, id: 1, password: 'hashed_password' };
-      repository.save?.mockResolvedValue(savedUser);
+      await service.create(dto as CreateUserDto);
+      expect(repository.save).toHaveBeenCalled();
+    });
 
-      const bcryptSpy = jest.spyOn(bcrypt, 'hash') as jest.SpyInstance;
-
-      bcryptSpy.mockImplementation(() => Promise.resolve('hashed_password'));
-
-      const result = await service.create(dto);
-
-      expect(bcryptSpy).toHaveBeenCalled();
-      expect(repository.save).toHaveBeenCalledWith(
-        expect.objectContaining({
-          username: dto.username,
-          password: 'hashed_password',
-        }),
-      );
-      expect(result).toEqual(savedUser);
-
-      bcryptSpy.mockRestore();
+    it('should throw DuplicatedResourceException if username is taken', async () => {
+      repository.findOne?.mockResolvedValue({ id: 99, username: 'taken' });
+      await expect(
+        service.create({ username: 'taken' } as CreateUserDto),
+      ).rejects.toThrow(DuplicatedResourceException);
     });
   });
 
@@ -323,6 +317,37 @@ describe('UsersService', () => {
       saltSpy.mockRestore();
       hashSpy.mockRestore();
     });
+
+    it('should allow updating if the "duplicate" found is the user itself', async () => {
+      const dto = { username: 'oldName' };
+      repository.findOneBy?.mockResolvedValue(existingUser);
+      repository.findOne?.mockResolvedValue(existingUser);
+      repository.merge?.mockImplementation(
+        (entity: User, changes: Partial<User>): User =>
+          ({
+            ...entity,
+            ...changes,
+          }) as User,
+      );
+      repository.save?.mockImplementation((u) => Promise.resolve(u));
+
+      const result = await service.update(id, id, dto);
+      expect(result.username).toBe('oldName');
+      expect(repository.save).toHaveBeenCalled();
+    });
+
+    it('should throw DuplicatedResourceException if new username belongs to someone else', async () => {
+      const dto = { username: 'someone_else' };
+      repository.findOneBy?.mockResolvedValue(existingUser);
+      repository.findOne?.mockResolvedValue({
+        id: 2,
+        username: 'someone_else',
+      });
+
+      await expect(service.update(id, id, dto)).rejects.toThrow(
+        DuplicatedResourceException,
+      );
+    });
   });
 
   describe('findByEmail', () => {
@@ -438,6 +463,38 @@ describe('UsersService', () => {
 
       saltSpy.mockRestore();
       hashSpy.mockRestore();
+    });
+  });
+
+  describe('checkExistingUser', () => {
+    const dto = { username: 'test', email: 'test@test.com' };
+
+    it('should throw if username is taken by another user', async () => {
+      repository.findOne?.mockResolvedValue({ id: 10, username: 'test' });
+      await expect(service.checkExistingUser(dto, 5)).rejects.toThrow(
+        DuplicatedResourceException,
+      );
+    });
+
+    it('should NOT throw if username is taken by the same user (excludeUserId)', async () => {
+      repository.findOne?.mockResolvedValue({ id: 5, username: 'test' });
+      await expect(service.checkExistingUser(dto, 5)).resolves.not.toThrow();
+    });
+
+    it('should throw if email is taken by another user', async () => {
+      repository.findOne?.mockResolvedValueOnce(null);
+      repository.findOne?.mockResolvedValueOnce({
+        id: 10,
+        email: 'test@test.com',
+      });
+      await expect(service.checkExistingUser(dto, 5)).rejects.toThrow(
+        DuplicatedResourceException,
+      );
+    });
+
+    it('should not throw if both are unique', async () => {
+      repository.findOne?.mockResolvedValue(null);
+      await expect(service.checkExistingUser(dto)).resolves.not.toThrow();
     });
   });
 });

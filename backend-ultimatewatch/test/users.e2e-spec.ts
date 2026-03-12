@@ -139,6 +139,21 @@ describe('UsersController (e2e)', () => {
 
       expect(loginRes.body).toHaveProperty('accessToken');
     });
+
+    it('should return 409 Conflict if trying to update to an existing username', async () => {
+      await request(app.getHttpServer()).post('/auth/signup').send({
+        username: 'collision_user',
+        email: 'collision@e2e.com',
+        password: 'password123',
+        imagePath: 'path',
+      });
+
+      return request(app.getHttpServer())
+        .patch(`/users/${createdUserId}`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ username: 'collision_user' })
+        .expect(HttpStatus.CONFLICT);
+    });
   });
 
   describe('/users/:id (DELETE)', () => {
@@ -173,7 +188,6 @@ describe('UsersController (e2e)', () => {
           username: 'user_with_photo',
           password: 'newPassword456',
         })
-        // CAMBIADO: Antes esperabas 401, pero ahora findByUsername lanza 404
         .expect(HttpStatus.NOT_FOUND);
     });
   });

@@ -81,6 +81,40 @@ describe('AuthController (e2e)', () => {
       });
   });
 
+  it('/auth/signup (POST) - Should return 409 if username already exists', async () => {
+    return request(app.getHttpServer())
+      .post('/auth/signup')
+      .send({
+        username: 'newuser_e2e',
+        email: 'different@email.com',
+        password: 'password123',
+        imagePath: 'path',
+      })
+      .expect(HttpStatus.CONFLICT)
+      .expect((res) => {
+        expect(res.body.message).toContain(
+          'A user with that username already exists',
+        );
+      });
+  });
+
+  it('/auth/signup (POST) - Should return 409 if email already exists', async () => {
+    return request(app.getHttpServer())
+      .post('/auth/signup')
+      .send({
+        username: 'different_user',
+        email: 'e2e@test.com',
+        password: 'password123',
+        imagePath: 'path',
+      })
+      .expect(HttpStatus.CONFLICT)
+      .expect((res) => {
+        expect(res.body.message).toContain(
+          'A user with that email already exists',
+        );
+      });
+  });
+
   describe('Password Recovery (e2e)', () => {
     const recoveryEmail = 'admin@watch.com';
     let resetToken: string;

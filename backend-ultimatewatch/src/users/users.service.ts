@@ -8,6 +8,7 @@ import * as bcrypt from 'bcrypt';
 import { ResourceNotOwnedException } from 'src/common/exceptions/resource-not-owned-exception';
 import { CloudinaryService } from 'src/common/cloudinary/cloudinary.service';
 import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
+import { DuplicatedResourceException } from 'src/common/exceptions/duplicated-resource-exception';
 
 @Injectable()
 export class UsersService {
@@ -18,6 +19,8 @@ export class UsersService {
   ) {}
 
   async create(dto: CreateUserDto): Promise<User> {
+    await this.checkExistingUser(dto);
+
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = (await bcrypt.hash(
       dto.password as string,
@@ -63,6 +66,8 @@ export class UsersService {
     if (!user) {
       throw new ResourceNotFoundException('User', 'ID', String(id));
     }
+
+    await this.checkExistingUser(updateUserDto, id);
 
     if (user?.imagePublicId) {
       await this.cloudinaryService.deleteImage(user?.imagePublicId);
@@ -179,5 +184,27 @@ export class UsersService {
     });
 
     return await this.userRepository.save(updatedUser);
+  }
+
+  async checkExistingUser(dto: Partial<CreateUserDto>, excludeUserId?: number) {
+    if (dto.username) {
+      const existingUser = await this.userRepository.findOne({
+        where: { username: dto.username },
+      });
+
+      if (existingUser && existingUser.id !== excludeUserId) {
+        throw new DuplicatedResourceException('user', 'username');
+      }
+    }
+
+    if (dto.email) {
+      const existingUser = await this.userRepository.findOne({
+        where: { email: dto.email },
+      });
+
+      if (existingUser && existingUser.id !== excludeUserId) {
+        throw new DuplicatedResourceException('user', 'email');
+      }
+    }
   }
 }

@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController, RequestWithUser } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '../common/guards/auth.guard';
+import { CloudinaryService } from 'src/common/cloudinary/cloudinary.service';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -19,10 +20,23 @@ describe('AuthController', () => {
     canActivate: jest.fn(() => true),
   };
 
+  const mockCloudinaryService = {
+    updateDtoImage: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
-      providers: [{ provide: AuthService, useValue: mockAuthService }],
+      providers: [
+        {
+          provide: AuthService,
+          useValue: mockAuthService,
+        },
+        {
+          provide: CloudinaryService,
+          useValue: mockCloudinaryService,
+        },
+      ],
     })
       .overrideGuard(AuthGuard)
       .useValue(mockAuthGuard)
@@ -30,10 +44,8 @@ describe('AuthController', () => {
 
     controller = module.get<AuthController>(AuthController);
     authService = module.get<AuthService>(AuthService);
-  });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
+    jest.clearAllMocks();
   });
 
   describe('login', () => {
@@ -67,12 +79,18 @@ describe('AuthController', () => {
   });
 
   describe('signUp', () => {
-    it('should call authService.signUp and return the result', async () => {
+    it('should call cloudinaryService if a file is provided and return authService.signUp result', async () => {
       const signUpDto = {
         username: 'newuser',
         email: 'test@test.com',
         password: 'password123',
       };
+
+      const mockFile = {
+        buffer: Buffer.from('test'),
+        originalname: 'test.png',
+        mimetype: 'image/png',
+      } as Express.Multer.File;
 
       const expectedResult = {
         accessToken: 'token-after-signup',
@@ -80,10 +98,36 @@ describe('AuthController', () => {
         username: 'newuser',
       };
 
+      mockCloudinaryService.updateDtoImage.mockResolvedValue(signUpDto);
       mockAuthService.signUp.mockResolvedValue(expectedResult);
 
-      const result = await controller.signUp(signUpDto);
+      const result = await controller.signUp(signUpDto, mockFile);
 
+      expect(mockCloudinaryService.updateDtoImage).toHaveBeenCalledWith(
+        signUpDto,
+        mockFile,
+      );
+      expect(authService.signUp).toHaveBeenCalledWith(signUpDto);
+      expect(result).toEqual(expectedResult);
+    });
+
+    it('should call authService.signUp directly if no file is provided', async () => {
+      const signUpDto = {
+        username: 'newuser',
+        email: 'test@test.com',
+        password: 'password123',
+      };
+      const expectedResult = {
+        accessToken: 'token',
+        userId: 1,
+        username: 'newuser',
+      };
+
+      mockAuthService.signUp.mockResolvedValue(expectedResult);
+
+      const result = await controller.signUp(signUpDto, undefined);
+
+      expect(mockCloudinaryService.updateDtoImage).not.toHaveBeenCalled();
       expect(authService.signUp).toHaveBeenCalledWith(signUpDto);
       expect(result).toEqual(expectedResult);
     });

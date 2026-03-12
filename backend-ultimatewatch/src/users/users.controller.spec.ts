@@ -9,7 +9,6 @@ import { UpdateUserDto } from './dto/update-user.dto';
 describe('UsersController', () => {
   let controller: UsersController;
   let service: UsersService;
-  let cloudinaryService: CloudinaryService;
 
   const mockUsersService = {
     findOne: jest.fn(),
@@ -18,7 +17,7 @@ describe('UsersController', () => {
   };
 
   const mockCloudinaryService = {
-    uploadImage: jest.fn(),
+    updateDtoImage: jest.fn(),
     deleteImage: jest.fn(),
   };
 
@@ -46,7 +45,6 @@ describe('UsersController', () => {
 
     controller = module.get<UsersController>(UsersController);
     service = module.get<UsersService>(UsersService);
-    cloudinaryService = module.get<CloudinaryService>(CloudinaryService);
 
     jest.clearAllMocks();
   });
@@ -128,31 +126,36 @@ describe('UsersController', () => {
         undefined,
       );
 
-      expect(service.update).toHaveBeenCalledWith(
+      expect(mockUsersService.findOne).not.toHaveBeenCalled();
+      expect(mockCloudinaryService.updateDtoImage).not.toHaveBeenCalled();
+
+      expect(mockUsersService.update).toHaveBeenCalledWith(
         1,
         userIdFromToken,
         updateUserDto,
       );
-      expect(cloudinaryService.uploadImage).not.toHaveBeenCalled();
       expect(result).toEqual(expectedResponse);
     });
 
     it('should delete old image and upload new one when file is provided', async () => {
       const mockFile = { buffer: Buffer.from('test') } as Express.Multer.File;
       const existingUser = { id: 1, imagePublicId: 'old_id' };
-      const uploadResult = {
-        secure_url: 'http://new-url.com',
-        public_id: 'new_id',
-      };
-      const expectedResponse = {
-        id: 1,
+
+      const updatedDtoWithImage = {
         ...updateUserDto,
         imagePath: 'http://new-url.com',
+        imagePublicId: 'new_id',
       };
 
       mockUsersService.findOne.mockResolvedValue(existingUser);
-      mockCloudinaryService.uploadImage.mockResolvedValue(uploadResult);
-      mockUsersService.update.mockResolvedValue(expectedResponse);
+      mockCloudinaryService.deleteImage.mockResolvedValue({ result: 'ok' });
+      mockCloudinaryService.updateDtoImage.mockResolvedValue(
+        updatedDtoWithImage,
+      );
+      mockUsersService.update.mockResolvedValue({
+        id: 1,
+        ...updatedDtoWithImage,
+      });
 
       const result = await controller.update(
         idParam,
@@ -161,30 +164,33 @@ describe('UsersController', () => {
         mockFile,
       );
 
-      expect(service.findOne).toHaveBeenCalledWith(1);
-      expect(cloudinaryService.deleteImage).toHaveBeenCalledWith('old_id');
-      expect(cloudinaryService.uploadImage).toHaveBeenCalledWith(mockFile);
-      expect(service.update).toHaveBeenCalledWith(
+      expect(mockUsersService.findOne).toHaveBeenCalledWith(1);
+      expect(mockCloudinaryService.deleteImage).toHaveBeenCalledWith('old_id');
+      expect(mockCloudinaryService.updateDtoImage).toHaveBeenCalledWith(
+        updateUserDto,
+        mockFile,
+      );
+
+      expect(mockUsersService.update).toHaveBeenCalledWith(
         1,
         userIdFromToken,
-        expect.objectContaining({
-          imagePath: 'http://new-url.com',
-          imagePublicId: 'new_id',
-        }),
+        updatedDtoWithImage,
       );
-      expect(result).toEqual(expectedResponse);
+      expect(result).toEqual({ id: 1, ...updatedDtoWithImage });
     });
 
     it('should upload image but NOT delete anything if user had no previous image', async () => {
       const mockFile = { buffer: Buffer.from('test') } as Express.Multer.File;
       const userWithoutImage = { id: 1, imagePublicId: null };
-      const uploadResult = {
-        secure_url: 'http://new-url.com',
-        public_id: 'new_id',
+      const updatedDtoWithImage = {
+        ...updateUserDto,
+        imagePath: 'http://new-url.com',
       };
 
       mockUsersService.findOne.mockResolvedValue(userWithoutImage);
-      mockCloudinaryService.uploadImage.mockResolvedValue(uploadResult);
+      mockCloudinaryService.updateDtoImage.mockResolvedValue(
+        updatedDtoWithImage,
+      );
       mockUsersService.update.mockResolvedValue({ id: 1 });
 
       await controller.update(
@@ -194,8 +200,12 @@ describe('UsersController', () => {
         mockFile,
       );
 
-      expect(cloudinaryService.deleteImage).not.toHaveBeenCalled();
-      expect(cloudinaryService.uploadImage).toHaveBeenCalled();
+      expect(mockUsersService.findOne).toHaveBeenCalled();
+      expect(mockCloudinaryService.deleteImage).not.toHaveBeenCalled();
+      expect(mockCloudinaryService.updateDtoImage).toHaveBeenCalledWith(
+        updateUserDto,
+        mockFile,
+      );
     });
   });
 });

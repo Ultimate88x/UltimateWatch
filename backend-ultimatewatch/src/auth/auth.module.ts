@@ -12,9 +12,10 @@ import { CloudinaryModule } from 'src/common/cloudinary/cloudinary.module';
   imports: [
     UsersModule,
     EmailModule,
+    CloudinaryModule,
     JwtModule.registerAsync({
       global: true,
-      imports: [ConfigModule, CloudinaryModule],
+      imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),

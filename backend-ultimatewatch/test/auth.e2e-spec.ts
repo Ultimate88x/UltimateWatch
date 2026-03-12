@@ -70,13 +70,10 @@ describe('AuthController (e2e)', () => {
   it('/auth/signup (POST) - Should register a new user and return token', () => {
     return request(app.getHttpServer())
       .post('/auth/signup')
-      .send({
-        username: 'newuser_e2e',
-        email: 'e2e@test.com',
-        password: 'password123',
-        imagePath:
-          'https://ui-avatars.com/api/?name=newuser_e2e&background=random',
-      })
+      .field('username', 'newuser_e2e')
+      .field('email', 'e2e@test.com')
+      .field('password', 'password123')
+      .field('imagePath', 'https://placeholder.com/image.png')
       .expect(HttpStatus.CREATED)
       .expect((res) => {
         expect(res.body).toHaveProperty('accessToken');
@@ -102,7 +99,7 @@ describe('AuthController (e2e)', () => {
       const user = await userRepository.findOneBy({
         email: recoveryEmail,
       });
-      resetToken = user.resetToken;
+      resetToken = user?.resetToken;
 
       expect(resetToken).toBeDefined();
 

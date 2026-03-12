@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Eye, EyeOff, UploadCloud, X } from "lucide-react";
+import { signUpSchema } from "./schemas/signUpSchema";
 
 export default function SignUp() {
   const navigate = useNavigate();
@@ -68,8 +69,13 @@ export default function SignUp() {
     e.preventDefault();
     setServerError(null);
     
-    if (formData.password !== formData.confirmPassword) {
-      setServerError({ field: 'confirmPassword', message: 'Passwords do not match!' });
+    const result = signUpSchema.safeParse(formData);
+    if (!result.success) {
+      const error = result.error.issues[0];
+      setServerError({ 
+        field: error.path[0] as string, 
+        message: error.message 
+      });
       return;
     }
 
@@ -267,10 +273,10 @@ export default function SignUp() {
             </button>
           </div>
           
-          {formData.confirmPassword && formData.password !== formData.confirmPassword ? (
-            <span className="text-red-400 text-xs ml-2 mt-1">Passwords do not match yet</span>
-          ) : serverError?.field === "confirmPassword" && (
-            <span className="text-red-400 text-xs ml-2 mt-1">{serverError.message}</span>
+          {serverError?.field === "confirmPassword" && (
+            <span className="text-red-400 text-xs ml-2 mt-1 animate-in fade-in slide-in-from-top-1 font-medium">
+              {serverError.message}
+            </span>
           )}
         </div>
 

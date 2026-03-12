@@ -466,7 +466,7 @@ export default function UserDetails() {
 
   return (
     <div className="relative w-full bg-cover bg-blue-background flex justify-start items-start overflow-x-hidden">
-      <div className="relative mt-8 w-1/3 h-fit flex flex-col justify-start items-center">
+      <div className="relative w-1/3 h-fit flex flex-col justify-start items-center">
         <div className="relative w-full flex flex-col justify-start items-center">
           {profileInfo()}
         </div>
@@ -489,7 +489,7 @@ export default function UserDetails() {
         </div>
       </div>
 
-      <div className="relative mt-8 max-w-2/3 flex flex-1 flex-col justify-start items-start gap-8">
+      <div className="relative max-w-2/3 flex flex-1 flex-col justify-start items-start gap-8">
         <div className="relative h-fit flex flex-col justify-start items-start gap-4">
           <h2 className="relative text-4xl text-white font-bold font-inter">LAST WATCHED</h2>
           <div className="relative w-full h-fit flex flex-row justify-start items-start gap-4 overflow-x-auto">

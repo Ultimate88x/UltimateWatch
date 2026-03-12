@@ -59,7 +59,7 @@ export default function ResetPassword() {
 
   return (
     <div className="relative w-full min-h-screen bg-cover bg-blue-background flex flex-col justify-start items-center overflow-x-hidden pb-12">
-      <div className="relative mt-8 w-full h-fit py-5 bg-purple-main flex flex-col justify-start items-center">
+      <div className="relative w-full h-fit py-5 bg-purple-main flex flex-col justify-start items-center">
         <h1 className="relative text-8xl text-white font-bold font-inter uppercase tracking-tighter">RESET PASSWORD</h1>
         <h2 className="relative mt-2 text-4xl text-white font-semibold font-inter text-center px-4">TYPE YOUR NEW PASSWORD</h2>
       </div>

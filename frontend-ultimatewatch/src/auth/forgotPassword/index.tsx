@@ -46,7 +46,7 @@ export default function ForgotPassword() {
 
 	return (
 			<div className="relative w-full bg-cover bg-blue-background flex flex-col justify-start items-center overflow-x-hidden">
-				<div className="relative mt-8 w-full h-fit py-5 bg-purple-main flex flex-col justify-start items-center">
+				<div className="relative w-full h-fit py-5 bg-purple-main flex flex-col justify-start items-center">
 						<h1 className="relative text-8xl text-white font-bold font-inter">RESET PASSWORD</h1>
 						<h2 className="relative mt-2 text-4xl text-white font-semibold font-inter">INTRODUCE YOUR EMAIL. WE'LL SEND A LINK TO RESET YOUR PASSWORD.</h2>
 				</div>

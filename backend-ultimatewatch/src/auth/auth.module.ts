@@ -6,6 +6,7 @@ import { JwtModule } from '@nestjs/jwt';
 
 import { UsersModule } from 'src/users/users.module';
 import { EmailModule } from 'src/email/email.module';
+import { CloudinaryModule } from 'src/common/cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -13,7 +14,7 @@ import { EmailModule } from 'src/email/email.module';
     EmailModule,
     JwtModule.registerAsync({
       global: true,
-      imports: [ConfigModule],
+      imports: [ConfigModule, CloudinaryModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),

@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { v2 as cloudinary } from 'cloudinary';
 import { UploadApiResponse, UploadApiErrorResponse } from 'cloudinary';
+import { CreateUserDto } from 'src/users/dto/create-user.dto';
+import { UpdateUserDto } from 'src/users/dto/update-user.dto';
 import { Readable } from 'stream';
 
 @Injectable()
@@ -48,5 +50,16 @@ export class CloudinaryService {
         error instanceof Error ? error.message : 'Cloudinary delete failed';
       throw new Error(message);
     }
+  }
+
+  async updateDtoImage(
+    dto: CreateUserDto | UpdateUserDto,
+    file: Express.Multer.File,
+  ) {
+    const result = await this.uploadImage(file);
+    dto.imagePath = (result as { secure_url: string })?.secure_url;
+    dto.imagePublicId = (result as { public_id: string })?.public_id;
+
+    return dto;
   }
 }

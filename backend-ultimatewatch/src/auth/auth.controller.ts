@@ -6,13 +6,17 @@ import {
   HttpStatus,
   Post,
   Request,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { ForgotPasswordDto } from './dto/forgot-password-dto';
 import { ResetPasswordDto } from './dto/reset-password-dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { CloudinaryService } from 'src/common/cloudinary/cloudinary.service';
 
 type User = {
   userId: number;
@@ -25,10 +29,24 @@ export interface RequestWithUser extends Request {
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private cloudinaryService: CloudinaryService,
+  ) {}
 
   @Post('signup')
-  async signUp(@Body() createUserDto: CreateUserDto) {
+  @UseInterceptors(FileInterceptor('file'))
+  async signUp(
+    @Body() createUserDto: CreateUserDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    if (file) {
+      createUserDto = (await this.cloudinaryService.updateDtoImage(
+        createUserDto,
+        file,
+      )) as CreateUserDto;
+    }
+
     return this.authService.signUp(createUserDto);
   }
 

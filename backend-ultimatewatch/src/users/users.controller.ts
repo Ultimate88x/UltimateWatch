@@ -57,11 +57,10 @@ export class UsersController {
         await this.cloudinaryService.deleteImage(user?.imagePublicId);
       }
 
-      const result = await this.cloudinaryService.uploadImage(file);
-      updateUserDto.imagePath = (result as { secure_url: string })?.secure_url;
-      updateUserDto.imagePublicId = (
-        result as { public_id: string }
-      )?.public_id;
+      updateUserDto = await this.cloudinaryService.updateDtoImage(
+        updateUserDto,
+        file,
+      );
     }
 
     return this.usersService.update(+id, userId, updateUserDto);

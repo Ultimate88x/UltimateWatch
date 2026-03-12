@@ -121,14 +121,17 @@ describe('AuthController (e2e)', () => {
         .expect(HttpStatus.OK);
     });
 
-    it('/auth/reset-password (POST) - Should return 401 with invalid token', () => {
+    it('/auth/reset-password (POST) - Should return 404 (ResourceNotFound) with invalid token', () => {
       return request(app.getHttpServer())
         .post('/auth/reset-password')
         .send({
-          token: 'invalid-token-random',
+          token: 'token-que-no-existe-en-db',
           newPassword: 'somePassword123',
         })
-        .expect(HttpStatus.UNAUTHORIZED);
+        .expect(HttpStatus.NOT_FOUND)
+        .expect((res) => {
+          expect(res.body.message).toContain('User with RESET_TOKEN');
+        });
     });
 
     it('/auth/reset-password (POST) - Should return 401 with empty token', () => {

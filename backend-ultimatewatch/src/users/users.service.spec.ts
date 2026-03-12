@@ -7,6 +7,7 @@ import * as bcrypt from 'bcrypt';
 import { ObjectLiteral } from 'typeorm';
 import { ResourceNotOwnedException } from 'src/common/exceptions/resource-not-owned-exception';
 import { CloudinaryService } from 'src/common/cloudinary/cloudinary.service';
+import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
 
 jest.mock('bcrypt');
 
@@ -76,12 +77,12 @@ describe('UsersService', () => {
       expect(repository.createQueryBuilder).toHaveBeenCalledWith('user');
     });
 
-    it('should return null if user not found', async () => {
+    it('should throw ResourceNotFoundException if user not found', async () => {
       mockQueryBuilder.getOne.mockResolvedValue(null);
 
-      const result = await service.findByUsername('nonexistent');
-
-      expect(result).toBeNull();
+      await expect(service.findByUsername('nonexistent')).rejects.toThrow(
+        ResourceNotFoundException,
+      );
     });
   });
 
@@ -132,14 +133,12 @@ describe('UsersService', () => {
       expect(result).toEqual(mockUser);
     });
 
-    it('should return null if user is not found', async () => {
+    it('should throw ResourceNotFoundException if user is not found', async () => {
       repository.findOne?.mockResolvedValue(null);
-      const result = await service.findOne(999);
 
-      expect(repository.findOne).toHaveBeenCalledWith({
-        where: { id: 999 },
-      });
-      expect(result).toBeNull();
+      await expect(service.findOne(999)).rejects.toThrow(
+        ResourceNotFoundException,
+      );
     });
   });
 
@@ -147,7 +146,9 @@ describe('UsersService', () => {
     it('should delete the user if the id matches the userId (Success)', async () => {
       const idToDelete = 1;
       const authenticatedUserId = 1;
+      const mockUser = { id: 1, username: 'test' } as User;
 
+      repository.findOneBy?.mockResolvedValue(mockUser);
       repository.delete?.mockResolvedValue({ affected: 1 });
 
       const result = await service.remove(idToDelete, authenticatedUserId);
@@ -165,6 +166,14 @@ describe('UsersService', () => {
       ).rejects.toThrow(ResourceNotOwnedException);
 
       expect(repository.delete).not.toHaveBeenCalled();
+    });
+
+    it('should throw ResourceNotFoundException if user to remove does not exist', async () => {
+      repository.findOneBy?.mockResolvedValue(null);
+
+      await expect(service.remove(1, 1)).rejects.toThrow(
+        ResourceNotFoundException,
+      );
     });
   });
 
@@ -185,12 +194,12 @@ describe('UsersService', () => {
       );
     });
 
-    it('should return null if user is not found', async () => {
+    it('should throw ResourceNotFoundException if user to update does not exist', async () => {
       repository.findOneBy?.mockResolvedValue(null);
 
-      const result = await service.update(id, userId, { username: 'new' });
-
-      expect(result).toBeNull();
+      await expect(service.update(1, 1, { username: 'new' })).rejects.toThrow(
+        ResourceNotFoundException,
+      );
     });
 
     it('should delete old image and update DTO if a new file is provided', async () => {
@@ -304,10 +313,12 @@ describe('UsersService', () => {
       expect(result).toEqual(mockUser);
     });
 
-    it('should return null if email does not exist', async () => {
+    it('should throw ResourceNotFoundException if email does not exist', async () => {
       repository.findOne?.mockResolvedValue(null);
-      const result = await service.findByEmail('notfound@test.com');
-      expect(result).toBeNull();
+
+      await expect(service.findByEmail('notfound@test.com')).rejects.toThrow(
+        ResourceNotFoundException,
+      );
     });
   });
 
@@ -322,12 +333,12 @@ describe('UsersService', () => {
       expect(result).toEqual(mockUser);
     });
 
-    it('should return null if no user has that resetToken', async () => {
+    it('should throw ResourceNotFoundException if no user has that resetToken', async () => {
       mockQueryBuilder.getOne.mockResolvedValue(null);
 
-      const result = await service.findByResetToken('invalid-token');
-
-      expect(result).toBeNull();
+      await expect(service.findByResetToken('invalid-token')).rejects.toThrow(
+        ResourceNotFoundException,
+      );
     });
   });
 
@@ -335,9 +346,12 @@ describe('UsersService', () => {
     it('should update the reset token and expiry date', async () => {
       const userId = 1;
       const token = 'new-secret-token';
+      const mockUser = { id: 1, email: 'admin@watch.com' } as User;
       const mockUpdateResult = { affected: 1 };
 
+      repository.findOne?.mockResolvedValue(mockUser);
       repository.update?.mockResolvedValue(mockUpdateResult);
+
       const result = await service.updateResetToken(userId, token);
 
       expect(repository.update).toHaveBeenCalledWith(
@@ -348,6 +362,14 @@ describe('UsersService', () => {
         }),
       );
       expect(result).toEqual(mockUpdateResult);
+    });
+
+    it('should throw ResourceNotFoundException if user does not exist', async () => {
+      repository.findOne?.mockResolvedValue(null);
+
+      await expect(service.updateResetToken(1, 'token')).rejects.toThrow(
+        ResourceNotFoundException,
+      );
     });
   });
 
@@ -361,12 +383,12 @@ describe('UsersService', () => {
       password: 'old_password',
     } as User;
 
-    it('should return null if user to update is not found', async () => {
-      jest.spyOn(service, 'findOne').mockResolvedValue(null);
+    it('should throw ResourceNotFoundException if user to update is not found', async () => {
+      repository.findOne?.mockResolvedValue(null);
 
-      const result = await service.updatePassword(userId, newPassword);
-
-      expect(result).toBeNull();
+      await expect(service.updatePassword(1, 'newPass')).rejects.toThrow(
+        ResourceNotFoundException,
+      );
     });
 
     it('should hash the password and save the user using merge', async () => {
@@ -377,16 +399,14 @@ describe('UsersService', () => {
         .spyOn(bcrypt, 'hash')
         .mockResolvedValue(hashedPassword as never);
 
-      jest.spyOn(service, 'findOne').mockResolvedValue(mockUser);
+      repository.findOne?.mockResolvedValue(mockUser);
 
-      const mergeSpy = jest
-        .spyOn(repository, 'merge' as any)
-        .mockImplementation(
-          (u: User, changes: Partial<User>): User => ({
-            ...u,
-            ...changes,
-          }),
-        );
+      repository.merge?.mockImplementation(
+        (u: User, changes: Partial<User>) => ({
+          ...u,
+          ...changes,
+        }),
+      );
       repository.save?.mockResolvedValue({
         ...mockUser,
         password: hashedPassword,
@@ -396,15 +416,11 @@ describe('UsersService', () => {
 
       expect(saltSpy).toHaveBeenCalledWith(10);
       expect(hashSpy).toHaveBeenCalledWith(newPassword, 'salt');
-      expect(mergeSpy).toHaveBeenCalledWith(mockUser, {
-        password: hashedPassword,
-      });
       expect(repository.save).toHaveBeenCalled();
       expect(result?.password).toBe(hashedPassword);
 
       saltSpy.mockRestore();
       hashSpy.mockRestore();
-      mergeSpy.mockRestore();
     });
   });
 });

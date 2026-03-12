@@ -7,6 +7,7 @@ import { User } from './entities/user.entity';
 import * as bcrypt from 'bcrypt';
 import { ResourceNotOwnedException } from 'src/common/exceptions/resource-not-owned-exception';
 import { CloudinaryService } from 'src/common/cloudinary/cloudinary.service';
+import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
 
 @Injectable()
 export class UsersService {
@@ -36,9 +37,15 @@ export class UsersService {
   }
 
   async findOne(id: number) {
-    return await this.userRepository.findOne({
+    const user = await this.userRepository.findOne({
       where: { id },
     });
+
+    if (!user) {
+      throw new ResourceNotFoundException('User', 'ID', String(id));
+    }
+
+    return user;
   }
 
   async update(
@@ -54,7 +61,7 @@ export class UsersService {
     const user = await this.userRepository.findOneBy({ id });
 
     if (!user) {
-      return null;
+      throw new ResourceNotFoundException('User', 'ID', String(id));
     }
 
     if (user?.imagePublicId) {
@@ -84,36 +91,68 @@ export class UsersService {
       throw new ResourceNotOwnedException('User');
     }
 
+    const user = await this.userRepository.findOneBy({ id });
+
+    if (!user) {
+      throw new ResourceNotFoundException('User', 'ID', String(id));
+    }
+
     await this.userRepository.delete(id);
 
     return { message: 'Account deleted successfully' };
   }
 
   async findByUsername(username: string): Promise<User | null> {
-    return await this.userRepository
+    const user = await this.userRepository
       .createQueryBuilder('user')
       .addSelect('user.password')
       .where('user.username = :username', { username })
       .getOne();
+
+    if (!user) {
+      throw new ResourceNotFoundException('User', 'USERNAME', username);
+    }
+
+    return user;
   }
 
   async findByEmail(email: string) {
-    return await this.userRepository.findOne({
+    const user = await this.userRepository.findOne({
       where: { email },
     });
+
+    if (!user) {
+      throw new ResourceNotFoundException('User', 'EMAIL', email);
+    }
+
+    return user;
   }
 
   async findByResetToken(resetToken: string) {
-    return await this.userRepository
+    const user = await this.userRepository
       .createQueryBuilder('user')
       .addSelect('user.resetTokenExpires')
       .where('user.resetToken = :resetToken', { resetToken })
       .getOne();
+
+    if (!user) {
+      throw new ResourceNotFoundException('User', 'RESET_TOKEN', resetToken);
+    }
+
+    return user;
   }
 
   async updateResetToken(userId: number, token: string) {
     const expiryDate = new Date();
     expiryDate.setHours(expiryDate.getHours() + 1);
+
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new ResourceNotFoundException('User', 'ID', String(userId));
+    }
 
     const result = await this.userRepository.update(userId, {
       resetToken: token,
@@ -127,10 +166,12 @@ export class UsersService {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const user = await this.findOne(userId);
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
 
     if (!user) {
-      return null;
+      throw new ResourceNotFoundException('User', 'ID', String(userId));
     }
 
     const updatedUser = this.userRepository.merge(user, {

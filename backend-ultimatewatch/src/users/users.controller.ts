@@ -50,13 +50,13 @@ export class UsersController {
     @Body() updateUserDto: UpdateUserDto,
     @UploadedFile() file?: Express.Multer.File,
   ) {
+    const user = await this.usersService.findOne(+id);
+
+    if (user?.imagePublicId) {
+      await this.cloudinaryService.deleteImage(user?.imagePublicId);
+    }
+
     if (file) {
-      const user = await this.usersService.findOne(+id);
-
-      if (user?.imagePublicId) {
-        await this.cloudinaryService.deleteImage(user?.imagePublicId);
-      }
-
       updateUserDto = await this.cloudinaryService.updateDtoImage(
         updateUserDto,
         file,

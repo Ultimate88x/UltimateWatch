@@ -96,8 +96,9 @@ describe('AuthController (e2e)', () => {
 
     it('/auth/reset-password (POST) - Should reset password with a valid token', async () => {
       const userRepository = app.get(getRepositoryToken(User));
-      const user = await userRepository.findOneBy({
-        email: recoveryEmail,
+      const user = await userRepository.findOne({
+        where: { email: recoveryEmail },
+        select: ['id', 'resetToken', 'username'],
       });
       resetToken = user?.resetToken;
 

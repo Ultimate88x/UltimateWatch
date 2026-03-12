@@ -16,14 +16,10 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { GetUser } from 'src/common/decorators/get-user.decorator';
-import { CloudinaryService } from 'src/common/cloudinary/cloudinary.service';
 
 @Controller('users')
 export class UsersController {
-  constructor(
-    private readonly usersService: UsersService,
-    private readonly cloudinaryService: CloudinaryService,
-  ) {}
+  constructor(private readonly usersService: UsersService) {}
 
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
@@ -50,20 +46,7 @@ export class UsersController {
     @Body() updateUserDto: UpdateUserDto,
     @UploadedFile() file?: Express.Multer.File,
   ) {
-    const user = await this.usersService.findOne(+id);
-
-    if (user?.imagePublicId) {
-      await this.cloudinaryService.deleteImage(user?.imagePublicId);
-    }
-
-    if (file) {
-      updateUserDto = await this.cloudinaryService.updateDtoImage(
-        updateUserDto,
-        file,
-      );
-    }
-
-    return this.usersService.update(+id, userId, updateUserDto);
+    return this.usersService.update(+id, userId, updateUserDto, file);
   }
 
   @Delete(':id')

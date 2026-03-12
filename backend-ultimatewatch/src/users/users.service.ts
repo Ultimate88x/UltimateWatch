@@ -6,12 +6,14 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import * as bcrypt from 'bcrypt';
 import { ResourceNotOwnedException } from 'src/common/exceptions/resource-not-owned-exception';
+import { CloudinaryService } from 'src/common/cloudinary/cloudinary.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   async create(dto: CreateUserDto): Promise<User> {
@@ -39,7 +41,12 @@ export class UsersService {
     });
   }
 
-  async update(id: number, userId: number, updateUserDto: UpdateUserDto) {
+  async update(
+    id: number,
+    userId: number,
+    updateUserDto: UpdateUserDto,
+    file?: Express.Multer.File,
+  ) {
     if (id !== userId) {
       throw new ResourceNotOwnedException('User');
     }
@@ -48,6 +55,17 @@ export class UsersService {
 
     if (!user) {
       return null;
+    }
+
+    if (user?.imagePublicId) {
+      await this.cloudinaryService.deleteImage(user?.imagePublicId);
+    }
+
+    if (file) {
+      updateUserDto = await this.cloudinaryService.updateDtoImage(
+        updateUserDto,
+        file,
+      );
     }
 
     if (updateUserDto.password) {
@@ -86,9 +104,11 @@ export class UsersService {
   }
 
   async findByResetToken(resetToken: string) {
-    return await this.userRepository.findOne({
-      where: { resetToken },
-    });
+    return await this.userRepository
+      .createQueryBuilder('user')
+      .addSelect('user.resetTokenExpires')
+      .where('user.resetToken = :resetToken', { resetToken })
+      .getOne();
   }
 
   async updateResetToken(userId: number, token: string) {

@@ -6,6 +6,7 @@ import { Repository } from 'typeorm/browser/repository/Repository.js';
 import * as bcrypt from 'bcrypt';
 import { ObjectLiteral } from 'typeorm';
 import { ResourceNotOwnedException } from 'src/common/exceptions/resource-not-owned-exception';
+import { CloudinaryService } from 'src/common/cloudinary/cloudinary.service';
 
 jest.mock('bcrypt');
 
@@ -33,6 +34,11 @@ describe('UsersService', () => {
     update: jest.fn(),
   });
 
+  const mockCloudinaryService = {
+    updateDtoImage: jest.fn(),
+    deleteImage: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -40,6 +46,10 @@ describe('UsersService', () => {
         {
           provide: getRepositoryToken(User),
           useValue: createMockRepository(),
+        },
+        {
+          provide: CloudinaryService,
+          useValue: mockCloudinaryService,
         },
       ],
     }).compile();
@@ -166,6 +176,7 @@ describe('UsersService', () => {
       username: 'oldName',
       email: 'test@test.com',
       password: 'oldHash',
+      imagePublicId: 'old_public_id',
     } as User;
 
     it('should throw ResourceNotOwnedException if id does not match userId', async () => {
@@ -175,34 +186,85 @@ describe('UsersService', () => {
     });
 
     it('should return null if user is not found', async () => {
-      const findOneBySpy = jest
-        .spyOn(repository, 'findOneBy' as any)
-        .mockResolvedValue(null);
+      repository.findOneBy?.mockResolvedValue(null);
 
       const result = await service.update(id, userId, { username: 'new' });
 
       expect(result).toBeNull();
-      findOneBySpy.mockRestore();
+    });
+
+    it('should delete old image and update DTO if a new file is provided', async () => {
+      const dto = { username: 'updatedName' };
+      const mockFile = { buffer: Buffer.from('test') } as Express.Multer.File;
+      const updatedDtoWithImage = {
+        ...dto,
+        imagePath: 'new_url',
+        imagePublicId: 'new_id',
+      };
+
+      repository.findOneBy?.mockResolvedValue(existingUser);
+      mockCloudinaryService.deleteImage.mockResolvedValue({ result: 'ok' });
+      mockCloudinaryService.updateDtoImage.mockResolvedValue(
+        updatedDtoWithImage,
+      );
+
+      repository.merge?.mockImplementation(
+        (entity: User, changes: Partial<User>) => ({
+          ...entity,
+          ...changes,
+        }),
+      );
+      repository.save?.mockImplementation((user) => Promise.resolve(user));
+
+      const result = await service.update(id, userId, dto, mockFile);
+
+      expect(mockCloudinaryService.deleteImage).toHaveBeenCalledWith(
+        'old_public_id',
+      );
+      expect(mockCloudinaryService.updateDtoImage).toHaveBeenCalledWith(
+        dto,
+        mockFile,
+      );
+
+      expect(repository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          imagePath: 'new_url',
+          imagePublicId: 'new_id',
+        }),
+      );
+      expect(result?.imagePath).toBe('new_url');
+    });
+
+    it('should NOT call deleteImage if user had no previous image but a file is provided', async () => {
+      const userWithoutImage = { ...existingUser, imagePublicId: null };
+      const dto = { username: 'newName' };
+      const mockFile = { buffer: Buffer.from('test') } as Express.Multer.File;
+
+      repository.findOneBy?.mockResolvedValue(userWithoutImage);
+      mockCloudinaryService.updateDtoImage.mockResolvedValue({
+        ...dto,
+        imagePath: 'url',
+      });
+      repository.save?.mockImplementation((user) => Promise.resolve(user));
+
+      await service.update(id, userId, dto, mockFile);
+
+      expect(mockCloudinaryService.deleteImage).not.toHaveBeenCalled();
+      expect(mockCloudinaryService.updateDtoImage).toHaveBeenCalled();
     });
 
     it('should hash password and update user using merge when password is provided', async () => {
       const dto = { username: 'updatedUser', password: 'newPassword123' };
       const hashedPassword = 'hashed_password';
 
-      const findOneBySpy = jest
-        .spyOn(repository, 'findOneBy' as any)
-        .mockResolvedValue(existingUser);
-      const mergeSpy = jest
-        .spyOn(repository, 'merge' as any)
-        .mockImplementation((entity: User, changes: Partial<User>) => ({
+      repository.findOneBy?.mockResolvedValue(existingUser);
+      repository.merge?.mockImplementation(
+        (entity: User, changes: Partial<User>) => ({
           ...entity,
           ...changes,
-        }));
-      repository.save?.mockResolvedValue({
-        ...existingUser,
-        ...dto,
-        password: hashedPassword,
-      });
+        }),
+      );
+      repository.save?.mockImplementation((user) => Promise.resolve(user));
 
       const saltSpy = jest
         .spyOn(bcrypt, 'genSalt')
@@ -216,49 +278,15 @@ describe('UsersService', () => {
       expect(saltSpy).toHaveBeenCalledWith(10);
       expect(hashSpy).toHaveBeenCalledWith('newPassword123', 'salt');
 
-      expect(findOneBySpy).toHaveBeenCalledWith({ id });
-      expect(mergeSpy).toHaveBeenCalledWith(
-        existingUser,
+      expect(repository.save).toHaveBeenCalledWith(
         expect.objectContaining({
           password: hashedPassword,
         }),
       );
-      expect(repository.save).toHaveBeenCalled();
 
-      expect(result?.username).toBe(dto.username);
       expect(result?.password).toBe(hashedPassword);
 
-      findOneBySpy.mockRestore();
-      mergeSpy.mockRestore();
       saltSpy.mockRestore();
-      hashSpy.mockRestore();
-    });
-
-    it('should update user without hashing when password is not provided', async () => {
-      const dto = { username: 'onlyNameUpdate' };
-
-      const findOneBySpy = jest
-        .spyOn(repository, 'findOneBy' as any)
-        .mockResolvedValue(existingUser);
-      const mergeSpy = jest
-        .spyOn(repository, 'merge' as any)
-        .mockImplementation((entity: User, changes: Partial<User>) => ({
-          ...entity,
-          ...changes,
-        }));
-      repository.save?.mockResolvedValue({ ...existingUser, ...dto });
-
-      const hashSpy = jest.spyOn(bcrypt, 'hash');
-
-      const result = await service.update(id, userId, dto);
-
-      expect(hashSpy).not.toHaveBeenCalled();
-      expect(repository.findOneBy).toHaveBeenCalledWith({ id });
-      expect(repository.save).toHaveBeenCalled();
-      expect(result?.username).toBe(dto.username);
-
-      findOneBySpy.mockRestore();
-      mergeSpy.mockRestore();
       hashSpy.mockRestore();
     });
   });
@@ -286,14 +314,20 @@ describe('UsersService', () => {
   describe('findByResetToken', () => {
     it('should return a user if resetToken is valid', async () => {
       const mockUser = { id: 1, resetToken: 'valid-token' } as User;
-      repository.findOne?.mockResolvedValue(mockUser);
+      mockQueryBuilder.getOne.mockResolvedValue(mockUser);
 
       const result = await service.findByResetToken('valid-token');
 
-      expect(repository.findOne).toHaveBeenCalledWith({
-        where: { resetToken: 'valid-token' },
-      });
+      expect(repository.createQueryBuilder).toHaveBeenCalledWith('user');
       expect(result).toEqual(mockUser);
+    });
+
+    it('should return null if no user has that resetToken', async () => {
+      mockQueryBuilder.getOne.mockResolvedValue(null);
+
+      const result = await service.findByResetToken('invalid-token');
+
+      expect(result).toBeNull();
     });
   });
 

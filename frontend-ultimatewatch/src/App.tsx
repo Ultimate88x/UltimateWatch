@@ -7,6 +7,7 @@ import UserDetails from "./user/userDetails";
 import ForgotPassword from "./auth/forgotPassword";
 import ResetPassword from "./auth/resetPassword";
 import { Toaster } from "react-hot-toast";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 function App() {
   return (
@@ -36,7 +37,10 @@ function App() {
           <Route path="/signup" element={<SignUp />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/profile" element={<UserDetails />} />
+
+          <Route element={<ProtectedRoute />}>
+            <Route path="/profile" element={<UserDetails />} />
+          </Route>
         </Routes>
       </main>
 

@@ -146,7 +146,7 @@ export default function UserDetails() {
   }
 
   const logout = () => {
-    localStorage.removeItem('accessToken');
+    localStorage.removeItem('token');
     localStorage.removeItem('user'); 
     
     window.location.href = '/'; 

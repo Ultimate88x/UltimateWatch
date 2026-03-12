@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SquarePen, UploadCloud, Eye, EyeOff, LogOut, X } from "lucide-react";
+import { updateUserSchema } from "./schemas/updateUserSchema";
 
 type UserProfile = {
   id: number;
@@ -27,6 +28,9 @@ export default function UserDetails() {
   const userId = userData?.id;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const [serverError, setServerError] = useState<{ field: string; message: string } | null>(null);
+
   const [showPassword, setShowPassword] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imagePath, setImagePath] = useState<string>("https://cdn-icons-png.flaticon.com/512/149/149071.png");
@@ -169,9 +173,15 @@ export default function UserDetails() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setServerError(null);
     
-    if ((formData.password || formData.confirmPassword) && formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!");
+    const result = updateUserSchema.safeParse(formData);
+    if (!result.success) {
+      const error = result.error.issues[0];
+      setServerError({ 
+        field: error.path[0] as string, 
+        message: error.message 
+      });
       return;
     }
 
@@ -213,12 +223,12 @@ export default function UserDetails() {
       localStorage.setItem('user', JSON.stringify(updatedUser));
       
       setUser(data); 
-      setIsUpdating(false);
+      handleCancelUpdate();
       alert("Profile updated!");
 
     } catch (error: Error | unknown) {
       const message = error instanceof Error ? error.message : 'An unexpected error occurred';
-      alert(message); 
+      setServerError({ field: 'general', message: message});
     }
   };
 
@@ -228,6 +238,10 @@ export default function UserDetails() {
       ...formData,
       [name]: value
     });
+
+    if (serverError?.field === name) {
+      setServerError(null);
+    }
   };
 
 	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -324,6 +338,11 @@ export default function UserDetails() {
               placeholder="Username" 
               className="w-full px-4 py-3 bg-white/10 shadow-lg border-2 rounded-2xl border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-main focus:bg-white/20 transition-all"
             />
+            {serverError?.field === "username" && (
+              <span className="text-red-400 text-xs ml-2 mt-1 animate-in fade-in slide-in-from-top-1">
+                {serverError.message}
+              </span>
+            )}
           </div>
 
           <div className="relative w-full flex flex-col justify-start items-start gap-1">
@@ -337,6 +356,11 @@ export default function UserDetails() {
               placeholder="your@email.com" 
               className="w-full px-4 py-3 bg-white/10 shadow-lg border-2 rounded-2xl border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-main focus:bg-white/20 transition-all"
             />
+            {serverError?.field === "email" && (
+              <span className="text-red-400 text-xs ml-2 mt-1 animate-in fade-in slide-in-from-top-1">
+                {serverError.message}
+              </span>
+            )}            
           </div>
 
           <div className="relative w-full flex flex-col justify-start items-start gap-1">
@@ -358,6 +382,11 @@ export default function UserDetails() {
                 {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
               </button>
             </div>
+            {serverError?.field === "password" && (
+              <span className="text-red-400 text-xs ml-2 mt-1 animate-in fade-in slide-in-from-top-1">
+                {serverError.message}
+              </span>
+            )}            
           </div>
 
           <div className="relative w-full flex flex-col justify-start items-start gap-1">
@@ -383,8 +412,10 @@ export default function UserDetails() {
             >
               {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
             </button>
-            {(formData.password || formData.confirmPassword) && formData.password !== formData.confirmPassword && (
-              <span className="text-red-400 text-xs ml-2 mt-1">Passwords do not match yet</span>
+            {serverError?.field === "confirmPassword" && (
+              <span className="text-red-400 text-xs ml-2 mt-1 animate-in fade-in slide-in-from-top-1 font-medium">
+                {serverError.message}
+              </span>
             )}
           </div>
 

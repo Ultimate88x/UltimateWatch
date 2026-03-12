@@ -272,7 +272,6 @@ export default function SignUp() {
               {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
             </button>
           </div>
-          
           {serverError?.field === "confirmPassword" && (
             <span className="text-red-400 text-xs ml-2 mt-1 animate-in fade-in slide-in-from-top-1 font-medium">
               {serverError.message}

@@ -318,7 +318,7 @@ export default function UserDetails() {
             <input
               required
               name="username"
-              value={formData.username? formData.username : user?.username || ''}
+              value={formData.username? formData.username : ''}
               onChange={handleChange}
               type="text" 
               placeholder="Username" 
@@ -331,7 +331,7 @@ export default function UserDetails() {
             <input
               required
               name="email"
-              value={formData.email? formData.email : user?.email || ''}
+              value={formData.email? formData.email : ''}
               onChange={handleChange}
               type="email" 
               placeholder="your@email.com" 

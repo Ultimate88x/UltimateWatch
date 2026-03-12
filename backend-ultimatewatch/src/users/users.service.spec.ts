@@ -143,17 +143,41 @@ describe('UsersService', () => {
   });
 
   describe('remove', () => {
-    it('should delete the user if the id matches the userId (Success)', async () => {
-      const idToDelete = 1;
-      const authenticatedUserId = 1;
-      const mockUser = { id: 1, username: 'test' } as User;
+    const idToDelete = 1;
+    const authenticatedUserId = 1;
 
-      repository.findOneBy?.mockResolvedValue(mockUser);
+    it('should delete the user and their image if the id matches the userId (Success)', async () => {
+      const mockUserWithImage = {
+        id: 1,
+        username: 'test',
+        imagePublicId: 'cloudinary_123',
+      } as User;
+
+      repository.findOneBy?.mockResolvedValue(mockUserWithImage);
       repository.delete?.mockResolvedValue({ affected: 1 });
+      mockCloudinaryService.deleteImage.mockResolvedValue({ result: 'ok' });
 
       const result = await service.remove(idToDelete, authenticatedUserId);
 
+      expect(mockCloudinaryService.deleteImage).toHaveBeenCalledWith(
+        'cloudinary_123',
+      );
+      expect(repository.delete).toHaveBeenCalledWith(idToDelete);
       expect(result).toEqual({ message: 'Account deleted successfully' });
+    });
+
+    it('should delete the user even if they do not have an image', async () => {
+      const mockUserWithoutImage = {
+        id: 1,
+        username: 'test',
+        imagePublicId: null,
+      } as unknown as User;
+
+      repository.findOneBy?.mockResolvedValue(mockUserWithoutImage);
+      repository.delete?.mockResolvedValue({ affected: 1 });
+
+      await service.remove(idToDelete, authenticatedUserId);
+      expect(mockCloudinaryService.deleteImage).not.toHaveBeenCalled();
       expect(repository.delete).toHaveBeenCalledWith(idToDelete);
     });
 
@@ -165,10 +189,11 @@ describe('UsersService', () => {
         service.remove(idToDelete, authenticatedUserId),
       ).rejects.toThrow(ResourceNotOwnedException);
 
+      expect(repository.findOneBy).not.toHaveBeenCalled();
       expect(repository.delete).not.toHaveBeenCalled();
     });
 
-    it('should throw ResourceNotFoundException if user to remove does not exist', async () => {
+    it('should throw ResourceNotFoundException if user to remove does not exist in DB', async () => {
       repository.findOneBy?.mockResolvedValue(null);
 
       await expect(service.remove(1, 1)).rejects.toThrow(

@@ -43,6 +43,40 @@ describe('UsersController', () => {
     expect(controller).toBeDefined();
   });
 
+  describe('findOne', () => {
+    const idParam = '1';
+    const numericId = 1;
+
+    it('should call usersService.findOne with numeric id and return the user', async () => {
+      const expectedUser = {
+        id: numericId,
+        username: 'testuser',
+        email: 'test@test.com',
+      };
+
+      mockUsersService.findOne.mockResolvedValue(expectedUser);
+
+      const result = await controller.findOne(idParam);
+
+      expect(service.findOne).toHaveBeenCalledWith(numericId);
+      expect(result).toEqual(expectedUser);
+    });
+
+    it('should propagate ResourceNotFoundException if user is not found in service', async () => {
+      const idNotFound = '999';
+
+      mockUsersService.findOne.mockRejectedValue(
+        new Error('ResourceNotFoundException'),
+      );
+
+      await expect(controller.findOne(idNotFound)).rejects.toThrow(
+        'ResourceNotFoundException',
+      );
+
+      expect(service.findOne).toHaveBeenCalledWith(999);
+    });
+  });
+
   describe('remove', () => {
     it('should call usersService.remove with numeric id and authenticated userId', async () => {
       const idParam = '10';

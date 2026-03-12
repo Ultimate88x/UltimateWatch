@@ -7,6 +7,7 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFile,
+  Get,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UsersService } from './users.service';
@@ -17,6 +18,12 @@ import { GetUser } from 'src/common/decorators/get-user.decorator';
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Get(':id')
+  @UseGuards(AuthGuard)
+  findOne(@Param('id') id: string) {
+    return this.usersService.findOne(+id);
+  }
 
   @Patch(':id')
   @UseGuards(AuthGuard)

@@ -97,6 +97,10 @@ export class UsersService {
       throw new ResourceNotFoundException('User', 'ID', String(id));
     }
 
+    if (user?.imagePublicId) {
+      await this.cloudinaryService.deleteImage(user?.imagePublicId);
+    }
+
     await this.userRepository.delete(id);
 
     return { message: 'Account deleted successfully' };

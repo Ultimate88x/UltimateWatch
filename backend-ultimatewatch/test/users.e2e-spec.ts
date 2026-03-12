@@ -37,6 +37,32 @@ describe('UsersController (e2e)', () => {
     createdUserId = signupRes.body.userId;
   });
 
+  describe('/users/:id (GET)', () => {
+    it('should return the user data if it exists', () => {
+      return request(app.getHttpServer())
+        .get(`/users/${createdUserId}`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body.id).toBe(createdUserId);
+          expect(res.body.username).toBe('user_e2e_target');
+        });
+    });
+
+    it('should return 404 if the user does not exist', () => {
+      return request(app.getHttpServer())
+        .get('/users/9999')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(HttpStatus.NOT_FOUND);
+    });
+
+    it('should return 401 if no token is provided', () => {
+      return request(app.getHttpServer())
+        .get(`/users/${createdUserId}`)
+        .expect(HttpStatus.UNAUTHORIZED);
+    });
+  });
+
   describe('/users/:id (PATCH)', () => {
     const updatedData = { username: 'new_e2e_name' };
 

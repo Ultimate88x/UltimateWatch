@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SquarePen, UploadCloud, Eye, EyeOff, LogOut, X } from "lucide-react";
 import { updateUserSchema } from "./schemas/updateUserSchema";
+import toast from "react-hot-toast";
 
 type UserProfile = {
   id: number;
@@ -113,12 +114,13 @@ export default function UserDetails() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to fetch user');
+        toast.error(data.message || 'Failed to fetch user');
       }
 
       setUser(data);
       } catch (error) {
-        console.error('Failed to fetch user:', error);
+        const message = error instanceof Error ? error.message : 'An unexpected error occurred';
+        toast.error(message);
       }
     };
 

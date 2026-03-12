@@ -1,9 +1,13 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff, KeyRound } from "lucide-react";
+import toast from "react-hot-toast";
+import { resetPasswordSchema } from "./schemas/signUpSchema";
 
 export default function ResetPassword() {
   const navigate = useNavigate();
+
+    const [error, setError] = useState<{ field: string; message: string } | null>(null);
 
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
@@ -21,13 +25,23 @@ export default function ResetPassword() {
       ...formData,
       [name]: value
     });
+
+    if (error?.field === name) {
+      setError(null);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError(null);
     
-    if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!");
+    const result = resetPasswordSchema.safeParse(formData);
+    if (!result.success) {
+      const error = result.error.issues[0];
+      setError({ 
+        field: error.path[0] as string, 
+        message: error.message 
+      });
       return;
     }
     
@@ -46,14 +60,15 @@ export default function ResetPassword() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Password reset failed');
+        toast.error(data.message || 'Password reset failed');
+        return;
       }
 
       navigate('/login');
 
     } catch (error: Error | unknown) {
       const message = error instanceof Error ? error.message : 'An unexpected error occurred';
-      alert(message); 
+      toast.error(message);
     }
   };
 
@@ -77,16 +92,21 @@ export default function ResetPassword() {
         </div>
 
         <div className="relative w-lg flex flex-col justify-start items-start gap-1">
-          <label className="relative font-inter font-medium text-white/90 ml-2 text-sm">Password</label>
+          <label className="relative font-inter font-medium text-white/90 ml-2 text-sm">
+            Password
+          </label>
           <div className="relative w-full">
             <input
-              required
               name="password"
               value={formData.password}
               onChange={handleChange}
               type={showPassword ? "text" : "password"}
-              placeholder="Password" 
-              className="w-full px-4 py-3 bg-white/10 shadow-lg border-2 rounded-2xl border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-main focus:bg-white/20 transition-all"
+              placeholder="Password"
+              className={`w-full px-4 py-3 bg-white/10 shadow-lg border-2 rounded-2xl text-white placeholder:text-white/40 focus:outline-none transition-all ${
+                error?.field === "password"
+                  ? "border-red-500 bg-red-500/10"
+                  : "border-white/20 focus:border-purple-main focus:bg-white/20"
+              }`}
             />
             <button
               type="button"
@@ -96,34 +116,41 @@ export default function ResetPassword() {
               {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
             </button>
           </div>
+          
+          {error?.field === "password" && (
+            <span className="text-red-400 text-xs ml-2 mt-1 animate-in fade-in slide-in-from-top-1">
+              {error.message}
+            </span>
+          )}
         </div>
 
         <div className="relative w-lg flex flex-col justify-start items-start gap-1">
           <label className="relative font-inter font-medium text-white/90 ml-2 text-sm">Verify Password</label>
           <div className="relative w-full">
             <input
-              required
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
               type={showPassword ? "text" : "password"}
               placeholder="Repeat your password" 
               className={`w-full px-4 py-3 bg-white/10 shadow-lg border-2 rounded-2xl transition-all focus:outline-none focus:bg-white/20 ${
-                formData.confirmPassword && formData.password !== formData.confirmPassword 
-                ? "border-red-500/50" 
+                (formData.confirmPassword && formData.password !== formData.confirmPassword) || error?.field === "confirmPassword"
+                ? "border-red-500/50 bg-red-500/10" 
                 : "border-white/20 focus:border-purple-main"
               }`}
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
+            >
+              {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
+            </button>
           </div>
-					<button
-						type="button"
-						onClick={() => setShowPassword(!showPassword)}
-						className="absolute right-4 top-12.5 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
-					>
-            {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
-          </button>
-          {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-            <span className="text-red-400 text-xs ml-2 mt-1">Passwords do not match yet</span>
+          {error?.field === "confirmPassword" && (
+            <span className="text-red-400 text-xs ml-2 mt-1 animate-in fade-in slide-in-from-top-1 font-medium">
+              {error.message}
+            </span>
           )}
         </div>
 

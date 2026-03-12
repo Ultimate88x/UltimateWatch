@@ -1,9 +1,11 @@
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function Login() {
 	const navigate = useNavigate();
+	const [error, setError] = useState<string | null>(null);
 	const [showPassword, setShowPassword] = useState(false);
 	const [formData, setFormData] = useState({
 			username: '',
@@ -16,41 +18,48 @@ export default function Login() {
 					...formData,
 					[name]: value
 			});
+
+			setError(null);
 	};
 
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-			e.preventDefault();
-			
-			try {
-        const response = await fetch('http://localhost:3000/auth/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                username: formData.username,
-                password: formData.password,
-            }),
-        });
+		e.preventDefault();
 
-        const data = await response.json();
+		try {
+			const response = await fetch('http://localhost:3000/auth/login', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					username: formData.username,
+					password: formData.password,
+				}),
+			});
 
-        if (!response.ok) {
-            throw new Error(data.message || 'Login failed');
-        }
+			const data = await response.json();
 
-        localStorage.setItem('token', data.accessToken);
-        localStorage.setItem('user', JSON.stringify({
-            id: data.userId,
-            username: data.username
-        }));
+			if (!response.ok) {
+				if (data.statusCode === 404) {
+					setError("Incorrect username or password");
+				} else {
+					toast.error(data.message || 'Login failed');
+				}
 
-        navigate('/');
+				return;
+			}
 
-	} catch (error: Error | unknown) {
-		const message = error instanceof Error ? error.message : 'An unexpected error occurred';
-		alert(message); 
-	}
+			localStorage.setItem('token', data.accessToken);
+			localStorage.setItem('user', JSON.stringify({
+				id: data.userId,
+				username: data.username
+			}));
+
+			navigate('/');
+		} catch (error: Error | unknown) {
+			const message = error instanceof Error ? error.message : 'An unexpected error occurred';
+			toast.error(message);
+		}
 	};
 
 	return (
@@ -98,6 +107,11 @@ export default function Login() {
 							>
 								{showPassword ? <EyeOff size={28} /> : <Eye size={28} />}
 							</button>
+							{error && (
+							<span className="text-red-400 text-xs ml-2 mt-1 animate-in fade-in slide-in-from-top-1 font-medium">
+								{error}
+							</span>
+						)}
 						</div>
 
 						<p className="text-center text-sm text-white/85">

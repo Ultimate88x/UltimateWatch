@@ -125,10 +125,6 @@ export class UsersService {
       where: { email },
     });
 
-    if (!user) {
-      throw new ResourceNotFoundException('User', 'EMAIL', email);
-    }
-
     return user;
   }
 

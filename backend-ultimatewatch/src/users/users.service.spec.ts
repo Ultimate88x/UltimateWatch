@@ -337,14 +337,6 @@ describe('UsersService', () => {
       });
       expect(result).toEqual(mockUser);
     });
-
-    it('should throw ResourceNotFoundException if email does not exist', async () => {
-      repository.findOne?.mockResolvedValue(null);
-
-      await expect(service.findByEmail('notfound@test.com')).rejects.toThrow(
-        ResourceNotFoundException,
-      );
-    });
   });
 
   describe('findByResetToken', () => {

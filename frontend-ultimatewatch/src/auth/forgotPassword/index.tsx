@@ -22,7 +22,6 @@ export default function ForgotPassword() {
 		const loadToast = toast.loading('Sending email...');
 
 		try {
-			console.log(formData.email)
 			const response = await fetch('http://localhost:3000/auth/forgot-password', {
 				method: 'POST',
 				headers: {
@@ -32,11 +31,13 @@ export default function ForgotPassword() {
 					email: formData.email,
 				}),
 			})
+
+			const data = await response.json();
 			
 			if (response.ok) {
-				toast.success('Email sent successfully!', { id: loadToast });
+				toast.success(data.message || 'Email sent successfully!', { id: loadToast });
 			} else {
-				toast.error('Could not send email', { id: loadToast });
+				toast.error(data.message || 'Could not send email', { id: loadToast });
 			}
 		} catch (error) {
 			const message = error instanceof Error ? error.message : 'An unexpected error occurred';

@@ -119,6 +119,7 @@ export default function UserDetails() {
 
       if (!response.ok) {
         toast.error(data.message || 'Failed to fetch user');
+        return;
       }
 
       setUser(data);
@@ -127,7 +128,7 @@ export default function UserDetails() {
         toast.error(message);
       } finally {
         setTimeout(() => setIsLoading(false), 500);
-    }
+      }
     };
 
     fetchUser();
@@ -184,6 +185,7 @@ export default function UserDetails() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+    setIsLoading(true)
     
     const result = updateUserSchema.safeParse(formData);
     if (!result.success) {
@@ -242,6 +244,15 @@ export default function UserDetails() {
       };
 
       localStorage.setItem('user', JSON.stringify(updatedUser));
+
+      const img = new Image();
+      img.src = data.imagePath || getBaseImagePath(data.username);
+      
+      await new Promise((resolve) => {
+        img.onload = resolve;
+        img.onerror = resolve;
+        setTimeout(resolve, 100); 
+      });
       
       setUser(data); 
       toast.success("Profile updated!");
@@ -249,6 +260,8 @@ export default function UserDetails() {
     } catch (error: Error | unknown) {
       const message = error instanceof Error ? error.message : 'An unexpected error occurred';
       toast.error(message);
+    } finally {
+      setTimeout(() => setIsLoading(false), 500);
     }
   };
 
@@ -303,7 +316,7 @@ export default function UserDetails() {
       imagePath: null
     });
     
-    setImagePreview(null);
+    setImagePreview(user?.imagePath || getBaseImagePath(user?.username));
     setShowPasswordFields(false);
   };
 

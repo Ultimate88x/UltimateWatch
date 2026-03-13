@@ -206,7 +206,7 @@ describe('UsersService', () => {
       username: 'oldName',
       email: 'test@test.com',
       password: 'oldHash',
-      imagePublicId: 'old_public_id',
+      imagePublicId: 'old_public_id' as string | null,
     } as User;
 
     it('should throw ResourceNotOwnedException if id does not match userId', async () => {
@@ -385,6 +385,71 @@ describe('UsersService', () => {
 
       await expect(service.update(id, id, dto)).rejects.toThrow(
         DuplicatedResourceException,
+      );
+    });
+
+    it('should delete image from Cloudinary and set imagePublicId to null when imagePath is "Delete"', async () => {
+      const dto: UpdateUserDto = { imagePath: 'Delete' };
+
+      repository.findOne?.mockResolvedValue(existingUser);
+      mockCloudinaryService.deleteImage.mockResolvedValue({ result: 'ok' });
+
+      repository.merge?.mockImplementation(
+        (entity, changes) =>
+          ({
+            ...entity,
+            ...changes,
+          }) as UpdateUserDto,
+      );
+      repository.save?.mockImplementation((user) => Promise.resolve(user));
+
+      await service.update(id, userId, dto);
+
+      expect(mockCloudinaryService.deleteImage).toHaveBeenCalledWith(
+        'old_public_id',
+      );
+
+      expect(repository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          imagePublicId: null,
+          imagePath: expect.stringContaining('ui-avatars.com') as string,
+        }),
+      );
+    });
+
+    it('should set imagePublicId to null before calling updateDtoImage when a file is provided', async () => {
+      const dto: UpdateUserDto = { username: 'newName' };
+      const mockFile = { buffer: Buffer.from('test') } as Express.Multer.File;
+
+      repository.findOne?.mockResolvedValue(existingUser);
+      mockCloudinaryService.deleteImage.mockResolvedValue({ result: 'ok' });
+
+      const updatedDtoFromCloudinary = {
+        ...dto,
+        imagePublicId: 'brand_new_id',
+        imagePath: 'http://new-path.com',
+      };
+      mockCloudinaryService.updateDtoImage.mockResolvedValue(
+        updatedDtoFromCloudinary,
+      );
+
+      repository.merge?.mockImplementation(
+        (entity, changes) =>
+          ({
+            ...entity,
+            ...changes,
+          }) as UpdateUserDto,
+      );
+
+      repository.save?.mockImplementation((user) => Promise.resolve(user));
+
+      await service.update(id, userId, dto, mockFile);
+
+      expect(mockCloudinaryService.deleteImage).toHaveBeenCalled();
+      expect(repository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          imagePublicId: 'brand_new_id',
+        }),
       );
     });
   });

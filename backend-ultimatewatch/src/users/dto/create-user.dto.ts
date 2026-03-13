@@ -34,5 +34,5 @@ export class CreateUserDto {
 
   @IsOptional()
   @IsString()
-  imagePublicId?: string;
+  imagePublicId?: string | null;
 }

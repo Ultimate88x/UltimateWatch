@@ -17,8 +17,8 @@ export class User {
   @Column()
   imagePath: string;
 
-  @Column({ nullable: true })
-  imagePublicId: string;
+  @Column({ type: 'varchar', nullable: true })
+  imagePublicId: string | null;
 
   @Column({ nullable: true, select: false })
   resetToken: string;

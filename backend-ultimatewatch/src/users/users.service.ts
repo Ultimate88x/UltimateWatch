@@ -72,17 +72,6 @@ export class UsersService {
 
     await this.checkExistingUser(updateUserDto, id);
 
-    if (user?.imagePublicId) {
-      await this.cloudinaryService.deleteImage(user?.imagePublicId);
-    }
-
-    if (file) {
-      updateUserDto = await this.cloudinaryService.updateDtoImage(
-        updateUserDto,
-        file,
-      );
-    }
-
     if (updateUserDto.password) {
       const isMatch = user
         ? updateUserDto.oldPassword
@@ -96,6 +85,22 @@ export class UsersService {
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(updateUserDto.password, salt);
       updateUserDto.password = hashedPassword;
+    }
+
+    if ((updateUserDto.imagePath === 'Delete' || file) && user?.imagePublicId) {
+      await this.cloudinaryService.deleteImage(user?.imagePublicId);
+      updateUserDto.imagePublicId = null;
+    }
+
+    if (file) {
+      updateUserDto = await this.cloudinaryService.updateDtoImage(
+        updateUserDto,
+        file,
+      );
+    } else {
+      updateUserDto.imagePath = updateUserDto.username
+        ? `https://ui-avatars.com/api/?name=${encodeURIComponent(updateUserDto.username)}&background=6D28D9&color=fff`
+        : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=6D28D9&color=fff`;
     }
 
     const updatedUser = this.userRepository.merge(user, updateUserDto);

@@ -64,7 +64,10 @@ export default function ResetPassword() {
         return;
       }
 
-      navigate('/login');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user'); 
+    
+    window.location.href = '/login'; 
 
     } catch (error: Error | unknown) {
       const message = error instanceof Error ? error.message : 'An unexpected error occurred';

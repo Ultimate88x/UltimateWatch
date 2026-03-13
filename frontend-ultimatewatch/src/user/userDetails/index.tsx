@@ -33,13 +33,14 @@ export default function UserDetails() {
   const [error, setError] = useState<{ field: string; message: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [showPasswordFields, setShowPasswordFields] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [imagePath, setImagePath] = useState<string>("https://cdn-icons-png.flaticon.com/512/149/149071.png");
 
   const [formData, setFormData] = useState({
     username: '',
     email: '',
+    oldPassword: '',
     password: '',
     confirmPassword: '',
     imagePath: null as File | null,
@@ -136,18 +137,19 @@ export default function UserDetails() {
         ...prev,
         username: user.username,
         email: user.email,
+        oldPassword: '',
+        password: '',
+        confirmPassword: '',
       }));
     
-    setImagePath(user.imagePath || getBaseImagePath(user.username));
+    setImagePreview(user.imagePath);
+    setShowPasswordFields(false);
+    setIsUpdating(false);
     }
   }, [user]);
 
-  useEffect(() => {
-    setImagePath(getBaseImagePath(formData.username))
-  }, [formData.username]);
-
-  const getBaseImagePath = (username: string) => {
-    return username !== "" ? `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=6D28D9&color=fff` : "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+  const getBaseImagePath = (username?: string) => {
+    return username && username !== "" ? `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=6D28D9&color=fff` : "https://cdn-icons-png.flaticon.com/512/149/149071.png";
   }
 
   const logout = () => {
@@ -171,8 +173,9 @@ export default function UserDetails() {
       }
 
       logout();
-    } catch (error) {
-      console.error("Error deleting account", error);
+    } catch (error: Error | unknown) {
+      const message = error instanceof Error ? error.message : 'An unexpected error occurred';
+      toast.error(message);
     }
   };
 
@@ -194,12 +197,13 @@ export default function UserDetails() {
 
     if (formData.username) finalData.append('username', formData.username);
     if (formData.email) finalData.append('email', formData.email);
+    if (formData.oldPassword) finalData.append('oldPassword', formData.oldPassword);
     if (formData.password) finalData.append('password', formData.password);
     
     if (formData.imagePath instanceof File) {
         finalData.append('file', formData.imagePath);
-    } else {
-      finalData.append('imagePath', imagePath);
+    } else if (imagePreview === null) {
+      finalData.append('imagePath', "Delete");
     }
     
     try {
@@ -214,7 +218,17 @@ export default function UserDetails() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Profile Update failed');
+        const message = Array.isArray(data.message) ? data.message[0] : data.message;
+        const lowerMessage = message.toLowerCase();
+        
+        let field = 'general';
+        if (lowerMessage.toLowerCase().includes('username')) field = 'username';
+        else if (message.toLowerCase().includes('email')) field = 'email';
+        else if (message.toLowerCase().includes('old password')) field = 'oldPassword';
+        else if (message.toLowerCase().includes('password')) field = 'password';
+
+        setError({ field, message: message });
+        return;
       }
 
       const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
@@ -228,12 +242,11 @@ export default function UserDetails() {
       localStorage.setItem('user', JSON.stringify(updatedUser));
       
       setUser(data); 
-      handleCancelUpdate();
-      alert("Profile updated!");
+      toast.success("Profile updated!");
 
     } catch (error: Error | unknown) {
       const message = error instanceof Error ? error.message : 'An unexpected error occurred';
-      setError({ field: 'general', message: message});
+      toast.error(message);
     }
   };
 
@@ -268,7 +281,6 @@ export default function UserDetails() {
   const handleRemoveImage = (e: React.MouseEvent) => {
     e.stopPropagation();
     setImagePreview(null);
-    setImagePath(getBaseImagePath(formData.username))
     setFormData({
       ...formData,
       imagePath: null
@@ -283,17 +295,19 @@ export default function UserDetails() {
     setFormData({
       username: user?.username || '',
       email: user?.email || '',
+      oldPassword: '',
       password: '',
       confirmPassword: '',
       imagePath: null
     });
+    
     setImagePreview(null);
-    setImagePath(user?.imagePath || getBaseImagePath(formData.username));
+    setShowPasswordFields(false);
   };
 
   const profileInfo = () => {
     if (isUpdating) {
-      const currentImageToShow = imagePreview ? imagePreview : imagePath
+      const currentImageToShow = imagePreview ? imagePreview : getBaseImagePath(formData.username);
 
       return (
         <form 
@@ -335,7 +349,6 @@ export default function UserDetails() {
           <div className="relative w-full flex flex-col justify-start items-start gap-1">
             <label className="relative font-inter font-medium text-white/90 ml-2 text-sm">Username</label>
             <input
-              required
               name="username"
               value={formData.username? formData.username : ''}
               onChange={handleChange}
@@ -353,7 +366,6 @@ export default function UserDetails() {
           <div className="relative w-full flex flex-col justify-start items-start gap-1">
             <label className="relative font-inter font-medium text-white/90 ml-2 text-sm">Email</label>
             <input
-              required
               name="email"
               value={formData.email? formData.email : ''}
               onChange={handleChange}
@@ -368,60 +380,104 @@ export default function UserDetails() {
             )}            
           </div>
 
-          <div className="relative w-full flex flex-col justify-start items-start gap-1">
-            <label className="relative font-inter font-medium text-white/90 ml-2 text-sm">New Password</label>
-            <div className="relative w-full">
-              <input
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                type={showPassword ? "text" : "password"}
-                placeholder="New Password" 
-                className="w-full px-4 py-3 bg-white/10 shadow-lg border-2 rounded-2xl border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-main focus:bg-white/20 transition-all"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
-              >
-                {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
-              </button>
-            </div>
-            {error?.field === "password" && (
-              <span className="text-red-400 text-xs ml-2 mt-1 animate-in fade-in slide-in-from-top-1">
-                {error.message}
-              </span>
-            )}            
-          </div>
-
-          <div className="relative w-full flex flex-col justify-start items-start gap-1">
-            <label className="relative font-inter font-medium text-white/90 ml-2 text-sm">Verify Password</label>
-            <div className="relative w-full">
-              <input
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                type={showPassword ? "text" : "password"}
-                placeholder="Repeat your new password" 
-                className={`w-full px-4 py-3 bg-white/10 shadow-lg border-2 rounded-2xl transition-all focus:outline-none focus:bg-white/20 ${
-                  formData.confirmPassword && formData.password !== formData.confirmPassword 
-                  ? "border-red-500/50" 
-                  : "border-white/20 focus:border-purple-main"
-                }`}
-              />
-            </div>
+          <div className="w-full mt-6 pt-4 border-t border-white/10">
             <button
               type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-12.5 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
+              onClick={() => setShowPasswordFields(!showPasswordFields)}
+              className="flex items-center justify-between w-full px-2 py-2 cursor-pointer text-white/70 hover:text-purple-main transition-colors group"
             >
-              {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
+              <span className="text-sm font-bold uppercase tracking-widest">Change Password</span>
+              <motion.div
+                animate={{ rotate: showPasswordFields ? 180 : 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <SquarePen size={18} className="group-hover:scale-110 transition-transform" />
+              </motion.div>
             </button>
-            {error?.field === "confirmPassword" && (
-              <span className="text-red-400 text-xs ml-2 mt-1 animate-in fade-in slide-in-from-top-1 font-medium">
-                {error.message}
-              </span>
-            )}
+
+            <AnimatePresence>
+              {showPasswordFields && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden flex flex-col gap-4 mt-4"
+                >
+                  <div className="relative w-full flex flex-col justify-start items-start gap-1">
+                    <label className="font-inter font-medium text-white/90 ml-2 text-sm">Old Password</label>
+                    <div className="relative w-full">
+                      <input
+                        name="oldPassword"
+                        onChange={handleChange}
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Current password"
+                        className="w-full px-4 py-3 bg-white/10 border-2 rounded-2xl border-white/20 text-white focus:border-purple-main transition-all"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-white/60"
+                      >
+                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                      </button>
+                    </div>
+                    {error?.field === "oldPassword" && (
+                      <span className="text-red-400 text-xs ml-2">{error.message}</span>
+                    )}
+                  </div>
+
+                  <div className="relative w-full flex flex-col justify-start items-start gap-1">
+                    <label className="font-inter font-medium text-white/90 ml-2 text-sm">New Password</label>
+                    <div className="relative w-full">
+                      <input
+                        name="password"
+                        onChange={handleChange}
+                        type={showPassword ? "text" : "password"}
+                        placeholder="New password"
+                        className="w-full px-4 py-3 bg-white/10 border-2 rounded-2xl border-white/20 text-white focus:border-purple-main transition-all"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-white/60"
+                      >
+                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                      </button>
+                    </div>
+                    {error?.field === "password" && (
+                      <span className="text-red-400 text-xs ml-2">{error.message}</span>
+                    )}
+                  </div>
+
+                  <div className="relative w-full flex flex-col justify-start items-start gap-1">
+                    <label className="font-inter font-medium text-white/90 ml-2 text-sm">Verify Password</label>
+                    <div className="relative w-full">
+                      <input
+                        name="confirmPassword"
+                        onChange={handleChange}
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Repeat new password"
+                        className={`w-full px-4 py-3 bg-white/10 border-2 rounded-2xl transition-all ${
+                          formData.confirmPassword && formData.password !== formData.confirmPassword 
+                          ? "border-red-500/50" 
+                          : "border-white/20 focus:border-purple-main"
+                        }`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-white/60"
+                      >
+                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                      </button>
+                    </div>
+                    {error?.field === "confirmPassword" && (
+                      <span className="text-red-400 text-xs ml-2">{error.message}</span>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           <div className="w-full flex justify-end items-center gap-4 mt-4">
@@ -444,8 +500,9 @@ export default function UserDetails() {
     } else {
       return (
         <>
-          <button className="absolute right-1/4 cursor-pointer" onClick={() => setIsUpdating(!isUpdating)}>
-            {!isUpdating && <SquarePen size={24} />}
+          <button className="absolute right-1/4 cursor-pointer hover:text-purple-main transition-colors"
+              onClick={() => setIsUpdating(!isUpdating)}>
+                {!isUpdating && <SquarePen size={24} />}
           </button>
           <img 
             className="mb-2 w-65 h-auto shadow-2xl object-cover border-4 rounded-full border-white/10 transition-all duration-300 group-hover:opacity-70" 
@@ -501,22 +558,25 @@ export default function UserDetails() {
           {profileInfo()}
         </div>
 
-        <div className="absolute top-213.5 pt-8 border-t border-white/10 w-60">
-          <div className="flex flex-col items-start gap-2">
-            <h3 className="text-xl font-bold text-red-danger uppercase tracking-widest">
-              Danger Zone
-            </h3>
-            <p className="text-sm text-gray-400 leading-relaxed">
-              Once you delete your account, there is no going back. Please be certain.
-            </p>
-            <button 
-              onClick={() => setIsModalOpen(true)}
-              className="mt-2 w-full py-2 bg-transparent border border-red-danger/50 cursor-pointer text-lg text-red-danger font-bold rounded hover:bg-red-danger hover:text-white transition-all duration-300 uppercase tracking-tighter"
-            >
-              Delete Account
-            </button>
+        {!isUpdating && (
+          <div className="absolute top-213.5 pt-8 border-t border-white/10 w-60">
+            <div className="flex flex-col items-start gap-2">
+              <h3 className="text-xl font-bold text-red-danger uppercase tracking-widest">
+                Danger Zone
+              </h3>
+              <p className="text-sm text-gray-400 leading-relaxed">
+                Once you delete your account, there is no going back. Please be certain.
+              </p>
+              <button 
+                type="button"
+                onClick={() => setIsModalOpen(true)}
+                className="mt-2 w-full py-2 bg-transparent border border-red-danger/50 cursor-pointer text-lg text-red-danger font-bold rounded hover:bg-red-danger hover:text-white transition-all duration-300 uppercase tracking-tighter"
+              >
+                Delete Account
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <div className="relative max-w-2/3 flex flex-1 flex-col justify-start items-start gap-8">

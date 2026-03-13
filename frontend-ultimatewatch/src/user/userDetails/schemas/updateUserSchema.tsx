@@ -8,6 +8,9 @@ export const updateUserSchema = z.object({
   email: z
     .string()
     .email("Invalid email format"),
+
+  oldPassword: z
+    .string(),
   
   password: z
     .string()
@@ -16,7 +19,21 @@ export const updateUserSchema = z.object({
     .optional(),
   
   confirmPassword: z.string(),
-}).refine((data) => !data.password || data.password === data.confirmPassword, {
+}).refine((data) => {
+  if (data.password && data.password !== "") {
+    return data.password === data.confirmPassword;
+  }
+  return true;
+}, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
+})
+.refine((data) => {
+  if (data.password && data.password !== "") {
+    return !!data.oldPassword && data.oldPassword !== "";
+  }
+  return true;
+}, {
+  message: "Old password is required to set a new one",
+  path: ["oldPassword"],
 });

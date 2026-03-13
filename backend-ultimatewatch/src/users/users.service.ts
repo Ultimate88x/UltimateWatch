@@ -80,7 +80,7 @@ export class UsersService {
         : false;
 
       if (!isMatch) {
-        throw new BadRequestException('Incorrect password');
+        throw new BadRequestException('Old password is incorrect');
       }
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(updateUserDto.password, salt);

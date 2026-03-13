@@ -336,7 +336,7 @@ describe('UsersService', () => {
       repository.findOne?.mockResolvedValue(existingUser);
 
       await expect(service.update(id, userId, dto)).rejects.toThrow(
-        new BadRequestException('Incorrect password'),
+        new BadRequestException('Old password is incorrect'),
       );
     });
 
@@ -350,7 +350,7 @@ describe('UsersService', () => {
         .mockResolvedValue(false as never);
 
       await expect(service.update(id, userId, dto)).rejects.toThrow(
-        new BadRequestException('Incorrect password'),
+        new BadRequestException('Old password is incorrect'),
       );
 
       expect(compareSpy).toHaveBeenCalled();

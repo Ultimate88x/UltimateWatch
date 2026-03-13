@@ -5,134 +5,134 @@ import toast from "react-hot-toast";
 import { Button } from "../../components/Button";
 
 export default function Login() {
-	const navigate = useNavigate();
-	const [error, setError] = useState<string | null>(null);
-	const [showPassword, setShowPassword] = useState(false);
-	const [formData, setFormData] = useState({
-		username: '',
-		password: ''
-	});
+  const navigate = useNavigate();
+  const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [formData, setFormData] = useState({
+    username: '',
+    password: ''
+  });
 
-	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const { name, value } = e.target;
-		setFormData({
-				...formData,
-				[name]: value
-		});
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value
+    });
 
-		setError(null);
-	};
+    setError(null);
+  };
 
-	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-		e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
 
-		try {
-			const response = await fetch('http://localhost:3000/auth/login', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					username: formData.username,
-					password: formData.password,
-				}),
-			});
+    try {
+      const response = await fetch('http://localhost:3000/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: formData.username,
+          password: formData.password,
+        }),
+      });
 
-			const data = await response.json();
+      const data = await response.json();
 
-			if (!response.ok) {
-				if (data.statusCode === 404) {
-					setError("Incorrect username or password");
-				} else {
-					toast.error(data.message || 'Login failed');
-				}
+      if (!response.ok) {
+        if (data.statusCode === 404) {
+          setError("Incorrect username or password");
+        } else {
+          toast.error(data.message || 'Login failed');
+        }
 
-				return;
-			}
+        return;
+      }
 
-			localStorage.setItem('token', data.accessToken);
-			localStorage.setItem('user', JSON.stringify({
-				id: data.userId,
-				username: data.username
-			}));
+      localStorage.setItem('token', data.accessToken);
+      localStorage.setItem('user', JSON.stringify({
+          id: data.userId,
+          username: data.username
+      }));
 
-			navigate('/');
-		} catch (error: Error | unknown) {
-			const message = error instanceof Error ? error.message : 'An unexpected error occurred';
-			toast.error(message);
-		}
-	};
+      navigate('/');
+    } catch (error: Error | unknown) {
+      const message = error instanceof Error ? error.message : 'An unexpected error occurred';
+      toast.error(message);
+    }
+  };
 
-	return (
-		<div className="relative w-full bg-cover bg-blue-background flex flex-col justify-start items-center overflow-x-hidden">
-			<div className="relative w-full h-fit py-5 bg-purple-main flex flex-col justify-start items-center">
-				<h1 className="relative text-8xl text-white font-bold font-inter">LOGIN</h1>
-				<h2 className="relative mt-2 text-4xl text-white font-semibold font-inter">WELCOME BACK! WE MISSED YOU!</h2>
-			</div>
+  return (
+    <div className="relative w-full bg-cover bg-blue-background flex flex-col justify-start items-center overflow-x-hidden">
+      <div className="relative w-full h-fit py-5 bg-purple-main flex flex-col justify-start items-center">
+          <h1 className="relative text-8xl text-white font-bold font-inter">LOGIN</h1>
+          <h2 className="relative mt-2 text-4xl text-white font-semibold font-inter">WELCOME BACK! WE MISSED YOU!</h2>
+      </div>
 
-			<form 
-				onSubmit={handleSubmit}
-				className="relative mt-10 flex flex-col justify-start items-center gap-4">
-					<img 
-						className="w-40 h-40 rounded-full shadow-2xl mb-2 object-cover border-4 border-white/10 transition-all duration-300 group-hover:opacity-70" 
-						src={"https://cdn-icons-png.flaticon.com/512/149/149071.png"} 
-						alt="Profile" 
-					/>
+      <form 
+        onSubmit={handleSubmit}
+        className="relative mt-10 flex flex-col justify-start items-center gap-4">
+          <img 
+            className="w-40 h-40 rounded-full shadow-2xl mb-2 object-cover border-4 border-white/10 transition-all duration-300 group-hover:opacity-70" 
+            src={"https://cdn-icons-png.flaticon.com/512/149/149071.png"} 
+            alt="Profile" 
+          />
 
-					<div className="relative w-lg flex flex-col justify-start items-start gap-1">
-						<a className="relative font-inter font-medium">Username</a>
-						<input
-							name="username"
-							value={formData.username}
-							onChange={handleChange}
-							type="text" 
-							placeholder="Username" 
-							className="w-full px-4 py-3 bg-white/10 shadow-lg border-2 rounded-2xl border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-main focus:bg-white/20 transition-all"
-						/>
-					</div>
+          <div className="relative w-lg flex flex-col justify-start items-start gap-1">
+            <a className="relative font-inter font-medium">Username</a>
+            <input
+              name="username"
+              value={formData.username}
+              onChange={handleChange}
+              type="text" 
+              placeholder="Username" 
+              className="w-full px-4 py-3 bg-white/10 shadow-lg border-2 rounded-2xl border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-main focus:bg-white/20 transition-all"
+            />
+          </div>
 
-					<div className="relative w-lg flex flex-col justify-start items-start gap-1">
-						<a className="relative font-inter font-medium">Password</a>
-						<input
-							name="password"
-							value={formData.password}
-							onChange={handleChange}
-							type={showPassword ? "text" : "password"}
-							placeholder="Password" 
-							className="w-full px-4 py-3 bg-white/10 shadow-lg border-2 rounded-2xl border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-main focus:bg-white/20 transition-all"
-						/>
-						<button
-							type="button"
-							onClick={() => setShowPassword(!showPassword)}
-							className="absolute right-4 top-10 text-white/60 hover:text-white transition-colors"
-						>
-							{showPassword ? <EyeOff size={28} /> : <Eye size={28} />}
-						</button>
-						{error && (
-						<span className="text-red-400 text-xs ml-2 mt-1 animate-in fade-in slide-in-from-top-1 font-medium">
-							{error}
-						</span>
-					)}
-					</div>
+          <div className="relative w-lg flex flex-col justify-start items-start gap-1">
+            <a className="relative font-inter font-medium">Password</a>
+            <input
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              type={showPassword ? "text" : "password"}
+              placeholder="Password" 
+              className="w-full px-4 py-3 bg-white/10 shadow-lg border-2 rounded-2xl border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-main focus:bg-white/20 transition-all"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-10 text-white/60 hover:text-white transition-colors"
+            >
+              {showPassword ? <EyeOff size={28} /> : <Eye size={28} />}
+            </button>
+            {error && (
+            <span className="text-red-400 text-xs ml-2 mt-1 animate-in fade-in slide-in-from-top-1 font-medium">
+              {error}
+            </span>
+          )}
+          </div>
 
-					<p className="text-center text-sm text-white/85">
-						Forgot your password? Click <Link to="/forgot-password" className="text-white font-bold cursor-pointer hover:underline" >here</Link> to reset it
-					</p>
+          <p className="text-center text-sm text-white/85">
+            Forgot your password? Click <Link to="/forgot-password" className="text-white font-bold cursor-pointer hover:underline" >here</Link> to reset it
+          </p>
 
-					<Button 
-					type="submit" 
-					variant="primary" 
-					size="lg" 
-					fullWidth 
-					className="mt-4"
-					>
-					Log In
-					</Button>
-			</form>
+          <Button 
+          type="submit" 
+          variant="primary" 
+          size="lg" 
+          fullWidth 
+          className="mt-4"
+          >
+          Log In
+          </Button>
+      </form>
 
-			<p className="mt-8 text-center text-sm text-white/85">
-				Don't have an account?  <Link to="/signup" className="text-white font-bold cursor-pointer hover:underline">Sign Up</Link>
-			</p>
-		</div>
-	)
+      <p className="mt-8 text-center text-sm text-white/85">
+        Don't have an account?  <Link to="/signup" className="text-white font-bold cursor-pointer hover:underline">Sign Up</Link>
+      </p>
+    </div>
+  )
 }

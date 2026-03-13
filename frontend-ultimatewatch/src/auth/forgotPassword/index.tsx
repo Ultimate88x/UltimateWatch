@@ -2,9 +2,14 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom";
 import { Mail } from "lucide-react";
 import toast from "react-hot-toast";
+import { Button } from "../../components/Button";
+import { forgotPasswordSchema } from "./schemas/signUpSchema";
 
 export default function ForgotPassword() {
 	const navigate = useNavigate();
+
+	const [error, setError] = useState<{ field: string; message: string } | null>(null);
+
 	const [formData, setFormData] = useState({
 			email: '',
 	});
@@ -19,6 +24,17 @@ export default function ForgotPassword() {
 
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
+
+		const result = forgotPasswordSchema.safeParse(formData);
+		if (!result.success) {
+			const error = result.error.issues[0];
+			setError({ 
+			field: error.path[0] as string, 
+			message: error.message 
+			});
+			return;
+		}
+
 		const loadToast = toast.loading('Sending email...');
 
 		try {
@@ -73,20 +89,31 @@ export default function ForgotPassword() {
 								placeholder="Email" 
 								className="w-full px-4 py-3 bg-white/10 shadow-lg border-2 rounded-2xl border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-main focus:bg-white/20 transition-all"
 							/>
+							{error?.field === "email" && (
+								<span className="text-red-400 text-xs ml-2 mt-1 animate-in fade-in slide-in-from-top-1">
+								{error.message}
+								</span>
+							)}
 						</div>
 
-						<button 
-							type="submit"
-							className="w-full py-4 bg-purple-main rounded-2xl text-white font-bold cursor-pointer active:scale-95 hover:bg-purple-600 transition-all shadow-lg shadow-purple-900/20">
-							SEND RECOVERY LINK
-						</button>
+						<Button 
+						type="submit" 
+						variant="primary" 
+						size="lg" 
+						fullWidth 
+						className="shadow-purple-900/20"
+						>
+							Send Recovery Link
+						</Button>
 
-						<button 
-							type="button"
-							onClick={() => navigate('/login')}
-							className="text-sm text-white/60 cursor-pointer hover:text-white transition-colors underline-offset-4 hover:underline">
+						<Button
+						variant="link" 
+						type="button"
+						onClick={() => navigate('/login')} 
+						className="text-sm"
+						>
 							Back to Login
-						</button>
+						</Button>
 			</form>
 		</div>
 	)

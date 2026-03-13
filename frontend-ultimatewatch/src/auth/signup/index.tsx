@@ -1,8 +1,9 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Eye, EyeOff, UploadCloud, X } from "lucide-react";
 import { signUpSchema } from "./schemas/signUpSchema";
 import toast from "react-hot-toast";
+import { Button } from "../../components/Button";
 
 export default function SignUp() {
   const navigate = useNavigate();
@@ -12,7 +13,6 @@ export default function SignUp() {
 
   const [showPassword, setShowPassword] = useState(false);
 	const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [imagePath, setImagePath] = useState<string>("https://cdn-icons-png.flaticon.com/512/149/149071.png");
 
   const [formData, setFormData] = useState({
     username: '',
@@ -22,9 +22,9 @@ export default function SignUp() {
 		imagePath: null as File | null,
   });
 
-  useEffect(() => {
-    setImagePath(`https://ui-avatars.com/api/?name=${encodeURIComponent(formData.username)}&background=6D28D9&color=fff`)
-  }, [formData.username]);
+  const getBaseImagePath = (username?: string) => {
+    return username && username !== "" ? `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=6D28D9&color=fff` : "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -88,8 +88,6 @@ export default function SignUp() {
     
     if (formData.imagePath instanceof File) {
         finalData.append('file', formData.imagePath);
-    } else {
-      finalData.append('imagePath', imagePath);
     }
     
     try {
@@ -144,7 +142,7 @@ export default function SignUp() {
               imagePreview
                 ? imagePreview 
                 : formData.username
-                  ? imagePath
+                  ? getBaseImagePath(formData.username)
                   : "https://cdn-icons-png.flaticon.com/512/149/149071.png"
             } 
             alt="Profile Preview" 
@@ -280,12 +278,15 @@ export default function SignUp() {
           )}
         </div>
 
-        <button 
-          type="submit"
-          className="mt-6 w-full py-4 bg-purple-main rounded-xl text-white font-bold cursor-pointer active:scale-95 hover:bg-purple-600 transition-all shadow-xl flex justify-center items-center gap-2"
+        <Button 
+          type="submit" 
+          variant="primary" 
+          size="lg" 
+          fullWidth 
+          className="mt-6"
         >
-          CREATE ACCOUNT
-        </button>
+          Create Account
+        </Button>
       </form>
 
       <p className="mt-8 text-center text-sm text-white/85">

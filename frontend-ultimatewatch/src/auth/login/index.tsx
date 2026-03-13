@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
+import { Button } from "../../components/Button";
 
 export default function Login() {
 	const navigate = useNavigate();
@@ -118,11 +119,15 @@ export default function Login() {
 							Forgot your password? Click <Link to="/forgot-password" className="text-white font-bold cursor-pointer hover:underline" >here</Link> to reset it
 						</p>
 
-						<button 
-							type="submit"
-							className="mt-4 w-full py-4 bg-purple-main rounded-xl text-white font-bold cursor-pointer active:scale-95 hover:bg-purple-600 transition-transform flex justify-center items-center gap-2">
-								LOG IN
-						</button>
+				<Button 
+				type="submit" 
+				variant="primary" 
+				size="lg" 
+				fullWidth 
+				className="mt-4"
+				>
+				Log In
+				</Button>
 			</form>
 
 			<p className="mt-8 text-center text-sm text-white/85">

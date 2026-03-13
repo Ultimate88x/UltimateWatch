@@ -3,11 +3,12 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff, KeyRound } from "lucide-react";
 import toast from "react-hot-toast";
 import { resetPasswordSchema } from "./schemas/signUpSchema";
+import { Button } from "../../components/Button";
 
 export default function ResetPassword() {
   const navigate = useNavigate();
 
-    const [error, setError] = useState<{ field: string; message: string } | null>(null);
+  const [error, setError] = useState<{ field: string; message: string } | null>(null);
 
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
@@ -154,19 +155,23 @@ export default function ResetPassword() {
           )}
         </div>
 
-        <button 
-          type="submit"
-          className="mt-6 w-full py-4 bg-purple-main rounded-xl text-white font-bold cursor-pointer active:scale-95 hover:bg-purple-600 transition-all shadow-xl flex justify-center items-center gap-2"
+        <Button 
+          variant="primary" 
+          size="lg" 
+          fullWidth 
+          className="mt-6"
         >
-          CONFIRM NEW PASSWORD
-        </button>
+          Confirm New Password
+        </Button>
 
-        <button 
+        <Button 
+          variant="link" 
           type="button"
-          onClick={() => navigate('/login')}
-          className="text-sm text-white/60 cursor-pointer hover:text-white transition-colors underline-offset-4 hover:underline">
+          onClick={() => navigate('/login')} 
+          className="text-sm mt-4"
+        >
           Back to Email Page
-				</button>
+        </Button>
       </form>
     </div>
   );

@@ -5,6 +5,7 @@ import { updateUserSchema } from "./schemas/updateUserSchema";
 import toast from "react-hot-toast";
 import ListMedia from "../../components/content/ListMedia";
 import ListCollection from "../../components/content/ListCollection";
+import { Button } from "../../components/Button";
 
 type UserProfile = {
   id: number;
@@ -329,7 +330,7 @@ export default function UserDetails() {
           onSubmit={handleSubmit}
           className="relative w-2/3 flex flex-col justify-start items-center gap-4"
         >
-          <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+          <div className="relative group cursor-pointer rounded-full" onClick={() => fileInputRef.current?.click()}>
             <img 
               className="mb-2 w-65 h-65 shadow-2xl object-cover border-4 rounded-full border-white/10 transition-all duration-300 group-hover:opacity-70" 
               src={currentImageToShow} 
@@ -339,18 +340,18 @@ export default function UserDetails() {
               <UploadCloud size={64} className="text-white mb-2" />
               <span className="px-2 py-1 bg-black/50 rounded text-lg text-white font-bold">Change picture</span>
             </div>
-
-            {(imagePreview || user?.imagePath) && (
-              <button
-                type="button"
-                onClick={handleRemoveImage}
-                className="absolute top-0 -right-5 p-1 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-transform hover:scale-110 active:scale-90 z-10"
-                title="Remove image"
-              >
-                <X size={20} />
-              </button>
-            )}
           </div>
+
+          {(imagePreview || user?.imagePath) && (
+            <button
+              type="button"
+              onClick={handleRemoveImage}
+              className="absolute top-0 right-12 p-1 bg-red-500 hover:bg-red-600 text-white cursor-pointer rounded-lg shadow-lg transition-transform active:scale-90 z-10"
+              title="Remove image"
+            >
+              <X size={20} />
+            </button>
+          )}
 
           <input 
             type="file"
@@ -496,19 +497,19 @@ export default function UserDetails() {
           </div>
 
           <div className="w-full flex justify-end items-center gap-4 mt-4">
-            <button 
+            <Button 
+              variant="outline" 
               type="button"
               onClick={handleCancelUpdate}
-              className="mt-6 w-60 py-4 bg-gray-500 rounded-xl text-white font-bold cursor-pointer active:scale-95 hover:bg-gray-600 transition-all shadow-xl flex justify-center items-center gap-2"
             >
-              CANCEL
-            </button>
-            <button 
+              Cancel
+            </Button>
+            <Button 
+              variant="primary" 
               type="submit"
-              className="mt-6 w-60 py-4 bg-purple-main rounded-xl text-white font-bold cursor-pointer active:scale-95 hover:bg-purple-main/90 transition-all shadow-xl flex justify-center items-center gap-2"
             >
-              UPDATE PROFILE
-            </button>
+              Update Profile
+            </Button>
           </div>
         </form>
       )
@@ -527,15 +528,9 @@ export default function UserDetails() {
           <h2 className="relative text-4xl text-white font-bold font-inter">{user?.username || 'Guest'}</h2>
           <a className="relative text-lg text-white font-medium font-inter">{user?.email || 'No email provided'}</a>
 
-          <button
-            onClick={logout}
-            className="relative mt-6 w-60 py-3 overflow-hidden rounded-xl cursor-pointer bg-white/5 font-inter font-semibold text-white hover:bg-red-500/20 hover:text-red-400 border border-white/10 hover:border-red-500/50 flex items-center justify-center gap-2 group transition-all duration-300"
-          >
-            <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/5 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
-            
-            <LogOut size={20} className="transition-transform duration-300 group-hover:-translate-x-1" />
-            <span>Log Out</span>
-          </button>
+          <Button variant="glass" className="mt-6" icon={LogOut} showShine onClick={logout}>
+            Log Out
+          </Button>
         </>
       )
     }
@@ -582,13 +577,15 @@ export default function UserDetails() {
               <p className="text-sm text-gray-400 leading-relaxed">
                 Once you delete your account, there is no going back. Please be certain.
               </p>
-              <button 
+              <Button 
                 type="button"
+                variant="danger-outline" 
                 onClick={() => setIsModalOpen(true)}
-                className="mt-2 w-full py-2 bg-transparent border border-red-danger/50 cursor-pointer text-lg text-red-danger font-bold rounded hover:bg-red-danger hover:text-white transition-all duration-300 uppercase tracking-tighter"
+                fullWidth
+                className="mt-2"
               >
                 Delete Account
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -629,18 +626,19 @@ export default function UserDetails() {
                 </p>
                 
                 <div className="flex gap-4">
-                  <button
+                  <Button 
+                    variant="primary" 
                     onClick={() => setIsModalOpen(false)}
-                    className="py-3 px-4 bg-purple-main/75 rounded-lg cursor-pointer hover:bg-purple-main/45 flex-1 text-white font-semibold transition-colors"
                   >
                     Keep Account
-                  </button>
-                  <button
+                  </Button>
+
+                  <Button 
+                    variant="danger" 
                     onClick={handleDeleteAccount}
-                    className="flex-1 py-3 px-4 bg-red-danger text-white font-bold rounded-lg hover:bg-red-700 transition-shadow shadow-[0_0_20px_rgba(239,68,68,0.4)] cursor-pointer"
                   >
                     Delete
-                  </button>
+                  </Button>
                 </div>
               </div>
             </motion.div>

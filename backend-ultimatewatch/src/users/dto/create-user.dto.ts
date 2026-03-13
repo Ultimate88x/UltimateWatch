@@ -13,11 +13,11 @@ export class CreateUserDto {
   @MinLength(3, {
     message: 'Username must be at least 3 characters long',
   })
-  username?: string;
+  username: string;
 
   @IsNotEmpty()
   @IsEmail({}, { message: 'Invalid email format' })
-  email?: string;
+  email: string;
 
   @IsNotEmpty()
   @IsString()
@@ -26,7 +26,7 @@ export class CreateUserDto {
     message:
       'Password is too weak. It must contain at least one uppercase letter, one lowercase letter, and one number or special character',
   })
-  password?: string;
+  password: string;
 
   @IsOptional()
   @IsString()

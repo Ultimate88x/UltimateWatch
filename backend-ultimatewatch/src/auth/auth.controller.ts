@@ -45,6 +45,8 @@ export class AuthController {
         createUserDto,
         file,
       )) as CreateUserDto;
+    } else {
+      createUserDto.imagePath = `https://ui-avatars.com/api/?name=${encodeURIComponent(createUserDto.username)}&background=6D28D9&color=fff`;
     }
 
     return this.authService.signUp(createUserDto);

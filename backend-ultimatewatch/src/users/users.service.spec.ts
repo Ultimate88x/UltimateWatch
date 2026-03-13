@@ -10,6 +10,8 @@ import { CloudinaryService } from 'src/common/cloudinary/cloudinary.service';
 import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
 import { DuplicatedResourceException } from 'src/common/exceptions/duplicated-resource-exception';
 import { CreateUserDto } from './dto/create-user.dto';
+import { BadRequestException } from '@nestjs/common';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 jest.mock('bcrypt');
 
@@ -214,7 +216,7 @@ describe('UsersService', () => {
     });
 
     it('should throw ResourceNotFoundException if user to update does not exist', async () => {
-      repository.findOneBy?.mockResolvedValue(null);
+      repository.findOne?.mockResolvedValue(null);
 
       await expect(service.update(1, 1, { username: 'new' })).rejects.toThrow(
         ResourceNotFoundException,
@@ -230,7 +232,7 @@ describe('UsersService', () => {
         imagePublicId: 'new_id',
       };
 
-      repository.findOneBy?.mockResolvedValue(existingUser);
+      repository.findOne?.mockResolvedValue(existingUser);
       mockCloudinaryService.deleteImage.mockResolvedValue({ result: 'ok' });
       mockCloudinaryService.updateDtoImage.mockResolvedValue(
         updatedDtoWithImage,
@@ -268,7 +270,8 @@ describe('UsersService', () => {
       const dto = { username: 'newName' };
       const mockFile = { buffer: Buffer.from('test') } as Express.Multer.File;
 
-      repository.findOneBy?.mockResolvedValue(userWithoutImage);
+      repository.findOne?.mockResolvedValue(userWithoutImage);
+
       mockCloudinaryService.updateDtoImage.mockResolvedValue({
         ...dto,
         imagePath: 'url',
@@ -281,19 +284,19 @@ describe('UsersService', () => {
       expect(mockCloudinaryService.updateDtoImage).toHaveBeenCalled();
     });
 
-    it('should hash password and update user using merge when password is provided', async () => {
-      const dto = { username: 'updatedUser', password: 'newPassword123' };
+    it('should hash password and update user if oldPassword is correct', async () => {
+      const dto = {
+        username: 'updatedUser',
+        password: 'newPassword123',
+        oldPassword: 'correctOldPassword',
+      };
       const hashedPassword = 'hashed_password';
 
-      repository.findOneBy?.mockResolvedValue(existingUser);
-      repository.merge?.mockImplementation(
-        (entity: User, changes: Partial<User>) => ({
-          ...entity,
-          ...changes,
-        }),
-      );
-      repository.save?.mockImplementation((user) => Promise.resolve(user));
+      repository.findOne?.mockResolvedValue(existingUser);
 
+      const compareSpy = jest
+        .spyOn(bcrypt, 'compare')
+        .mockResolvedValue(true as never);
       const saltSpy = jest
         .spyOn(bcrypt, 'genSalt')
         .mockResolvedValue('salt' as never);
@@ -301,21 +304,57 @@ describe('UsersService', () => {
         .spyOn(bcrypt, 'hash')
         .mockResolvedValue(hashedPassword as never);
 
-      const result = await service.update(id, userId, dto);
+      repository.merge?.mockImplementation(
+        (entity, changes) =>
+          ({
+            ...entity,
+            ...changes,
+          }) as UpdateUserDto,
+      );
+      repository.save?.mockImplementation((user) => Promise.resolve(user));
 
-      expect(saltSpy).toHaveBeenCalledWith(10);
-      expect(hashSpy).toHaveBeenCalledWith('newPassword123', 'salt');
+      await service.update(id, userId, dto);
 
-      expect(repository.save).toHaveBeenCalledWith(
-        expect.objectContaining({
-          password: hashedPassword,
-        }),
+      expect(repository.findOne).toHaveBeenCalledWith({
+        where: { id: 1 },
+        select: ['id', 'username', 'email', 'password', 'imagePublicId'],
+      });
+
+      expect(compareSpy).toHaveBeenCalledWith(
+        'correctOldPassword',
+        existingUser.password,
       );
 
-      expect(result?.password).toBe(hashedPassword);
-
+      compareSpy.mockRestore();
       saltSpy.mockRestore();
       hashSpy.mockRestore();
+    });
+
+    it('should throw BadRequestException if password is provided but oldPassword is missing', async () => {
+      const dto = { password: 'newPassword123' };
+
+      repository.findOne?.mockResolvedValue(existingUser);
+
+      await expect(service.update(id, userId, dto)).rejects.toThrow(
+        new BadRequestException('Incorrect password'),
+      );
+    });
+
+    it('should throw BadRequestException if oldPassword does not match stored password', async () => {
+      const dto = { password: 'newPassword123', oldPassword: 'wrongPassword' };
+
+      repository.findOne?.mockResolvedValue(existingUser);
+
+      const compareSpy = jest
+        .spyOn(bcrypt, 'compare')
+        .mockResolvedValue(false as never);
+
+      await expect(service.update(id, userId, dto)).rejects.toThrow(
+        new BadRequestException('Incorrect password'),
+      );
+
+      expect(compareSpy).toHaveBeenCalled();
+      compareSpy.mockRestore();
     });
 
     it('should allow updating if the "duplicate" found is the user itself', async () => {

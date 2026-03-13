@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -61,7 +61,10 @@ export class UsersService {
       throw new ResourceNotOwnedException('User');
     }
 
-    const user = await this.userRepository.findOneBy({ id });
+    const user = await this.userRepository.findOne({
+      where: { id },
+      select: ['id', 'username', 'email', 'password', 'imagePublicId'],
+    });
 
     if (!user) {
       throw new ResourceNotFoundException('User', 'ID', String(id));
@@ -81,6 +84,15 @@ export class UsersService {
     }
 
     if (updateUserDto.password) {
+      const isMatch = user
+        ? updateUserDto.oldPassword
+          ? await bcrypt.compare(updateUserDto.oldPassword, user.password)
+          : false
+        : false;
+
+      if (!isMatch) {
+        throw new BadRequestException('Incorrect password');
+      }
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(updateUserDto.password, salt);
       updateUserDto.password = hashedPassword;
@@ -168,9 +180,6 @@ export class UsersService {
   }
 
   async updatePassword(userId: number, password: string) {
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
     const user = await this.userRepository.findOne({
       where: { id: userId },
     });
@@ -178,6 +187,9 @@ export class UsersService {
     if (!user) {
       throw new ResourceNotFoundException('User', 'ID', String(userId));
     }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
     const updatedUser = this.userRepository.merge(user, {
       password: hashedPassword,

@@ -110,7 +110,11 @@ describe('UsersController', () => {
   describe('update', () => {
     const idParam = '1';
     const userIdFromToken = 1;
-    const updateUserDto: UpdateUserDto = { username: 'newname' };
+    const updateUserDto: UpdateUserDto = {
+      username: 'newname',
+      password: 'newPassword123',
+      oldPassword: 'currentPassword',
+    };
 
     it('should call usersService.update with numeric id, userId, dto and file', async () => {
       const expectedResponse = { id: 1, username: 'newname' };

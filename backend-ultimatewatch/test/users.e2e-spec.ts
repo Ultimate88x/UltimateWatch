@@ -122,11 +122,15 @@ describe('UsersController (e2e)', () => {
 
     it('should update password and verify it was hashed', async () => {
       const newPassword = 'newPassword456';
+      const oldPassword = 'password123';
 
       await request(app.getHttpServer())
         .patch(`/users/${createdUserId}`)
         .set('Authorization', `Bearer ${accessToken}`)
-        .send({ password: newPassword })
+        .send({
+          password: newPassword,
+          oldPassword: oldPassword,
+        })
         .expect(HttpStatus.OK);
 
       const loginRes = await request(app.getHttpServer())
@@ -138,6 +142,17 @@ describe('UsersController (e2e)', () => {
         .expect(HttpStatus.OK);
 
       expect(loginRes.body).toHaveProperty('accessToken');
+    });
+
+    it('should return 400 if oldPassword is incorrect when changing password', async () => {
+      return request(app.getHttpServer())
+        .patch(`/users/${createdUserId}`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          password: 'someNewPassword',
+          oldPassword: 'wrong_old_password',
+        })
+        .expect(HttpStatus.BAD_REQUEST);
     });
 
     it('should return 409 Conflict if trying to update to an existing username', async () => {

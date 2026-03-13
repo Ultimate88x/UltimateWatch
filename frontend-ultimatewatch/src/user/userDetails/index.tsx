@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import ListMedia from "../../components/content/ListMedia";
 import ListCollection from "../../components/content/ListCollection";
 import { Button } from "../../components/Button";
+import { Link } from "react-router-dom";
 
 type UserProfile = {
   id: number;
@@ -491,6 +492,9 @@ export default function UserDetails() {
                       <span className="text-red-400 text-xs ml-2">{error.message}</span>
                     )}
                   </div>
+                  <p className="text-center text-sm text-white/85">
+                    Forgot your password? Click <Link to="/forgot-password" className="text-white font-bold cursor-pointer hover:underline" >here</Link> to reset it
+                  </p>
                 </motion.div>
               )}
             </AnimatePresence>

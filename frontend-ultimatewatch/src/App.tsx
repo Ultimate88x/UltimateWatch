@@ -8,6 +8,7 @@ import ForgotPassword from "./auth/forgotPassword";
 import ResetPassword from "./auth/resetPassword";
 import { Toaster } from "react-hot-toast";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import PublicRoute from "./components/auth/PublicRoute";
 
 function App() {
   return (
@@ -33,14 +34,17 @@ function App() {
       
       <main className="flex-1"> 
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route element={<PublicRoute />}>
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<SignUp />} />
+          </Route>
 
           <Route element={<ProtectedRoute />}>
             <Route path="/profile" element={<UserDetails />} />
           </Route>
+
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
         </Routes>
       </main>
 

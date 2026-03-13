@@ -1,9 +1,10 @@
 import { useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Eye, EyeOff, UploadCloud, X } from "lucide-react";
+import { UploadCloud, X } from "lucide-react";
 import { signUpSchema } from "./schemas/signUpSchema";
 import toast from "react-hot-toast";
 import { Button } from "../../components/Button";
+import { Input } from "../../components/Input";
 
 export default function SignUp() {
   const navigate = useNavigate();
@@ -11,7 +12,6 @@ export default function SignUp() {
 
   const [error, setError] = useState<{ field: string; message: string } | null>(null);
 
-  const [showPassword, setShowPassword] = useState(false);
 	const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
@@ -173,109 +173,45 @@ export default function SignUp() {
           className="hidden"
         />
 
-        <div className="relative w-lg flex flex-col justify-start items-start gap-1">
-          <label className="relative font-inter font-medium text-white/90 ml-2 text-sm">Username</label>
-          <input
+        <div className="flex flex-col gap-4 w-lg">
+          <Input
+            label="Username"
             name="username"
             value={formData.username}
             onChange={handleChange}
-            type="text" 
-            placeholder="Username" 
-            className={`w-full px-4 py-3 bg-white/10 shadow-lg border-2 rounded-2xl transition-all focus:outline-none ${
-              error?.field === "username"
-                ? "border-red-500 bg-red-500/10"
-                : "border-white/20 focus:border-purple-main focus:bg-white/20"
-            } text-white placeholder:text-white/40`}
+            placeholder="Username"
+            error={error}
           />
-          {error?.field === "username" && (
-            <span className="text-red-400 text-xs ml-2 mt-1 animate-in fade-in slide-in-from-top-1">
-              {error.message}
-            </span>
-          )}
-        </div>
 
-        <div className="relative w-lg flex flex-col justify-start items-start gap-1">
-          <label className="relative font-inter font-medium text-white/90 ml-2 text-sm">Email</label>
-          <input
+          <Input
+            label="Email"
             name="email"
+            type="email"
             value={formData.email}
             onChange={handleChange}
-            type="text" 
-            placeholder="your@email.com" 
-            className={`w-full px-4 py-3 bg-white/10 shadow-lg border-2 rounded-2xl transition-all focus:outline-none ${
-              error?.field === "email"
-                ? "border-red-500 bg-red-500/10"
-                : "border-white/20 focus:border-purple-main focus:bg-white/20"
-            } text-white placeholder:text-white/40`}
+            placeholder="your@email.com"
+            error={error}
           />
-          {error?.field === "email" && (
-            <span className="text-red-400 text-xs ml-2 mt-1 animate-in fade-in slide-in-from-top-1">
-              {error.message}
-            </span>
-          )}
-        </div>
 
-        <div className="relative w-lg flex flex-col justify-start items-start gap-1">
-          <label className="relative font-inter font-medium text-white/90 ml-2 text-sm">
-            Password
-          </label>
-          <div className="relative w-full">
-            <input
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              type={showPassword ? "text" : "password"}
-              placeholder="Password"
-              className={`w-full px-4 py-3 bg-white/10 shadow-lg border-2 rounded-2xl text-white placeholder:text-white/40 focus:outline-none transition-all ${
-                error?.field === "password"
-                  ? "border-red-500 bg-red-500/10"
-                  : "border-white/20 focus:border-purple-main focus:bg-white/20"
-              }`}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
-            >
-              {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
-            </button>
-          </div>
-          
-          {error?.field === "password" && (
-            <span className="text-red-400 text-xs ml-2 mt-1 animate-in fade-in slide-in-from-top-1">
-              {error.message}
-            </span>
-          )}
-        </div>
+          <Input
+            label="Password"
+            name="password"
+            type="password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="Password"
+            error={error}
+          />
 
-        <div className="relative w-lg flex flex-col justify-start items-start gap-1">
-          <label className="relative font-inter font-medium text-white/90 ml-2 text-sm">Verify Password</label>
-          <div className="relative w-full">
-            <input
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              type={showPassword ? "text" : "password"}
-              placeholder="Repeat your password" 
-              className={`w-full px-4 py-3 bg-white/10 shadow-lg border-2 rounded-2xl transition-all focus:outline-none focus:bg-white/20 ${
-                (formData.confirmPassword && formData.password !== formData.confirmPassword) || error?.field === "confirmPassword"
-                ? "border-red-500/50 bg-red-500/10" 
-                : "border-white/20 focus:border-purple-main"
-              }`}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
-            >
-              {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
-            </button>
-          </div>
-          {error?.field === "confirmPassword" && (
-            <span className="text-red-400 text-xs ml-2 mt-1 animate-in fade-in slide-in-from-top-1 font-medium">
-              {error.message}
-            </span>
-          )}
+          <Input
+            label="Verify Password"
+            name="confirmPassword"
+            type="password"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            placeholder="Repeat your password"
+            error={error}
+          />
         </div>
 
         <Button 

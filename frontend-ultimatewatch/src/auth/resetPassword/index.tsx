@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Eye, EyeOff, KeyRound } from "lucide-react";
+import { KeyRound } from "lucide-react";
 import toast from "react-hot-toast";
 import { resetPasswordSchema } from "./schemas/signUpSchema";
 import { Button } from "../../components/Button";
+import { Input } from "../../components/Input";
 
 export default function ResetPassword() {
   const navigate = useNavigate();
@@ -12,8 +13,6 @@ export default function ResetPassword() {
 
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
-
-  const [showPassword, setShowPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     password: '',
@@ -74,7 +73,7 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="relative w-full min-h-screen bg-cover bg-blue-background flex flex-col justify-start items-center overflow-x-hidden pb-12">
+    <div className="relative w-full bg-cover bg-blue-background flex flex-col justify-start items-center overflow-x-hidden pb-12">
       <div className="relative w-full h-fit py-5 bg-purple-main flex flex-col justify-start items-center">
         <h1 className="relative text-8xl text-white font-bold font-inter uppercase tracking-tighter">RESET PASSWORD</h1>
         <h2 className="relative mt-2 text-4xl text-white font-semibold font-inter text-center px-4">TYPE YOUR NEW PASSWORD</h2>
@@ -92,67 +91,26 @@ export default function ResetPassword() {
           />
         </div>
 
-        <div className="relative w-lg flex flex-col justify-start items-start gap-1">
-          <label className="relative font-inter font-medium text-white/90 ml-2 text-sm">
-            Password
-          </label>
-          <div className="relative w-full">
-            <input
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              type={showPassword ? "text" : "password"}
-              placeholder="Password"
-              className={`w-full px-4 py-3 bg-white/10 shadow-lg border-2 rounded-2xl text-white placeholder:text-white/40 focus:outline-none transition-all ${
-                error?.field === "password"
-                  ? "border-red-500 bg-red-500/10"
-                  : "border-white/20 focus:border-purple-main focus:bg-white/20"
-              }`}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
-            >
-              {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
-            </button>
-          </div>
-          
-          {error?.field === "password" && (
-            <span className="text-red-400 text-xs ml-2 mt-1 animate-in fade-in slide-in-from-top-1">
-              {error.message}
-            </span>
-          )}
-        </div>
+        <div className="flex flex-col gap-4 w-lg">
+          <Input
+            label="Password"
+            name="password"
+            type="password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="Password"
+            error={error}
+          />
 
-        <div className="relative w-lg flex flex-col justify-start items-start gap-1">
-          <label className="relative font-inter font-medium text-white/90 ml-2 text-sm">Verify Password</label>
-          <div className="relative w-full">
-            <input
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              type={showPassword ? "text" : "password"}
-              placeholder="Repeat your password" 
-              className={`w-full px-4 py-3 bg-white/10 shadow-lg border-2 rounded-2xl transition-all focus:outline-none focus:bg-white/20 ${
-                (formData.confirmPassword && formData.password !== formData.confirmPassword) || error?.field === "confirmPassword"
-                ? "border-red-500/50 bg-red-500/10" 
-                : "border-white/20 focus:border-purple-main"
-              }`}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
-            >
-              {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
-            </button>
-          </div>
-          {error?.field === "confirmPassword" && (
-            <span className="text-red-400 text-xs ml-2 mt-1 animate-in fade-in slide-in-from-top-1 font-medium">
-              {error.message}
-            </span>
-          )}
+          <Input
+            label="Verify Password"
+            name="confirmPassword"
+            type="password"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            placeholder="Repeat your password"
+            error={error}
+          />
         </div>
 
         <Button 

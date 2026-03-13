@@ -4,6 +4,7 @@ import { Mail } from "lucide-react";
 import toast from "react-hot-toast";
 import { Button } from "../../components/Button";
 import { forgotPasswordSchema } from "./schemas/signUpSchema";
+import { Input } from "../../components/Input";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
@@ -79,21 +80,16 @@ export default function ForgotPassword() {
             />
           </div>
 
-          <div className="relative w-lg flex flex-col justify-start items-start gap-1">
-            <a className="relative font-inter font-medium">Email</a>
-            <input
+          <div className="w-lg flex flex-col gap-4">
+            <Input
+              label="Email"
               name="email"
+              type="email"
               value={formData.email}
               onChange={handleChange}
-              type="email" 
-              placeholder="Email" 
-              className="w-full px-4 py-3 bg-white/10 shadow-lg border-2 rounded-2xl border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-main focus:bg-white/20 transition-all"
+              placeholder="Email"
+              error={error}
             />
-            {error?.field === "email" && (
-              <span className="text-red-400 text-xs ml-2 mt-1 animate-in fade-in slide-in-from-top-1">
-              {error.message}
-              </span>
-            )}
           </div>
 
           <Button 

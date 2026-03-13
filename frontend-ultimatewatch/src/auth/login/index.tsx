@@ -1,13 +1,11 @@
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
 import { Button } from "../../components/Button";
+import { Input } from "../../components/Input";
 
 export default function Login() {
   const navigate = useNavigate();
-  const [error, setError] = useState<string | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -19,8 +17,6 @@ export default function Login() {
       ...formData,
       [name]: value
     });
-
-    setError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -42,7 +38,7 @@ export default function Login() {
 
       if (!response.ok) {
         if (data.statusCode === 404) {
-          setError("Incorrect username or password");
+          toast.error("Incorrect username or password");
         } else {
           toast.error(data.message || 'Login failed');
         }
@@ -52,8 +48,8 @@ export default function Login() {
 
       localStorage.setItem('token', data.accessToken);
       localStorage.setItem('user', JSON.stringify({
-          id: data.userId,
-          username: data.username
+        id: data.userId,
+        username: data.username
       }));
 
       navigate('/');
@@ -78,41 +74,24 @@ export default function Login() {
             src={"https://cdn-icons-png.flaticon.com/512/149/149071.png"} 
             alt="Profile" 
           />
-
-          <div className="relative w-lg flex flex-col justify-start items-start gap-1">
-            <a className="relative font-inter font-medium">Username</a>
-            <input
+        <div className="flex flex-col gap-4 w-lg">
+          <Input
+              label="Username"
               name="username"
+              type="text"
               value={formData.username}
               onChange={handleChange}
-              type="text" 
-              placeholder="Username" 
-              className="w-full px-4 py-3 bg-white/10 shadow-lg border-2 rounded-2xl border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-main focus:bg-white/20 transition-all"
+              placeholder="Username"
             />
-          </div>
 
-          <div className="relative w-lg flex flex-col justify-start items-start gap-1">
-            <a className="relative font-inter font-medium">Password</a>
-            <input
+            <Input
+              label="Password"
               name="password"
+              type="password"
               value={formData.password}
               onChange={handleChange}
-              type={showPassword ? "text" : "password"}
-              placeholder="Password" 
-              className="w-full px-4 py-3 bg-white/10 shadow-lg border-2 rounded-2xl border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-main focus:bg-white/20 transition-all"
+              placeholder="Password"
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-10 text-white/60 hover:text-white transition-colors"
-            >
-              {showPassword ? <EyeOff size={28} /> : <Eye size={28} />}
-            </button>
-            {error && (
-            <span className="text-red-400 text-xs ml-2 mt-1 animate-in fade-in slide-in-from-top-1 font-medium">
-              {error}
-            </span>
-          )}
           </div>
 
           <p className="text-center text-sm text-white/85">

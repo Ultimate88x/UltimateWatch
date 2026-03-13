@@ -1,12 +1,13 @@
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { SquarePen, UploadCloud, Eye, EyeOff, LogOut, X } from "lucide-react";
+import { SquarePen, UploadCloud, LogOut, X } from "lucide-react";
 import { updateUserSchema } from "./schemas/updateUserSchema";
 import toast from "react-hot-toast";
 import ListMedia from "../../components/content/ListMedia";
 import ListCollection from "../../components/content/ListCollection";
 import { Button } from "../../components/Button";
 import { Link } from "react-router-dom";
+import { Input } from "../../components/Input";
 
 type UserProfile = {
   id: number;
@@ -38,7 +39,6 @@ export default function UserDetails() {
   const [isLoading, setIsLoading] = useState(true);
 
   const [showPasswordFields, setShowPasswordFields] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
@@ -187,7 +187,6 @@ export default function UserDetails() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
-    setIsLoading(true)
     
     const result = updateUserSchema.safeParse(formData);
     if (!result.success) {
@@ -198,6 +197,8 @@ export default function UserDetails() {
       });
       return;
     }
+
+    setIsLoading(true)
 
     const finalData = new FormData();
 
@@ -211,6 +212,8 @@ export default function UserDetails() {
     } else if (imagePreview === null) {
       finalData.append('imagePath', "Delete");
     }
+
+    console.log(formData.oldPassword)
     
     try {
 			const response = await fetch(`http://localhost:3000/users/${userId}`, {
@@ -232,6 +235,8 @@ export default function UserDetails() {
         else if (message.toLowerCase().includes('email')) field = 'email';
         else if (message.toLowerCase().includes('old password')) field = 'oldPassword';
         else if (message.toLowerCase().includes('password')) field = 'password';
+
+        formData.oldPassword = '';
 
         setError({ field, message: message });
         return;
@@ -318,6 +323,7 @@ export default function UserDetails() {
       imagePath: null
     });
     
+    setError(null);
     setImagePreview(user?.imagePath || getBaseImagePath(user?.username));
     setShowPasswordFields(false);
   };
@@ -363,38 +369,26 @@ export default function UserDetails() {
             className="hidden"
           />
 
-          <div className="relative w-full flex flex-col justify-start items-start gap-1">
-            <label className="relative font-inter font-medium text-white/90 ml-2 text-sm">Username</label>
-            <input
+          <div className="flex flex-col gap-4 w-full">
+            <Input
+              label="Username"
               name="username"
-              value={formData.username? formData.username : ''}
+              type="text"
+              placeholder="Username"
+              value={formData.username || ''}
               onChange={handleChange}
-              type="text" 
-              placeholder="Username" 
-              className="w-full px-4 py-3 bg-white/10 shadow-lg border-2 rounded-2xl border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-main focus:bg-white/20 transition-all"
+              error={error}
             />
-            {error?.field === "username" && (
-              <span className="text-red-400 text-xs ml-2 mt-1 animate-in fade-in slide-in-from-top-1">
-                {error.message}
-              </span>
-            )}
-          </div>
 
-          <div className="relative w-full flex flex-col justify-start items-start gap-1">
-            <label className="relative font-inter font-medium text-white/90 ml-2 text-sm">Email</label>
-            <input
+            <Input
+              label="Email"
               name="email"
-              value={formData.email? formData.email : ''}
+              type="email"
+              placeholder="your@email.com"
+              value={formData.email || ''}
               onChange={handleChange}
-              type="email" 
-              placeholder="your@email.com" 
-              className="w-full px-4 py-3 bg-white/10 shadow-lg border-2 rounded-2xl border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:border-purple-main focus:bg-white/20 transition-all"
+              error={error}
             />
-            {error?.field === "email" && (
-              <span className="text-red-400 text-xs ml-2 mt-1 animate-in fade-in slide-in-from-top-1">
-                {error.message}
-              </span>
-            )}            
           </div>
 
           <div className="w-full mt-6 pt-4 border-t border-white/10">
@@ -420,77 +414,40 @@ export default function UserDetails() {
                   exit={{ height: 0, opacity: 0 }}
                   className="overflow-hidden flex flex-col gap-4 mt-4"
                 >
-                  <div className="relative w-full flex flex-col justify-start items-start gap-1">
-                    <label className="font-inter font-medium text-white/90 ml-2 text-sm">Old Password</label>
-                    <div className="relative w-full">
-                      <input
-                        name="oldPassword"
-                        onChange={handleChange}
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Current password"
-                        className="w-full px-4 py-3 bg-white/10 border-2 rounded-2xl border-white/20 text-white focus:border-purple-main transition-all"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-white/60"
-                      >
-                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                      </button>
-                    </div>
-                    {error?.field === "oldPassword" && (
-                      <span className="text-red-400 text-xs ml-2">{error.message}</span>
-                    )}
-                  </div>
+                  <div className="flex flex-col gap-4 mt-4">
+                    <Input
+                      label="Old Password"
+                      name="oldPassword"
+                      type="password"
+                      onChange={handleChange}
+                      placeholder="Current password"
+                      error={error}
+                    />
 
-                  <div className="relative w-full flex flex-col justify-start items-start gap-1">
-                    <label className="font-inter font-medium text-white/90 ml-2 text-sm">New Password</label>
-                    <div className="relative w-full">
-                      <input
-                        name="password"
-                        onChange={handleChange}
-                        type={showPassword ? "text" : "password"}
-                        placeholder="New password"
-                        className="w-full px-4 py-3 bg-white/10 border-2 rounded-2xl border-white/20 text-white focus:border-purple-main transition-all"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-white/60"
-                      >
-                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                      </button>
-                    </div>
-                    {error?.field === "password" && (
-                      <span className="text-red-400 text-xs ml-2">{error.message}</span>
-                    )}
-                  </div>
+                    <Input
+                      label="New Password"
+                      name="password"
+                      type="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      placeholder="New password"
+                      error={error}
+                    />
 
-                  <div className="relative w-full flex flex-col justify-start items-start gap-1">
-                    <label className="font-inter font-medium text-white/90 ml-2 text-sm">Verify Password</label>
-                    <div className="relative w-full">
-                      <input
-                        name="confirmPassword"
-                        onChange={handleChange}
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Repeat new password"
-                        className={`w-full px-4 py-3 bg-white/10 border-2 rounded-2xl transition-all ${
-                          formData.confirmPassword && formData.password !== formData.confirmPassword 
+                    <Input
+                      label="Verify Password"
+                      name="confirmPassword"
+                      type="password"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      placeholder="Repeat new password"
+                      error={error}
+                      className={
+                        formData.confirmPassword && formData.password !== formData.confirmPassword 
                           ? "border-red-500/50" 
-                          : "border-white/20 focus:border-purple-main"
-                        }`}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-white/60"
-                      >
-                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                      </button>
-                    </div>
-                    {error?.field === "confirmPassword" && (
-                      <span className="text-red-400 text-xs ml-2">{error.message}</span>
-                    )}
+                          : ""
+                      }
+                    />
                   </div>
                   <p className="text-center text-sm text-white/85">
                     Forgot your password? Click <Link to="/forgot-password" className="text-white font-bold cursor-pointer hover:underline" >here</Link> to reset it

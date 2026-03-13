@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { resetPasswordSchema } from "./schemas/signUpSchema";
 import { Button } from "../../components/Button";
 import { Input } from "../../components/Input";
+import { Banner } from "../../components/Banner";
 
 export default function ResetPassword() {
   const navigate = useNavigate();
@@ -77,14 +78,11 @@ export default function ResetPassword() {
 
   return (
     <div className="relative w-full bg-cover bg-blue-background flex flex-col justify-start items-center overflow-x-hidden pb-12">
-      <div className="relative w-full h-fit py-5 bg-purple-main flex flex-col justify-start items-center">
-        <h1 className="relative text-8xl text-white font-bold font-inter uppercase tracking-tighter">RESET PASSWORD</h1>
-        <h2 className="relative mt-2 text-4xl text-white font-semibold font-inter text-center px-4">TYPE YOUR NEW PASSWORD</h2>
-      </div>
+      <Banner title="RESET PASSWORD" subtitle="TYPE YOUR NEW PASSWORD" />
 
       <form 
         onSubmit={handleSubmit}
-        className="relative mt-8 flex flex-col justify-start items-center gap-4"
+        className="relative flex flex-col justify-start items-center gap-4"
       >
         <div className="w-40 h-40 flex justify-center items-center shadow-2xl mb-2 border-4 border-white/10 rounded-3xl bg-white/5 transition-all duration-300 hover:scale-105">
           <KeyRound 

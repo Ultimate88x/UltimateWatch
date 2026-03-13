@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/Button";
 import ListMedia from "../components/content/ListMedia";
+import { Banner } from "../components/Banner";
 
 type Media = {
   id: number;
@@ -62,11 +63,9 @@ export default function Home() {
 
   return (
     <div className="relative w-full bg-cover bg-blue-background flex flex-col justify-start items-center overflow-x-hidden">
-      <div className="relative w-full h-fit py-5 bg-purple-main flex flex-col justify-start items-center">
-        <h1 className="relative text-8xl text-white font-bold font-inter">ULTIMATEWATCH</h1>
-        <h2 className="relative mt-2 text-4xl text-white font-semibold font-inter">WELCOME BACK! WE'VE BEEN WAITING FOR YOU!</h2>
-      </div>
-      <div className="relative mt-10 w-full h-fit px-20 flex flex-col justify-start items-start gap-8">
+      <Banner subtitle="WELCOME BACK! WE'VE BEEN WAITING FOR YOU!" />
+      
+      <div className="relative w-full h-fit px-20 flex flex-col justify-start items-start gap-8">
         <ListMedia title="Top-Rated Movies" mediaItems={MOCK_MOVIES} />
   
         <ListMedia title="Top-Rated Series" mediaItems={MOCK_MOVIES} />

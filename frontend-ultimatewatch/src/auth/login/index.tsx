@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Button } from "../../components/Button";
 import { Input } from "../../components/Input";
+import { Banner } from "../../components/Banner";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -61,14 +62,11 @@ export default function Login() {
 
   return (
     <div className="relative w-full bg-cover bg-blue-background flex flex-col justify-start items-center overflow-x-hidden">
-      <div className="relative w-full h-fit py-5 bg-purple-main flex flex-col justify-start items-center">
-          <h1 className="relative text-8xl text-white font-bold font-inter">LOGIN</h1>
-          <h2 className="relative mt-2 text-4xl text-white font-semibold font-inter">WELCOME BACK! WE MISSED YOU!</h2>
-      </div>
+      <Banner title="LOGIN" subtitle="WELCOME BACK! WE MISSED YOU!" />
 
       <form 
         onSubmit={handleSubmit}
-        className="relative mt-10 flex flex-col justify-start items-center gap-4">
+        className="relative flex flex-col justify-start items-center gap-4">
           <img 
             className="w-40 h-40 rounded-full shadow-2xl mb-2 object-cover border-4 border-white/10 transition-all duration-300 group-hover:opacity-70" 
             src={"https://cdn-icons-png.flaticon.com/512/149/149071.png"} 

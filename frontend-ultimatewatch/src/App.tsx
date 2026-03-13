@@ -9,6 +9,7 @@ import ResetPassword from "./auth/resetPassword";
 import { Toaster } from "react-hot-toast";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import PublicRoute from "./components/auth/PublicRoute";
+import Home from "./home";
 
 function App() {
   return (
@@ -43,6 +44,7 @@ function App() {
             <Route path="/profile" element={<UserDetails />} />
           </Route>
 
+          <Route path="/" element={<Home />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
         </Routes>

@@ -9,6 +9,7 @@ import { SeedModule } from './common/seed/seed.module';
 import { CloudinaryModule } from './common/cloudinary/cloudinary.module';
 import { EmailModule } from './email/email.module';
 import { SeriesModule } from './series/series.module';
+import { TmdbapiModule } from './tmdbapi/tmdbapi.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { SeriesModule } from './series/series.module';
     CloudinaryModule,
     EmailModule,
     SeriesModule,
+    TmdbapiModule,
   ],
   controllers: [AppController],
   providers: [AppService],

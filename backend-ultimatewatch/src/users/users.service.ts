@@ -23,7 +23,7 @@ export class UsersService {
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = (await bcrypt.hash(
-      dto.password as string,
+      dto.password,
       salt,
     )) as unknown as string;
 

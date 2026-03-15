@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
-import { TmdbapiService } from './tmdbapi.service';
+import { TmdbApiService } from './tmdbapi.service';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
-  providers: [TmdbapiService]
+  imports: [HttpModule],
+  providers: [TmdbApiService],
 })
 export class TmdbapiModule {}

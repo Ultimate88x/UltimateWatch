@@ -1,15 +1,50 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ConfigurationError } from 'src/common/exceptions/configuration-error';
+import { SeriesListResponseDto } from './dto/series/series-list-response-dto';
+import { catchError, firstValueFrom } from 'rxjs';
+import { AxiosError, AxiosResponse } from 'axios';
 
 @Injectable()
-export class TmdbapiService {
-  constructor(private configService: ConfigService) {
-    const apiKey: string | undefined =
-      this.configService.get<string>('TMDB_API_KEY');
+export class TmdbApiService {
+  private readonly apiKey: string;
 
-    if (!apiKey) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly httpService: HttpService,
+  ) {
+    const key = this.configService.get<string>('TMDB_API_KEY');
+
+    if (!key) {
       throw new ConfigurationError('Tmdb Configuration');
     }
+
+    this.apiKey = key;
+  }
+
+  async getSeriesListFromTmdb() {
+    const url = 'https://api.themoviedb.org/3/discover/tv';
+    const options = {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+    };
+    const response: AxiosResponse<SeriesListResponseDto> = await firstValueFrom(
+      this.httpService.get<SeriesListResponseDto>(url, options).pipe(
+        catchError((error: AxiosError) => {
+          throw new Error(
+            `TMDB API Error: ${error.response?.statusText || 'Unknown Error'}`,
+          );
+        }),
+      ),
+    );
+
+    return response.data;
   }
 }

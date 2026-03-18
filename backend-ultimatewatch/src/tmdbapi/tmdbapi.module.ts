@@ -7,4 +7,4 @@ import { HttpModule } from '@nestjs/axios';
   providers: [TmdbApiService],
   exports: [TmdbApiService],
 })
-export class TmdbapiModule {}
+export class TmdbApiModule {}

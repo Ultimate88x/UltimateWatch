@@ -1,7 +1,8 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import sgMail from '@sendgrid/mail';
 import { ConfigurationError } from 'src/common/exceptions/configuration-error';
+import { ExternalApiError } from 'src/common/exceptions/external-api-error';
 
 @Injectable()
 export class EmailService {
@@ -58,9 +59,7 @@ export class EmailService {
       await sgMail.send(msg);
     } catch (error) {
       console.error('SendGrid error:', error);
-      throw new InternalServerErrorException(
-        'Failed to send the recovery email',
-      );
+      throw new ExternalApiError('Failed to send the recovery email');
     }
   }
 }

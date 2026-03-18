@@ -1,15 +1,34 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { TmdbapiService } from './tmdbapi.service';
+import { TmdbApiService } from './tmdbapi.service';
+import { HttpModule } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
 
-describe('TmdbapiService', () => {
-  let service: TmdbapiService;
+type MockConfig = {
+  TMDB_API_KEY: string;
+};
+
+describe('TmdbApiService', () => {
+  let service: TmdbApiService;
+
+  const mockConfig = {
+    TMDB_API_KEY: 'TMDB.valid_key',
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [TmdbapiService],
+      imports: [HttpModule],
+      providers: [
+        TmdbApiService,
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn((key: string) => mockConfig[key] as MockConfig),
+          },
+        },
+      ],
     }).compile();
 
-    service = module.get<TmdbapiService>(TmdbapiService);
+    service = module.get<TmdbApiService>(TmdbApiService);
   });
 
   it('should be defined', () => {

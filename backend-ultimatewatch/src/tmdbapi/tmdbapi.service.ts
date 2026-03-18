@@ -10,6 +10,7 @@ import { catchError, firstValueFrom } from 'rxjs';
 import { AxiosError, AxiosResponse } from 'axios';
 import { SeriesListDto } from './dto/series/series-list-dto';
 import { TmdbApiSeriesMapper } from './mapper/tmdbapi-series-mapper';
+import { ExternalApiError } from 'src/common/exceptions/external-api-error';
 
 @Injectable()
 export class TmdbApiService {
@@ -40,7 +41,7 @@ export class TmdbApiService {
     const response: AxiosResponse<SeriesListResponseDto> = await firstValueFrom(
       this.httpService.get<SeriesListResponseDto>(url, options).pipe(
         catchError((error: AxiosError) => {
-          throw new Error(
+          throw new ExternalApiError(
             `TMDB API Error: ${error.response?.statusText || 'Unknown Error'}`,
           );
         }),

@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
-import { InternalServerErrorException } from '@nestjs/common';
 import { EmailService } from './email.service';
 import { ConfigurationError } from 'src/common/exceptions/configuration-error';
 import sgMail from '@sendgrid/mail';
+import { ExternalApiError } from 'src/common/exceptions/external-api-error';
 
 jest.mock('@sendgrid/mail', () => ({
   setApiKey: jest.fn(),
@@ -93,14 +93,14 @@ describe('EmailService', () => {
       );
     });
 
-    it('should throw InternalServerErrorException if SendGrid fails', async () => {
+    it('should throw ExternalApiError if SendGrid fails', async () => {
       jest.spyOn(console, 'error').mockImplementation(() => {});
 
       (sgMail.send as jest.Mock).mockRejectedValue(new Error('SendGrid Error'));
 
       await expect(
         service.sendPasswordRecoveryEmail(testEmail, testUsername, testToken),
-      ).rejects.toThrow(InternalServerErrorException);
+      ).rejects.toThrow(ExternalApiError);
     });
   });
 });

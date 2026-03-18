@@ -1,9 +1,15 @@
+/* eslint-disable @typescript-eslint/no-redundant-type-constituents */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Injectable } from '@nestjs/common';
 import { v2 as cloudinary } from 'cloudinary';
 import { UploadApiResponse, UploadApiErrorResponse } from 'cloudinary';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { UpdateUserDto } from 'src/users/dto/update-user.dto';
 import { Readable } from 'stream';
+import { ExternalApiError } from '../exceptions/external-api-error';
 
 @Injectable()
 export class CloudinaryService {
@@ -21,7 +27,7 @@ export class CloudinaryService {
         (error, result) => {
           if (error)
             return reject(
-              new Error(error.message || 'Cloudinary upload failed'),
+              new ExternalApiError(error.message || 'Cloudinary upload failed'),
             );
           if (result) resolve(result);
         },
@@ -41,14 +47,14 @@ export class CloudinaryService {
       };
 
       if (result.result !== 'ok' && result.result !== 'not_found') {
-        throw new Error('Cloudinary delete failed');
+        throw new ExternalApiError('Cloudinary delete failed');
       }
 
       return result;
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Cloudinary delete failed';
-      throw new Error(message);
+      throw new ExternalApiError(message);
     }
   }
 

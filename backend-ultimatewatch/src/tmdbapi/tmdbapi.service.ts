@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -29,13 +26,17 @@ export class TmdbApiService {
     this.apiKey = key;
   }
 
-  async getSeriesListFromTmdb() {
+  async getSeriesListFromTmdb(page: number = 1) {
     const url = 'https://api.themoviedb.org/3/discover/tv';
     const options = {
       method: 'GET',
       headers: {
         accept: 'application/json',
         Authorization: `Bearer ${this.apiKey}`,
+      },
+      params: {
+        include_adult: false,
+        page: page,
       },
     };
     const response: AxiosResponse<SeriesListResponseDto> = await firstValueFrom(

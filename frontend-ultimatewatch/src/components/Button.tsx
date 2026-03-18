@@ -71,7 +71,7 @@ const variants = {
         {children}
       </span>
       
-      {isLoading && <span className="absolute inset-0 flex items-center justify-center">Processing...</span>}
+      {isLoading && <span className="absolute inset-0 flex items-center justify-center">Loading...</span>}
     </button>
   );
 };

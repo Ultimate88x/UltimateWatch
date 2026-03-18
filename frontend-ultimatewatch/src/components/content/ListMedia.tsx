@@ -1,8 +1,4 @@
-interface Media {
-  id: number;
-  title: string;
-  posterPath: string;
-}
+import type { Media } from "../../types/media";
 
 interface ListMediaProps {
   title: string;

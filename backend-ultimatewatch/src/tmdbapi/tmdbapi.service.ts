@@ -8,6 +8,8 @@ import { ConfigurationError } from 'src/common/exceptions/configuration-error';
 import { SeriesListResponseDto } from './dto/series/series-list-response-dto';
 import { catchError, firstValueFrom } from 'rxjs';
 import { AxiosError, AxiosResponse } from 'axios';
+import { SeriesListDto } from './dto/series/series-list-dto';
+import { TmdbApiSeriesMapper } from './mapper/tmdbapi-series-mapper';
 
 @Injectable()
 export class TmdbApiService {
@@ -45,6 +47,9 @@ export class TmdbApiService {
       ),
     );
 
-    return response.data;
+    const seriesList: SeriesListDto[] =
+      TmdbApiSeriesMapper.seriesListResponseDtoToSeriesListDto(response.data);
+
+    return seriesList;
   }
 }

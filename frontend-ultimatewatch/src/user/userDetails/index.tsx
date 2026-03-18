@@ -81,6 +81,11 @@ export default function UserDetails() {
       title: "Mad Max: Fury Road",
       posterPath: "https://images.unsplash.com/photo-1509281373149-e957c6296406?auto=format&fit=crop&q=80&w=400",
     },
+    {
+      id: 6,
+      title: "The Martian",
+      posterPath: "https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?auto=format&fit=crop&q=80&w=400",
+    },
   ];
 
   const MOCK_COLLECTIONS: Collection[] = [
@@ -553,9 +558,9 @@ export default function UserDetails() {
       </div>
 
       <div className="relative max-w-2/3 flex flex-1 flex-col justify-start items-start gap-8">
-        <ListMedia title="Last Watched" mediaItems={MOCK_MOVIES} />
+        <ListMedia title="Last Watched" mediaItems={MOCK_MOVIES} columns={6} />
   
-        <ListMedia title="Highest Rated" mediaItems={MOCK_MOVIES} />
+        <ListMedia title="Highest Rated" mediaItems={MOCK_MOVIES} columns={6} />
 
         <ListCollection title="Public Collections" collections={MOCK_COLLECTIONS} />
       </div>

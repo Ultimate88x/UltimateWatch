@@ -1,6 +1,6 @@
 export class SeriesListDto {
-  tmdbId: number;
-  name: string;
+  id: number;
+  title: string;
   posterPath: string;
   firstAirDate: string;
 }

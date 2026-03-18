@@ -7,16 +7,22 @@ interface Media {
 interface ListMediaProps {
   title: string;
   mediaItems: Media[];
+  columns?: number;
 }
 
-const ListMedia = ({ title, mediaItems }: ListMediaProps) => {
+const ListMedia = ({ title, mediaItems, columns = 9 }: ListMediaProps) => {
   return (
     <div className="relative h-fit flex flex-col justify-start items-start gap-4">
       <h2 className="relative text-4xl text-white font-bold font-inter uppercase">
         {title}
       </h2>
 
-      <div className="relative w-full h-fit flex flex-row justify-start items-start gap-4 pb-4">
+      <div 
+        className="relative w-full h-fit grid gap-4 pb-4"
+        style={{ 
+          gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` 
+        }}
+      >
         {mediaItems.map((media) => (
           <div key={media.id} className="relative w-44 h-68 cursor-pointer group">
             <img

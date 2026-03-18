@@ -10,6 +10,7 @@ import { Toaster } from "react-hot-toast";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import PublicRoute from "./components/auth/PublicRoute";
 import Home from "./home";
+import SeriesList from "./series/list";
 
 function App() {
   return (
@@ -47,6 +48,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/series" element={<SeriesList />} />
         </Routes>
       </main>
 

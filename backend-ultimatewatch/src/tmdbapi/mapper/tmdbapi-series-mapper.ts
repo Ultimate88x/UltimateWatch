@@ -14,9 +14,9 @@ export class TmdbApiSeriesMapper {
   ): SeriesListDto[] {
     return response.results.map(
       (tmdbSeries: TmdbSeriesResult): SeriesListDto => ({
-        tmdbId: tmdbSeries.id,
-        name: tmdbSeries.name,
-        posterPath: tmdbSeries.poster_path,
+        id: tmdbSeries.id,
+        title: tmdbSeries.name,
+        posterPath: 'https://image.tmdb.org/t/p/w500' + tmdbSeries.poster_path,
         firstAirDate: tmdbSeries.first_air_date,
       }),
     );

@@ -9,7 +9,7 @@ import { SeedModule } from './common/seed/seed.module';
 import { CloudinaryModule } from './common/cloudinary/cloudinary.module';
 import { EmailModule } from './email/email.module';
 import { SeriesModule } from './series/series.module';
-import { TmdbApiModule } from './tmdbapi/tmdbapi.module';
+import { TmdbApiModule } from './common/tmdbapi/tmdbapi.module';
 
 @Module({
   imports: [

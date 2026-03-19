@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { SeriesListDto } from 'src/tmdbapi/dto/series/series-list-dto';
-import { TmdbApiService } from 'src/tmdbapi/tmdbapi.service';
+import { SeriesListDto } from 'src/common/tmdbapi/dto/series/series-list-dto';
+import { TmdbApiService } from 'src/common/tmdbapi/tmdbapi.service';
 
 @Injectable()
 export class SeriesService {

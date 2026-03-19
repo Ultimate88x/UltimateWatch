@@ -1,7 +1,7 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { SeriesService } from './series.service';
 import { TmdbApiService } from 'src/common/tmdbapi/tmdbapi.service';
-import { SeriesListDto } from 'src/common/tmdbapi/dto/series/series-list-dto';
+import { TmdbListMediaDto } from 'src/common/tmdbapi/dto/media/media-list-dto';
 
 @Controller('series')
 export class SeriesController {
@@ -13,8 +13,8 @@ export class SeriesController {
   @Get('tmdb-list')
   async getTmdbSeries(
     @Query('page') page: string = '1',
-  ): Promise<SeriesListDto[]> {
-    const data: SeriesListDto[] =
+  ): Promise<TmdbListMediaDto[]> {
+    const data: TmdbListMediaDto[] =
       await this.seriesService.getSeriesListForWholePage(+page);
     return data;
   }

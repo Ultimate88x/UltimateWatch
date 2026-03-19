@@ -1,4 +1,4 @@
-export class SeriesListDto {
+export class TmdbListMediaDto {
   id: number;
   title: string;
   posterPath: string;

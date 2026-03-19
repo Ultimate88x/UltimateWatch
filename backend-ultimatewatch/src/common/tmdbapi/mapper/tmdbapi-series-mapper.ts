@@ -1,5 +1,5 @@
-import { SeriesListDto } from '../dto/series/series-list-dto';
-import { SeriesListResponseDto } from '../dto/series/series-list-response-dto';
+import { TmdbListMediaDto } from '../dto/media/media-list-dto';
+import { TmdbListResponseDto } from '../dto/media/tmdb-list-response-dto';
 
 type TmdbSeriesResult = {
   id: number;
@@ -8,12 +8,12 @@ type TmdbSeriesResult = {
   first_air_date: string;
 };
 
-export class TmdbApiSeriesMapper {
+export class TmdbApiListMediaMapper {
   static seriesListResponseDtoToSeriesListDto(
-    response: SeriesListResponseDto,
-  ): SeriesListDto[] {
+    response: TmdbListResponseDto,
+  ): TmdbListMediaDto[] {
     return response.results.map(
-      (tmdbSeries: TmdbSeriesResult): SeriesListDto => ({
+      (tmdbSeries: TmdbSeriesResult): TmdbListMediaDto => ({
         id: tmdbSeries.id,
         title: tmdbSeries.name,
         posterPath: 'https://image.tmdb.org/t/p/w500' + tmdbSeries.poster_path,

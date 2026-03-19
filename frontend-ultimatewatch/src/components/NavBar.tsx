@@ -1,9 +1,18 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ChevronDown, Search, User, Film, Tv, MonitorPlay, } from "lucide-react";
 
 export default function Navbar() {
+  const navigate = useNavigate();
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+
+  const searchOptions = {
+    "Movies": "movie",
+    "Series": "tv",
+  }
+
+  const [searchMedia, setSearchMedia] = useState<string>(searchOptions.Movies);
+  const [searchText, setSearchText] = useState<string>("");
 
   const toggleMenu = (menu: string) => {
     setOpenMenu(openMenu === menu ? null : menu);
@@ -21,6 +30,14 @@ export default function Navbar() {
     ],
     social: [
     ]
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchText.trim()) return;
+
+    const url = `search-results?media=${searchMedia}&query=${encodeURIComponent(searchText)}`;
+    navigate(url);
   };
 
   return (
@@ -65,15 +82,41 @@ export default function Navbar() {
       </div>
 
       <div className="flex flex-1 justify-end items-center gap-6">
-        
-        <div className="relative w-full max-w-xl group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-black/60 group-focus-within:text-purple-main transition-colors z-10" size={20} />
+        <form 
+          className="relative w-2/3 flex items-center bg-white/70 backdrop-blur-md border border-white/10 rounded-xl focus-within:bg-white focus-within:ring-2 focus-within:ring-purple-main/20 transition-all group overflow-hidden"
+          onSubmit={handleSubmit}
+        >
+          <div className="relative flex items-center px-4 border-r border-black/10">
+            <select 
+              className="appearance-none bg-transparent pl-2 pr-8 py-2.5 text-xs font-bold uppercase tracking-wider text-black/70 cursor-pointer focus:outline-none hover:text-purple-main transition-colors"
+              onChange={(e) => setSearchMedia(e.target.value)}
+              value={searchMedia}
+            >
+              {Object.entries(searchOptions).map(([label, value]) => (
+                  <option key={value} value={value} className="bg-white text-black">
+                    {label}
+                  </option>
+                ))}
+            </select>
+            <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+              <ChevronDown size={14} className="text-black/40" />
+            </div>
+          </div>
+
           <input 
             type="text" 
             placeholder="Search for content..." 
-            className="w-full py-2.5 pl-12 pr-4 bg-white/70 border rounded-xl border-white/10 cursor-text focus:outline-none focus:bg-white text-sm text-black placeholder:text-black/60 focus:text-gray-900 transition-all"
+            className="flex-1 py-2.5 px-4 bg-transparent cursor-text focus:outline-none text-sm text-black placeholder:text-black/50 transition-all"
+            onChange={(e) => setSearchText(e.target.value)}
           />
-        </div>
+
+          <button className="h-full px-5 py-2.5 text-purple-main transition-all flex items-center justify-center cursor-pointer group-focus-within:shadow-[-5px_0_15px_rgba(168,85,247,0.2)]">
+            <Search 
+              className="transition-transform group-hover:scale-110" 
+              size={18} 
+            />
+          </button>
+        </form>
 
         <Link 
           to="/profile" 

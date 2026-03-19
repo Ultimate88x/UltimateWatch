@@ -10,8 +10,8 @@ import { Toaster } from "react-hot-toast";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import PublicRoute from "./components/auth/PublicRoute";
 import Home from "./home";
-import SeriesList from "./series/list";
-import MovieList from "./movies/list";
+import SeriesList from "./content/series/list";
+import MovieList from "./content/movies/list";
 
 function App() {
   return (

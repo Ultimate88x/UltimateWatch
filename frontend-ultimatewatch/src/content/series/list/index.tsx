@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
-import ListMedia from "../../components/content/ListMedia";
+import ListMedia from "../../../components/content/ListMedia";
 import toast from "react-hot-toast";
-import { Button } from "../../components/Button";
+import { Button } from "../../../components/Button";
 import { Plus } from "lucide-react";
-import type { Media } from "../../types/media";
+import type { Media } from "../../../types/media";
 import { motion } from "framer-motion";
 
-export default function MovieList() {
+export default function SeriesList() {
   const [page, setPage] = useState(1);
-  const [movieList, setMovieList] = useState<Media[]>([]);
+  const [seriesList, setSeriesList] = useState<Media[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -18,7 +18,7 @@ export default function MovieList() {
 
       try {
         const [response] = await Promise.all([
-          fetch(`http://localhost:3000/movies/tmdb-list?page=${page}`, {
+          fetch(`http://localhost:3000/series/tmdb-list?page=${page}`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json'
@@ -35,11 +35,11 @@ export default function MovieList() {
         }
 
         if (page === 1) {
-          const topMovies = data.slice(0, 27); 
-          const imagePromises = topMovies.map((movie: Media) => {
+          const topSeries = data.slice(0, 27); 
+          const imagePromises = topSeries.map((series: Media) => {
             return new Promise((resolve) => {
               const img = new Image();
-              img.src = movie.posterPath;
+              img.src = series.posterPath;
               img.onload = resolve;
               img.onerror = resolve;
               setTimeout(resolve, 500);
@@ -49,7 +49,7 @@ export default function MovieList() {
           await Promise.all(imagePromises);
         }
 
-        setMovieList((prev) => {
+        setSeriesList((prev) => {
           const existingIds = new Set(prev.map(s => s.id));
           const uniqueNewData = data.filter((item: Media) => !existingIds.has(item.id));
           return [...prev, ...uniqueNewData];
@@ -65,7 +65,7 @@ export default function MovieList() {
     fetchUser();
   }, [page]);
 
-  if (isLoading && movieList.length === 0) {
+  if (isLoading && seriesList.length === 0) {
     return (
       <div className="fixed inset-0 bg-blue-background flex flex-col items-center justify-center">
         <motion.div
@@ -93,9 +93,9 @@ export default function MovieList() {
   return (
     <div className="relative w-full min-h-screen bg-cover bg-blue-background flex flex-col justify-start items-start overflow-x-hidden">
       <div className="relative w-full h-fit px-20 flex flex-col justify-start items-start gap-8">
-        <ListMedia title={"DISCOVER MOVIES"} mediaItems={movieList} />
+        <ListMedia title={"DISCOVER SERIES"} mediaItems={seriesList} />
 
-        {movieList.length > 0 && (<div className="relative w-full -mt-40 pt-40 flex justify-center bg-linear-to-t from-blue-background via-blue-background/90 to-transparent z-10">
+        {seriesList.length > 0 && (<div className="relative w-full -mt-40 pt-40 flex justify-center bg-linear-to-t from-blue-background via-blue-background/90 to-transparent z-10">
           <Button
             variant="ghost"
             size="lg"

@@ -1,15 +1,20 @@
 import { useEffect, useState } from "react";
-import ListMedia from "../../../components/content/ListMedia";
+import ListMedia from "../../components/content/ListMedia";
 import toast from "react-hot-toast";
-import { Button } from "../../../components/Button";
+import { Button } from "../../components/Button";
 import { Plus } from "lucide-react";
-import type { Media } from "../../../types/media";
+import type { Media } from "../../types/media";
 import { motion } from "framer-motion";
+import { useSearchParams } from "react-router-dom";
 
-export default function SeriesList() {
+export default function SearchResultsList() {
   const [page, setPage] = useState(1);
   const [mediaList, setMediaList] = useState<Media[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  const [searchParams] = useSearchParams();
+  const media = searchParams.get('media');
+  const query = searchParams.get('query');
 
   useEffect(() => {
     const fetchMedia = async () => {
@@ -18,7 +23,7 @@ export default function SeriesList() {
 
       try {
         const [response] = await Promise.all([
-          fetch(`http://localhost:3000/series/tmdb-list?page=${page}`, {
+          fetch(`http://localhost:3000/${media}/tmdb-search?query=${query}&page=${page}`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json'
@@ -35,11 +40,11 @@ export default function SeriesList() {
         }
 
         if (page === 1) {
-          const topSeries = data.slice(0, 27); 
-          const imagePromises = topSeries.map((series: Media) => {
+          const topMovies = data.slice(0, 27); 
+          const imagePromises = topMovies.map((movie: Media) => {
             return new Promise((resolve) => {
               const img = new Image();
-              img.src = series.posterPath;
+              img.src = movie.posterPath;
               img.onload = resolve;
               img.onerror = resolve;
               setTimeout(resolve, 500);
@@ -50,6 +55,8 @@ export default function SeriesList() {
         }
 
         setMediaList((prev) => {
+          if (page === 1) return data;
+
           const existingIds = new Set(prev.map(s => s.id));
           const uniqueNewData = data.filter((item: Media) => !existingIds.has(item.id));
           return [...prev, ...uniqueNewData];
@@ -63,7 +70,12 @@ export default function SeriesList() {
     };
 
     fetchMedia();
-  }, [page]);
+  }, [media, page, query]);
+
+  useEffect(() => {
+    setPage(1);
+    setMediaList([]);
+  }, [media, query]);
 
   if (isLoading && mediaList.length === 0) {
     return (
@@ -93,7 +105,7 @@ export default function SeriesList() {
   return (
     <div className="relative w-full min-h-screen bg-cover bg-blue-background flex flex-col justify-start items-start overflow-x-hidden">
       <div className="relative w-full h-fit px-20 flex flex-col justify-start items-start gap-8">
-        <ListMedia title={"DISCOVER SERIES"} mediaItems={mediaList} />
+        <ListMedia title={`SEARCH RESULTS FOR: ${media} - ${query}`} mediaItems={mediaList} />
 
         {mediaList.length > 0 && (<div className="relative w-full -mt-40 pt-40 flex justify-center bg-linear-to-t from-blue-background via-blue-background/90 to-transparent z-10">
           <Button
@@ -105,7 +117,7 @@ export default function SeriesList() {
             className="w-80 border border-purple-main/20 hover:border-purple-main/50 rounded-full hover:bg-purple-main/10 text-white/80 hover:text-white transition-all duration-300 shadow-[0_0_10px_rgba(168,85,247,0)] hover:shadow-[0_0_20px_rgba(168,85,247,0.3)] [&_svg]:hover:rotate-180"
             onClick={() => setPage((prev) => prev + 1)}
           >
-            Explore More Titles
+            Load More Results
           </Button>
         </div>)}
       </div>

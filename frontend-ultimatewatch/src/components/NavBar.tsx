@@ -7,8 +7,8 @@ export default function Navbar() {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
   const searchOptions = {
-    "Movies": "movie",
-    "Series": "tv",
+    "Movies": "movies",
+    "Series": "series",
   }
 
   const [searchMedia, setSearchMedia] = useState<string>(searchOptions.Movies);

@@ -8,11 +8,11 @@ import { motion } from "framer-motion";
 
 export default function MovieList() {
   const [page, setPage] = useState(1);
-  const [movieList, setMovieList] = useState<Media[]>([]);
+  const [mediaList, setMediaList] = useState<Media[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchMedia = async () => {
       setIsLoading(true);
       const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -30,7 +30,7 @@ export default function MovieList() {
         const data = await response.json();
 
         if (!response.ok) {
-          toast.error(data.message || 'Failed to fetch series');
+          toast.error(data.message || 'Failed to fetch media');
           return;
         }
 
@@ -49,7 +49,7 @@ export default function MovieList() {
           await Promise.all(imagePromises);
         }
 
-        setMovieList((prev) => {
+        setMediaList((prev) => {
           const existingIds = new Set(prev.map(s => s.id));
           const uniqueNewData = data.filter((item: Media) => !existingIds.has(item.id));
           return [...prev, ...uniqueNewData];
@@ -62,10 +62,10 @@ export default function MovieList() {
       }
     };
 
-    fetchUser();
+    fetchMedia();
   }, [page]);
 
-  if (isLoading && movieList.length === 0) {
+  if (isLoading && mediaList.length === 0) {
     return (
       <div className="fixed inset-0 bg-blue-background flex flex-col items-center justify-center">
         <motion.div
@@ -93,9 +93,9 @@ export default function MovieList() {
   return (
     <div className="relative w-full min-h-screen bg-cover bg-blue-background flex flex-col justify-start items-start overflow-x-hidden">
       <div className="relative w-full h-fit px-20 flex flex-col justify-start items-start gap-8">
-        <ListMedia title={"DISCOVER MOVIES"} mediaItems={movieList} />
+        <ListMedia title={"DISCOVER MOVIES"} mediaItems={mediaList} />
 
-        {movieList.length > 0 && (<div className="relative w-full -mt-40 pt-40 flex justify-center bg-linear-to-t from-blue-background via-blue-background/90 to-transparent z-10">
+        {mediaList.length > 0 && (<div className="relative w-full -mt-40 pt-40 flex justify-center bg-linear-to-t from-blue-background via-blue-background/90 to-transparent z-10">
           <Button
             variant="ghost"
             size="lg"

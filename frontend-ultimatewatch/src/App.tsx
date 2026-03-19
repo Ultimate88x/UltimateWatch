@@ -12,6 +12,7 @@ import PublicRoute from "./components/auth/PublicRoute";
 import Home from "./home";
 import SeriesList from "./content/series/list";
 import MovieList from "./content/movies/list";
+import SearchResultsList from "./content/searchResults";
 
 function App() {
   return (
@@ -51,6 +52,7 @@ function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/series" element={<SeriesList />} />
           <Route path="/movies" element={<MovieList />} />
+          <Route path="/search-results" element={<SearchResultsList />} />
         </Routes>
       </main>
 

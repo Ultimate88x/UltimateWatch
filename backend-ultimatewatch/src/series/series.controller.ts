@@ -1,7 +1,7 @@
 import { BadRequestException, Controller, Get, Query } from '@nestjs/common';
 import { SeriesService } from './series.service';
 import { TmdbApiService } from 'src/common/tmdbapi/tmdbapi.service';
-import { TmdbListMediaDto } from 'src/common/tmdbapi/dto/media/media-list-dto';
+import { TmdbListMediaDto } from 'src/common/tmdbapi/dto/media/tmdb-media-list-dto';
 
 @Controller('series')
 export class SeriesController {

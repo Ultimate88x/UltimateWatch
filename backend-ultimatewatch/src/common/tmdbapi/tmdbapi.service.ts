@@ -9,9 +9,10 @@ import {
 } from './dto/media/tmdb-list-response-dto';
 import { catchError, firstValueFrom } from 'rxjs';
 import { AxiosError, AxiosResponse } from 'axios';
-import { TmdbListMediaDto } from './dto/media/media-list-dto';
-import { TmdbApiListMediaMapper } from './mapper/tmdbapi-series-mapper';
+import { TmdbListMediaDto } from './dto/media/tmdb-media-list-dto';
+import { TmdbApiMapper } from './mapper/tmdbapi-mapper';
 import { ExternalApiError } from 'src/common/exceptions/external-api-error';
+import { TmdbMovieDto } from './dto/media/tmdb-movie-dto';
 
 @Injectable()
 export class TmdbApiService {
@@ -58,9 +59,7 @@ export class TmdbApiService {
     );
 
     const seriesList: TmdbListMediaDto[] =
-      TmdbApiListMediaMapper.tmdbListSeriesResultDtoToTmdbListMediaDto(
-        response.data,
-      );
+      TmdbApiMapper.tmdbListSeriesResultDtoToTmdbListMediaDto(response.data);
 
     return seriesList;
   }
@@ -93,9 +92,7 @@ export class TmdbApiService {
     );
 
     const seriesList: TmdbListMediaDto[] =
-      TmdbApiListMediaMapper.tmdbListMoviesResultDtoToTmdbListMediaDto(
-        response.data,
-      );
+      TmdbApiMapper.tmdbListMoviesResultDtoToTmdbListMediaDto(response.data);
 
     return seriesList;
   }
@@ -129,9 +126,7 @@ export class TmdbApiService {
     );
 
     const seriesList: TmdbListMediaDto[] =
-      TmdbApiListMediaMapper.tmdbListSeriesResultDtoToTmdbListMediaDto(
-        response.data,
-      );
+      TmdbApiMapper.tmdbListSeriesResultDtoToTmdbListMediaDto(response.data);
 
     return seriesList;
   }
@@ -165,10 +160,32 @@ export class TmdbApiService {
     );
 
     const movieList: TmdbListMediaDto[] =
-      TmdbApiListMediaMapper.tmdbListMoviesResultDtoToTmdbListMediaDto(
-        response.data,
-      );
+      TmdbApiMapper.tmdbListMoviesResultDtoToTmdbListMediaDto(response.data);
 
     return movieList;
+  }
+
+  async getMovieFromTmdb(id: number) {
+    const url = `https://api.themoviedb.org/3/movie/${id}`;
+    const options = {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+    };
+    const response: AxiosResponse<TmdbMovieDto> = await firstValueFrom(
+      this.httpService.get<TmdbMovieDto>(url, options).pipe(
+        catchError((error: AxiosError) => {
+          throw new ExternalApiError(
+            `TMDB API Error: ${error.response?.statusText || 'Unknown Error'}`,
+          );
+        }),
+      ),
+    );
+
+    const movie: TmdbMovieDto = response.data;
+
+    return movie;
   }
 }

@@ -1,7 +1,13 @@
-import { BadRequestException, Controller, Get, Query } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  Param,
+  Query,
+} from '@nestjs/common';
 import { TmdbApiService } from 'src/common/tmdbapi/tmdbapi.service';
 import { MoviesService } from './movies.service';
-import { TmdbListMediaDto } from 'src/common/tmdbapi/dto/media/media-list-dto';
+import { TmdbListMediaDto } from 'src/common/tmdbapi/dto/media/tmdb-media-list-dto';
 
 @Controller('movies')
 export class MoviesController {
@@ -11,7 +17,7 @@ export class MoviesController {
   ) {}
 
   @Get('tmdb-list')
-  async getTmdbSeries(
+  async getTmdbMovies(
     @Query('page') page: string = '1',
   ): Promise<TmdbListMediaDto[]> {
     const data: TmdbListMediaDto[] =
@@ -20,7 +26,7 @@ export class MoviesController {
   }
 
   @Get('tmdb-search')
-  async searchTmdbSeries(
+  async searchTmdbMovies(
     @Query('query') query: string,
     @Query('page') page: string = '1',
   ): Promise<TmdbListMediaDto[]> {
@@ -30,6 +36,12 @@ export class MoviesController {
 
     const data: TmdbListMediaDto[] =
       await this.moviesService.searchMoviesForWholePage(query, +page);
+    return data;
+  }
+
+  @Get(':id')
+  async getMovieByTmdbId(@Param('id') id: string) {
+    const data = await this.moviesService.findMovieFromTmdbId(+id);
     return data;
   }
 }

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import * as bcrypt from 'bcrypt';
+import { Movie } from 'src/movies/entities/movie.entity';
 
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
@@ -11,6 +12,8 @@ export class SeedService implements OnApplicationBootstrap {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Movie)
+    private readonly movieRepository: Repository<Movie>,
   ) {}
 
   async onApplicationBootstrap() {
@@ -20,6 +23,9 @@ export class SeedService implements OnApplicationBootstrap {
   async runSeed() {
     await this.userRepository.query(
       'TRUNCATE TABLE "users" RESTART IDENTITY CASCADE',
+    );
+    await this.movieRepository.query(
+      'TRUNCATE TABLE "movies" RESTART IDENTITY CASCADE',
     );
 
     this.logger.log('Seeding database...');

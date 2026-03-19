@@ -1,10 +1,18 @@
 import { Injectable } from '@nestjs/common';
-import { TmdbListMediaDto } from 'src/common/tmdbapi/dto/media/media-list-dto';
+import { TmdbListMediaDto } from 'src/common/tmdbapi/dto/media/tmdb-media-list-dto';
+import { TmdbApiMapper } from 'src/common/tmdbapi/mapper/tmdbapi-mapper';
 import { TmdbApiService } from 'src/common/tmdbapi/tmdbapi.service';
+import { Movie } from './entities/movie.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class MoviesService {
-  constructor(private readonly tmdbApiService: TmdbApiService) {}
+  constructor(
+    @InjectRepository(Movie)
+    private readonly movieRepository: Repository<Movie>,
+    private readonly tmdbApiService: TmdbApiService,
+  ) {}
 
   private async fetchFourPages(
     page: number,
@@ -32,5 +40,21 @@ export class MoviesService {
     return this.fetchFourPages(page, (p) =>
       this.tmdbApiService.searchMoviesFromTmdb(query, p),
     );
+  }
+
+  async findMovieFromTmdbId(tmdbId: number) {
+    const existingMovie = await this.movieRepository.findOne({
+      where: { tmdbId },
+    });
+
+    if (existingMovie) {
+      existingMovie.popularity++;
+      return await this.movieRepository.save(existingMovie);
+    }
+    const movie = await this.tmdbApiService.getMovieFromTmdb(tmdbId);
+    const mappedMovie = TmdbApiMapper.tmdbMovieDtoToMovie(movie);
+    mappedMovie.popularity = 1;
+
+    return await this.movieRepository.save(mappedMovie);
   }
 }

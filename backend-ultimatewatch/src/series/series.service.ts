@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { TmdbListMediaDto } from 'src/common/tmdbapi/dto/media/media-list-dto';
+import { TmdbListMediaDto } from 'src/common/tmdbapi/dto/media/tmdb-media-list-dto';
 import { TmdbApiService } from 'src/common/tmdbapi/tmdbapi.service';
 
 @Injectable()

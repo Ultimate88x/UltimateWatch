@@ -6,18 +6,31 @@ import { TmdbApiService } from 'src/common/tmdbapi/tmdbapi.service';
 export class MoviesService {
   constructor(private readonly tmdbApiService: TmdbApiService) {}
 
-  async getMovieListForWholePage(page: number = 1) {
+  private async fetchFourPages(
+    page: number,
+    fetchFn: (page: number) => Promise<TmdbListMediaDto[]>,
+  ): Promise<TmdbListMediaDto[]> {
     const finalList: TmdbListMediaDto[] = [];
-
     const startPage = (page - 1) * 4 + 1;
-    for (let i = 0; i < 4; i++) {
-      const newPage = startPage + i;
-      const list: TmdbListMediaDto[] =
-        await this.tmdbApiService.getMovieListFromTmdb(newPage);
 
+    for (let i = 0; i < 4; i++) {
+      const currentPage = startPage + i;
+      const list = await fetchFn(currentPage);
       finalList.push(...list);
     }
 
     return finalList;
+  }
+
+  async getMovieListForWholePage(page: number = 1) {
+    return this.fetchFourPages(page, (p) =>
+      this.tmdbApiService.getMovieListFromTmdb(p),
+    );
+  }
+
+  async searchMoviesForWholePage(query: string, page: number = 1) {
+    return this.fetchFourPages(page, (p) =>
+      this.tmdbApiService.searchMoviesFromTmdb(query, p),
+    );
   }
 }

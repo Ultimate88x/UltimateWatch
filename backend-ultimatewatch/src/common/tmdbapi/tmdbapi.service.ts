@@ -99,4 +99,40 @@ export class TmdbApiService {
 
     return seriesList;
   }
+
+  async searchSeriesFromTmdb(query: string, page: number = 1) {
+    const url = 'https://api.themoviedb.org/3/search/tv';
+    const options = {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+      params: {
+        include_adult: false,
+        query: encodeURIComponent(query),
+        page: page,
+      },
+    };
+    const response: AxiosResponse<
+      TmdbListResponseDto<TmdbListSeriesResultDto>
+    > = await firstValueFrom(
+      this.httpService
+        .get<TmdbListResponseDto<TmdbListSeriesResultDto>>(url, options)
+        .pipe(
+          catchError((error: AxiosError) => {
+            throw new ExternalApiError(
+              `TMDB API Error: ${error.response?.statusText || 'Unknown Error'}`,
+            );
+          }),
+        ),
+    );
+
+    const seriesList: TmdbListMediaDto[] =
+      TmdbApiListMediaMapper.tmdbListSeriesResultDtoToTmdbListMediaDto(
+        response.data,
+      );
+
+    return seriesList;
+  }
 }

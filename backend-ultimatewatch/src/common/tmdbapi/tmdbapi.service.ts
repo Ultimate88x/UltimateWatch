@@ -2,7 +2,11 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ConfigurationError } from 'src/common/exceptions/configuration-error';
-import { TmdbListResponseDto } from './dto/media/tmdb-list-response-dto';
+import {
+  TmdbListMoviesResultDto,
+  TmdbListResponseDto,
+  TmdbListSeriesResultDto,
+} from './dto/media/tmdb-list-response-dto';
 import { catchError, firstValueFrom } from 'rxjs';
 import { AxiosError, AxiosResponse } from 'axios';
 import { TmdbListMediaDto } from './dto/media/media-list-dto';
@@ -39,18 +43,22 @@ export class TmdbApiService {
         page: page,
       },
     };
-    const response: AxiosResponse<TmdbListResponseDto> = await firstValueFrom(
-      this.httpService.get<TmdbListResponseDto>(url, options).pipe(
-        catchError((error: AxiosError) => {
-          throw new ExternalApiError(
-            `TMDB API Error: ${error.response?.statusText || 'Unknown Error'}`,
-          );
-        }),
-      ),
+    const response: AxiosResponse<
+      TmdbListResponseDto<TmdbListSeriesResultDto>
+    > = await firstValueFrom(
+      this.httpService
+        .get<TmdbListResponseDto<TmdbListSeriesResultDto>>(url, options)
+        .pipe(
+          catchError((error: AxiosError) => {
+            throw new ExternalApiError(
+              `TMDB API Error: ${error.response?.statusText || 'Unknown Error'}`,
+            );
+          }),
+        ),
     );
 
     const seriesList: TmdbListMediaDto[] =
-      TmdbApiListMediaMapper.seriesListResponseDtoToSeriesListDto(
+      TmdbApiListMediaMapper.tmdbListSeriesResultDtoToTmdbListMediaDto(
         response.data,
       );
 
@@ -70,18 +78,22 @@ export class TmdbApiService {
         page: page,
       },
     };
-    const response: AxiosResponse<TmdbListResponseDto> = await firstValueFrom(
-      this.httpService.get<TmdbListResponseDto>(url, options).pipe(
-        catchError((error: AxiosError) => {
-          throw new ExternalApiError(
-            `TMDB API Error: ${error.response?.statusText || 'Unknown Error'}`,
-          );
-        }),
-      ),
+    const response: AxiosResponse<
+      TmdbListResponseDto<TmdbListMoviesResultDto>
+    > = await firstValueFrom(
+      this.httpService
+        .get<TmdbListResponseDto<TmdbListMoviesResultDto>>(url, options)
+        .pipe(
+          catchError((error: AxiosError) => {
+            throw new ExternalApiError(
+              `TMDB API Error: ${error.response?.statusText || 'Unknown Error'}`,
+            );
+          }),
+        ),
     );
 
     const seriesList: TmdbListMediaDto[] =
-      TmdbApiListMediaMapper.seriesListResponseDtoToSeriesListDto(
+      TmdbApiListMediaMapper.tmdbListMoviesResultDtoToTmdbListMediaDto(
         response.data,
       );
 

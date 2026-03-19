@@ -10,6 +10,7 @@ import { CloudinaryModule } from './common/cloudinary/cloudinary.module';
 import { EmailModule } from './email/email.module';
 import { SeriesModule } from './series/series.module';
 import { TmdbApiModule } from './common/tmdbapi/tmdbapi.module';
+import { MoviesModule } from './movies/movies.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { TmdbApiModule } from './common/tmdbapi/tmdbapi.module';
     EmailModule,
     SeriesModule,
     TmdbApiModule,
+    MoviesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

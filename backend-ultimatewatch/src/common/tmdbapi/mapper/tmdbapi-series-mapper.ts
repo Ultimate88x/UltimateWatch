@@ -1,23 +1,33 @@
 import { TmdbListMediaDto } from '../dto/media/media-list-dto';
-import { TmdbListResponseDto } from '../dto/media/tmdb-list-response-dto';
-
-type TmdbSeriesResult = {
-  id: number;
-  name: string;
-  poster_path: string;
-  first_air_date: string;
-};
+import {
+  TmdbListMoviesResultDto,
+  TmdbListResponseDto,
+  TmdbListSeriesResultDto,
+} from '../dto/media/tmdb-list-response-dto';
 
 export class TmdbApiListMediaMapper {
-  static seriesListResponseDtoToSeriesListDto(
-    response: TmdbListResponseDto,
+  static tmdbListSeriesResultDtoToTmdbListMediaDto(
+    response: TmdbListResponseDto<TmdbListSeriesResultDto>,
   ): TmdbListMediaDto[] {
     return response.results.map(
-      (tmdbSeries: TmdbSeriesResult): TmdbListMediaDto => ({
+      (tmdbSeries: TmdbListSeriesResultDto): TmdbListMediaDto => ({
         id: tmdbSeries.id,
         title: tmdbSeries.name,
         posterPath: 'https://image.tmdb.org/t/p/w500' + tmdbSeries.poster_path,
-        firstAirDate: tmdbSeries.first_air_date,
+        releaseDate: tmdbSeries.first_air_date,
+      }),
+    );
+  }
+
+  static tmdbListMoviesResultDtoToTmdbListMediaDto(
+    response: TmdbListResponseDto<TmdbListMoviesResultDto>,
+  ): TmdbListMediaDto[] {
+    return response.results.map(
+      (tmdbSeries: TmdbListMoviesResultDto): TmdbListMediaDto => ({
+        id: tmdbSeries.id,
+        title: tmdbSeries.title,
+        posterPath: 'https://image.tmdb.org/t/p/w500' + tmdbSeries.poster_path,
+        releaseDate: tmdbSeries.release_date,
       }),
     );
   }

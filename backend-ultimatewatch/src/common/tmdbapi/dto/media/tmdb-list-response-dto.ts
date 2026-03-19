@@ -1,13 +1,20 @@
-export type TmdbListMediaResultDto = {
+export type TmdbListSeriesResultDto = {
   id: number;
   name: string;
   poster_path: string;
   first_air_date: string;
 };
 
-export class TmdbListResponseDto {
+export type TmdbListMoviesResultDto = {
+  id: number;
+  title: string;
+  poster_path: string;
+  release_date: string;
+};
+
+export class TmdbListResponseDto<T> {
   page: number;
-  results: TmdbListMediaResultDto[];
+  results: T[];
   total_pages: number;
   total_results: number;
 }

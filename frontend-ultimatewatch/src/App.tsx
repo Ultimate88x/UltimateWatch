@@ -11,6 +11,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import PublicRoute from "./components/auth/PublicRoute";
 import Home from "./home";
 import SeriesList from "./series/list";
+import MovieList from "./movies/list";
 
 function App() {
   return (
@@ -49,6 +50,7 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/series" element={<SeriesList />} />
+          <Route path="/movies" element={<MovieList />} />
         </Routes>
       </main>
 

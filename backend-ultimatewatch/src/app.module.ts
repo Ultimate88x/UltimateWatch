@@ -11,6 +11,7 @@ import { EmailModule } from './email/email.module';
 import { SeriesModule } from './series/series.module';
 import { TmdbApiModule } from './common/tmdbapi/tmdbapi.module';
 import { MoviesModule } from './movies/movies.module';
+import { GenresModule } from './genres/genres.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { MoviesModule } from './movies/movies.module';
     SeriesModule,
     TmdbApiModule,
     MoviesModule,
+    GenresModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -13,6 +13,10 @@ import { TmdbListMediaDto } from './dto/media/tmdb-media-list-dto';
 import { TmdbApiMapper } from './mapper/tmdbapi-mapper';
 import { ExternalApiError } from 'src/common/exceptions/external-api-error';
 import { TmdbMovieDto } from './dto/media/tmdb-movie-dto';
+import {
+  tmdbGenreDto,
+  tmdbListGenreResponseDto,
+} from './dto/media/tmdb-genre-dto';
 
 @Injectable()
 export class TmdbApiService {
@@ -187,5 +191,30 @@ export class TmdbApiService {
     const movie: TmdbMovieDto = response.data;
 
     return movie;
+  }
+
+  async getMovieGenres() {
+    const url = `https://api.themoviedb.org/3/genre/movie/list`;
+    const options = {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+    };
+    const response: AxiosResponse<tmdbListGenreResponseDto> =
+      await firstValueFrom(
+        this.httpService.get<tmdbListGenreResponseDto>(url, options).pipe(
+          catchError((error: AxiosError) => {
+            throw new ExternalApiError(
+              `TMDB API Error: ${error.response?.statusText || 'Unknown Error'}`,
+            );
+          }),
+        ),
+      );
+
+    const genreList: tmdbGenreDto[] = response.data.genres;
+
+    return genreList;
   }
 }

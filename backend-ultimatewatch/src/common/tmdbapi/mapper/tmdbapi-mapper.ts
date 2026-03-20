@@ -6,6 +6,9 @@ import {
 } from '../dto/media/tmdb-list-response-dto';
 import { TmdbMovieDto } from '../dto/media/tmdb-movie-dto';
 import { Movie } from 'src/movies/entities/movie.entity';
+import { Genre } from 'src/genres/entities/genre.entity';
+import { tmdbGenreDto } from '../dto/media/tmdb-genre-dto';
+import { MediaType } from 'src/genres/enums/media.type.enum';
 
 export class TmdbApiMapper {
   static tmdbListSeriesResultDtoToTmdbListMediaDto(
@@ -48,5 +51,20 @@ export class TmdbApiMapper {
     movie.releaseDate = new Date(response.release_date);
 
     return movie;
+  }
+
+  static tmdbGenreDtoListToGenreList(
+    response: tmdbGenreDto[],
+    type: MediaType,
+  ): Genre[] {
+    return response.map((tmdbGenre: tmdbGenreDto): Genre => {
+      const genre: Genre = new Genre();
+
+      genre.tmdbId = tmdbGenre.id;
+      genre.name = tmdbGenre.name;
+      genre.mediaType = type;
+
+      return genre;
+    });
   }
 }

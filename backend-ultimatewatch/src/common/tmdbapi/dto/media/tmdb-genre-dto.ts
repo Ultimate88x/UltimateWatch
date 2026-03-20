@@ -1,8 +1,8 @@
-export type tmdbGenreDto = {
+export type TmdbGenreDto = {
   id: number;
   name: string;
 };
 
 export class tmdbListGenreResponseDto {
-  genres: tmdbGenreDto[];
+  genres: TmdbGenreDto[];
 }

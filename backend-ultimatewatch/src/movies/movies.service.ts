@@ -5,6 +5,8 @@ import { TmdbApiService } from 'src/common/tmdbapi/tmdbapi.service';
 import { Movie } from './entities/movie.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { TmdbMovieDto } from 'src/common/tmdbapi/dto/media/tmdb-movie-dto';
+import { MediaType } from 'src/genres/enums/media.type.enum';
 
 @Injectable()
 export class MoviesService {
@@ -51,8 +53,14 @@ export class MoviesService {
       existingMovie.popularity++;
       return await this.movieRepository.save(existingMovie);
     }
-    const movie = await this.tmdbApiService.getMovieFromTmdb(tmdbId);
-    const mappedMovie = TmdbApiMapper.tmdbMovieDtoToMovie(movie);
+    const movie: TmdbMovieDto =
+      await this.tmdbApiService.getMovieFromTmdb(tmdbId);
+    const mappedMovie: Movie = TmdbApiMapper.tmdbMovieDtoToMovie(movie);
+
+    mappedMovie.genres = TmdbApiMapper.tmdbGenreDtoListToGenreList(
+      movie.genres,
+      MediaType.MOVIE,
+    );
     mappedMovie.popularity = 1;
 
     return await this.movieRepository.save(mappedMovie);

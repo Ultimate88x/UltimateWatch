@@ -9,5 +9,6 @@ import { Genre } from './entities/genre.entity';
   imports: [TypeOrmModule.forFeature([Genre]), TmdbApiModule],
   providers: [GenresService],
   controllers: [GenresController],
+  exports: [GenresService],
 })
 export class GenresModule {}

@@ -1,3 +1,5 @@
+import { TmdbGenreDto } from './tmdb-genre-dto';
+
 export class TmdbMovieDto {
   id: number;
   title: string;
@@ -9,4 +11,5 @@ export class TmdbMovieDto {
   runtime: number;
   revenue: number;
   release_date: string;
+  genres: TmdbGenreDto[];
 }

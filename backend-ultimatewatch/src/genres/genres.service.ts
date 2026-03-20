@@ -3,7 +3,7 @@ import { Genre } from './entities/genre.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TmdbApiService } from 'src/common/tmdbapi/tmdbapi.service';
 import { Repository } from 'typeorm';
-import { tmdbGenreDto } from 'src/common/tmdbapi/dto/media/tmdb-genre-dto';
+import { TmdbGenreDto } from 'src/common/tmdbapi/dto/media/tmdb-genre-dto';
 import { TmdbApiMapper } from 'src/common/tmdbapi/mapper/tmdbapi-mapper';
 import { MediaType } from './enums/media.type.enum';
 
@@ -15,12 +15,8 @@ export class GenresService {
     private readonly tmdbApiService: TmdbApiService,
   ) {}
 
-  async onApplicationBootstrap() {
-    await this.storeTmdbGenres();
-  }
-
   async storeTmdbGenres() {
-    const genreDtoList: tmdbGenreDto[] =
+    const genreDtoList: TmdbGenreDto[] =
       await this.tmdbApiService.getMovieGenres();
 
     const genreList: Genre[] = TmdbApiMapper.tmdbGenreDtoListToGenreList(

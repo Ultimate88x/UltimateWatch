@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import * as bcrypt from 'bcrypt';
 import { Movie } from 'src/movies/entities/movie.entity';
+import { Genre } from 'src/genres/entities/genre.entity';
+import { GenresService } from 'src/genres/genres.service';
 
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
@@ -14,6 +16,9 @@ export class SeedService implements OnApplicationBootstrap {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Movie)
     private readonly movieRepository: Repository<Movie>,
+    @InjectRepository(Genre)
+    private readonly genreRepository: Repository<Genre>,
+    private readonly genreService: GenresService,
   ) {}
 
   async onApplicationBootstrap() {
@@ -39,6 +44,11 @@ export class SeedService implements OnApplicationBootstrap {
     });
 
     await this.userRepository.save(testUser);
+
+    if ((await this.genreRepository.count()) === 0) {
+      await this.genreService.storeTmdbGenres();
+    }
+
     this.logger.log('Database seeded successfully!');
   }
 }

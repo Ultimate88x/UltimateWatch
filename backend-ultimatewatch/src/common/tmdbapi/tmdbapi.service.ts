@@ -14,7 +14,7 @@ import { TmdbApiMapper } from './mapper/tmdbapi-mapper';
 import { ExternalApiError } from 'src/common/exceptions/external-api-error';
 import { TmdbMovieDto } from './dto/media/tmdb-movie-dto';
 import {
-  tmdbGenreDto,
+  TmdbGenreDto,
   tmdbListGenreResponseDto,
 } from './dto/media/tmdb-genre-dto';
 
@@ -213,7 +213,7 @@ export class TmdbApiService {
         ),
       );
 
-    const genreList: tmdbGenreDto[] = response.data.genres;
+    const genreList: TmdbGenreDto[] = response.data.genres;
 
     return genreList;
   }

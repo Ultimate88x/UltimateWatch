@@ -7,7 +7,7 @@ import {
 import { TmdbMovieDto } from '../dto/media/tmdb-movie-dto';
 import { Movie } from 'src/movies/entities/movie.entity';
 import { Genre } from 'src/genres/entities/genre.entity';
-import { tmdbGenreDto } from '../dto/media/tmdb-genre-dto';
+import { TmdbGenreDto } from '../dto/media/tmdb-genre-dto';
 import { MediaType } from 'src/genres/enums/media.type.enum';
 
 export class TmdbApiMapper {
@@ -54,10 +54,10 @@ export class TmdbApiMapper {
   }
 
   static tmdbGenreDtoListToGenreList(
-    response: tmdbGenreDto[],
+    response: TmdbGenreDto[],
     type: MediaType,
   ): Genre[] {
-    return response.map((tmdbGenre: tmdbGenreDto): Genre => {
+    return response.map((tmdbGenre: TmdbGenreDto): Genre => {
       const genre: Genre = new Genre();
 
       genre.tmdbId = tmdbGenre.id;

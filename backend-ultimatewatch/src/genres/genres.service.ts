@@ -6,6 +6,7 @@ import { Repository } from 'typeorm';
 import { TmdbGenreDto } from 'src/common/tmdbapi/dto/media/tmdb-genre-dto';
 import { TmdbApiMapper } from 'src/common/tmdbapi/mapper/tmdbapi-mapper';
 import { MediaType } from './enums/media.type.enum';
+import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
 
 @Injectable()
 export class GenresService {
@@ -15,7 +16,7 @@ export class GenresService {
     private readonly tmdbApiService: TmdbApiService,
   ) {}
 
-  async storeTmdbGenres() {
+  async storeTmdbGenres(): Promise<void> {
     const genreDtoList: TmdbGenreDto[] =
       await this.tmdbApiService.getMovieGenres();
 
@@ -25,5 +26,17 @@ export class GenresService {
     );
 
     await this.genreRepository.save(genreList);
+  }
+
+  async findByTmdbId(tmdbId: number): Promise<Genre> {
+    const genre = await this.genreRepository.findOne({
+      where: { tmdbId },
+    });
+
+    if (!genre) {
+      throw new ResourceNotFoundException('Genre', 'TMDB_ID', String(tmdbId));
+    }
+
+    return genre;
   }
 }

@@ -9,7 +9,7 @@ export abstract class MediaContentEntity extends MediaEntity {
   @Column()
   status: string;
 
-  @ManyToMany(() => Genre, { cascade: true })
+  @ManyToMany(() => Genre)
   @JoinTable()
   genres: Genre[];
 }

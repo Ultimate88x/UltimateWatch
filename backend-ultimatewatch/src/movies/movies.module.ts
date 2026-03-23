@@ -4,9 +4,10 @@ import { MoviesController } from './movies.controller';
 import { TmdbApiModule } from 'src/common/tmdbapi/tmdbapi.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Movie } from './entities/movie.entity';
+import { GenresModule } from 'src/genres/genres.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Movie]), TmdbApiModule],
+  imports: [TypeOrmModule.forFeature([Movie]), TmdbApiModule, GenresModule],
   providers: [MoviesService],
   controllers: [MoviesController],
 })

@@ -6,9 +6,10 @@ import { Movie } from './entities/movie.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TmdbMovieDto } from 'src/common/tmdbapi/dto/media/tmdb-movie-dto';
-import { MediaType } from 'src/genres/enums/media.type.enum';
 import { Genre } from 'src/genres/entities/genre.entity';
 import { GenresService } from 'src/genres/genres.service';
+import { ProductionCompany } from 'src/production-companies/entities/production-company.entity';
+import { ProductionCompaniesService } from 'src/production-companies/production-companies.service';
 
 @Injectable()
 export class MoviesService {
@@ -17,6 +18,7 @@ export class MoviesService {
     private readonly movieRepository: Repository<Movie>,
     private readonly tmdbApiService: TmdbApiService,
     private readonly genresService: GenresService,
+    private readonly productionCompaniesService: ProductionCompaniesService,
   ) {}
 
   private async fetchFourPages(
@@ -50,15 +52,22 @@ export class MoviesService {
   async create(movie: TmdbMovieDto) {
     const mappedMovie: Movie = TmdbApiMapper.tmdbMovieDtoToMovie(movie);
 
-    const genres: Genre[] = TmdbApiMapper.tmdbGenreDtoListToGenreList(
-      movie.genres,
-      MediaType.MOVIE,
-    );
     mappedMovie.genres = await Promise.all(
-      genres.map((genre: Genre) =>
+      mappedMovie.genres.map((genre: Genre) =>
         this.genresService.findByTmdbId(genre.tmdbId),
       ),
     );
+
+    mappedMovie.productionCompanies = await Promise.all(
+      mappedMovie.productionCompanies.map(
+        (productionCompany: ProductionCompany) =>
+          this.productionCompaniesService.findOrCreate(
+            productionCompany.tmdbId,
+            productionCompany,
+          ),
+      ),
+    );
+
     mappedMovie.popularity = 1;
 
     return await this.movieRepository.save(mappedMovie);

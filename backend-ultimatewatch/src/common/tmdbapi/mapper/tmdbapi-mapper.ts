@@ -9,6 +9,8 @@ import { Movie } from 'src/movies/entities/movie.entity';
 import { Genre } from 'src/genres/entities/genre.entity';
 import { TmdbGenreDto } from '../dto/media/tmdb-genre-dto';
 import { MediaType } from 'src/genres/enums/media.type.enum';
+import { TmdbProductionCompanyDto } from '../dto/media/tmdb-production-company-dto';
+import { ProductionCompany } from 'src/production-companies/entities/production-company.entity';
 
 export class TmdbApiMapper {
   static tmdbListSeriesResultDtoToTmdbListMediaDto(
@@ -49,6 +51,14 @@ export class TmdbApiMapper {
     movie.runtime = response.runtime;
     movie.revenue = response.revenue;
     movie.releaseDate = new Date(response.release_date);
+    movie.genres = this.tmdbGenreDtoListToGenreList(
+      response.genres,
+      MediaType.MOVIE,
+    );
+    movie.productionCompanies =
+      this.tmdbProductionCompanyDtoListToProductionCompanyList(
+        response.production_companies,
+      );
 
     return movie;
   }
@@ -66,5 +76,21 @@ export class TmdbApiMapper {
 
       return genre;
     });
+  }
+
+  static tmdbProductionCompanyDtoListToProductionCompanyList(
+    response: TmdbProductionCompanyDto[],
+  ): ProductionCompany[] {
+    return response.map(
+      (tmdbProductionCompany: TmdbProductionCompanyDto): ProductionCompany => {
+        const productionCompany: ProductionCompany = new ProductionCompany();
+
+        productionCompany.tmdbId = tmdbProductionCompany.id;
+        productionCompany.logoPath = `https://image.tmdb.org/t/p/w500${tmdbProductionCompany.logo_path}`;
+        productionCompany.name = tmdbProductionCompany.name;
+
+        return productionCompany;
+      },
+    );
   }
 }

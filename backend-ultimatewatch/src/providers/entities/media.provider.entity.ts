@@ -1,16 +1,22 @@
 import { BaseEntity } from 'src/common/entities/base.entity';
 import { MediaContent } from 'src/media-contents/entities/media.content.entity';
-import { Column, Entity, ManyToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { Provider } from './provider.entity';
 
 @Entity('media_providers')
 export class MediaProvider extends BaseEntity {
-  @Column()
+  @Column({ nullable: true })
   link?: string;
 
-  @ManyToOne(() => Provider)
+  @ManyToOne(() => Provider, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn()
   provider: Provider;
 
-  @ManyToOne(() => MediaContent)
+  @ManyToOne(() => MediaContent, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn()
   mediaContent: MediaContent;
 }

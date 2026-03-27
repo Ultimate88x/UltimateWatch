@@ -7,6 +7,7 @@ import { TmdbApiService } from 'src/common/tmdbapi/tmdbapi.service';
 import { TmdbProviderInfoDto } from 'src/common/tmdbapi/dto/tmdb-provider-response-dto';
 import { MediaType } from 'src/common/tmdbapi/enums/media.type.enum';
 import { TmdbApiMapper } from 'src/common/tmdbapi/mapper/tmdbapi-mapper';
+import { MediaContentsService } from 'src/media-contents/media-contents.service';
 
 @Injectable()
 export class ProvidersService {
@@ -16,6 +17,7 @@ export class ProvidersService {
     @InjectRepository(MediaProvider)
     private readonly mediaProviderRepository: Repository<MediaProvider>,
     private readonly tmdbapiService: TmdbApiService,
+    private readonly mediaContentService: MediaContentsService,
   ) {}
 
   async createProvider(provider: Provider): Promise<Provider> {
@@ -49,16 +51,26 @@ export class ProvidersService {
   }
 
   async findOrCreate(
+    providerTmdbId: number,
     mediaTmdbId: number,
     provider: Provider,
   ): Promise<Provider> {
-    const existingProvider = await this.findByTmdbId(mediaTmdbId);
+    let savedProvider = await this.findByTmdbId(providerTmdbId);
 
-    if (existingProvider) {
-      return existingProvider;
+    if (!savedProvider) {
+      savedProvider = await this.createProvider(provider);
     }
 
-    return await this.createProvider(provider);
+    const mediaContent =
+      await this.mediaContentService.findByTmdbId(mediaTmdbId);
+
+    const mediaProvider = new MediaProvider();
+    mediaProvider.mediaContent = mediaContent;
+    mediaProvider.provider = savedProvider;
+
+    await this.createMediaProvider(mediaProvider);
+
+    return savedProvider;
   }
 
   async findProvidersOrGetFromTmdbAndFindOrCreate(
@@ -93,7 +105,7 @@ export class ProvidersService {
 
     return await Promise.all(
       providers.map((provider: Provider) =>
-        this.findOrCreate(provider.tmdbId, provider),
+        this.findOrCreate(provider.tmdbId, mediaTmdbId, provider),
       ),
     );
   }

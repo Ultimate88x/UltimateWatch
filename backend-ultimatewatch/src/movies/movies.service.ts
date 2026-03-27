@@ -52,14 +52,14 @@ export class MoviesService {
   async create(movie: TmdbMovieDto) {
     const mappedMovie: Movie = TmdbApiMapper.tmdbMovieDtoToMovie(movie);
 
-    mappedMovie.genres = await Promise.all(
-      mappedMovie.genres.map((genre: Genre) =>
+    mappedMovie.mediaContent.genres = await Promise.all(
+      mappedMovie.mediaContent.genres.map((genre: Genre) =>
         this.genresService.findByTmdbId(genre.tmdbId),
       ),
     );
 
-    mappedMovie.productionCompanies = await Promise.all(
-      mappedMovie.productionCompanies.map(
+    mappedMovie.mediaContent.productionCompanies = await Promise.all(
+      mappedMovie.mediaContent.productionCompanies.map(
         (productionCompany: ProductionCompany) =>
           this.productionCompaniesService.findOrCreate(
             productionCompany.tmdbId,
@@ -68,18 +68,20 @@ export class MoviesService {
       ),
     );
 
-    mappedMovie.popularity = 1;
+    mappedMovie.mediaContent.popularity = 1;
 
     return await this.movieRepository.save(mappedMovie);
   }
 
   async findMovieFromTmdbId(tmdbId: number) {
     const existingMovie = await this.movieRepository.findOne({
-      where: { tmdbId },
+      where: {
+        mediaContent: { tmdbId },
+      },
     });
 
     if (existingMovie) {
-      existingMovie.popularity++;
+      existingMovie.mediaContent.popularity++;
       return await this.movieRepository.save(existingMovie);
     }
 

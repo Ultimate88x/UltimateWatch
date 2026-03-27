@@ -14,6 +14,7 @@ import { MoviesModule } from './movies/movies.module';
 import { GenresModule } from './genres/genres.module';
 import { ProductionCompaniesModule } from './production-companies/production-companies.module';
 import { ProvidersModule } from './providers/providers.module';
+import { MediaContentsModule } from './media-contents/media-contents.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { ProvidersModule } from './providers/providers.module';
     GenresModule,
     ProductionCompaniesModule,
     ProvidersModule,
+    MediaContentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

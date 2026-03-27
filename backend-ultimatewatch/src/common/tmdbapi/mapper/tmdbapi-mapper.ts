@@ -16,6 +16,7 @@ import {
   TmdbProviderInfoDto,
 } from '../dto/tmdb-provider-response-dto';
 import { Provider } from 'src/providers/entities/provider.entity';
+import { MediaContent } from 'src/media-contents/entities/media.content.entity';
 
 export class TmdbApiMapper {
   static tmdbListSeriesResultDtoToTmdbListMediaDto(
@@ -45,25 +46,28 @@ export class TmdbApiMapper {
   }
 
   static tmdbMovieDtoToMovie(response: TmdbMovieDto): Movie {
+    const mediaContent = new MediaContent();
     const movie = new Movie();
 
-    movie.tmdbId = response.id;
-    movie.title = response.title;
-    movie.overview = response.overview;
-    movie.imagePath = `https://image.tmdb.org/t/p/w500/${response.poster_path}`;
-    movie.status = response.status;
+    mediaContent.tmdbId = response.id;
+    mediaContent.title = response.title;
+    mediaContent.overview = response.overview;
+    mediaContent.imagePath = `https://image.tmdb.org/t/p/w500/${response.poster_path}`;
+    mediaContent.status = response.status;
+    mediaContent.genres = this.tmdbGenreDtoListToGenreList(
+      response.genres,
+      MediaType.MOVIE,
+    );
+    mediaContent.productionCompanies =
+      this.tmdbProductionCompanyDtoListToProductionCompanyList(
+        response.production_companies,
+      );
+
     movie.budget = response.budget;
     movie.runtime = response.runtime;
     movie.revenue = response.revenue;
     movie.releaseDate = new Date(response.release_date);
-    movie.genres = this.tmdbGenreDtoListToGenreList(
-      response.genres,
-      MediaType.MOVIE,
-    );
-    movie.productionCompanies =
-      this.tmdbProductionCompanyDtoListToProductionCompanyList(
-        response.production_companies,
-      );
+    movie.mediaContent = mediaContent;
 
     return movie;
   }

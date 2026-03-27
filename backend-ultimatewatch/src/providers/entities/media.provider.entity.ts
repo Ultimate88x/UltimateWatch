@@ -1,5 +1,5 @@
 import { BaseEntity } from 'src/common/entities/base.entity';
-import { MediaContentEntity } from 'src/common/entities/media.content.entity';
+import { MediaContent } from 'src/media-contents/entities/media.content.entity';
 import { Column, Entity, ManyToOne } from 'typeorm';
 import { Provider } from './provider.entity';
 
@@ -11,6 +11,6 @@ export class MediaProvider extends BaseEntity {
   @ManyToOne(() => Provider)
   provider: Provider;
 
-  @ManyToOne(() => MediaContentEntity)
-  mediaContent: MediaContentEntity;
+  @ManyToOne(() => MediaContent)
+  mediaContent: MediaContent;
 }

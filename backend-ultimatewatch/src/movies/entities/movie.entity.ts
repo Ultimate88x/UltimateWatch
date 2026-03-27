@@ -1,8 +1,9 @@
-import { MediaContentEntity } from 'src/common/entities/media.content.entity';
-import { Column, Entity } from 'typeorm';
+import { BaseEntity } from 'src/common/entities/base.entity';
+import { MediaContent } from 'src/media-contents/entities/media.content.entity';
+import { Column, Entity, JoinColumn, OneToOne } from 'typeorm';
 
 @Entity('movies')
-export class Movie extends MediaContentEntity {
+export class Movie extends BaseEntity {
   @Column()
   budget: number;
 
@@ -14,6 +15,13 @@ export class Movie extends MediaContentEntity {
 
   @Column()
   releaseDate: Date;
+
+  @OneToOne(() => MediaContent, (mediaContent) => mediaContent.movie, {
+    onDelete: 'CASCADE',
+    cascade: true,
+  })
+  @JoinColumn()
+  mediaContent: MediaContent;
 
   getReleaseDate(): Date {
     return this.releaseDate;

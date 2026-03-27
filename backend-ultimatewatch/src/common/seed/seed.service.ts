@@ -3,11 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import * as bcrypt from 'bcrypt';
-import { Movie } from 'src/movies/entities/movie.entity';
 import { Genre } from 'src/genres/entities/genre.entity';
 import { GenresService } from 'src/genres/genres.service';
 import { ProductionCompany } from 'src/production-companies/entities/production-company.entity';
 import { Provider } from 'src/providers/entities/provider.entity';
+import { MediaContent } from 'src/media-contents/entities/media.content.entity';
 
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
@@ -16,8 +16,8 @@ export class SeedService implements OnApplicationBootstrap {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(Movie)
-    private readonly movieRepository: Repository<Movie>,
+    @InjectRepository(MediaContent)
+    private readonly mediaContentRepository: Repository<MediaContent>,
     @InjectRepository(Genre)
     private readonly genreRepository: Repository<Genre>,
     @InjectRepository(ProductionCompany)
@@ -35,8 +35,8 @@ export class SeedService implements OnApplicationBootstrap {
     await this.userRepository.query(
       'TRUNCATE TABLE "users" RESTART IDENTITY CASCADE',
     );
-    await this.movieRepository.query(
-      'TRUNCATE TABLE "movies" RESTART IDENTITY CASCADE',
+    await this.mediaContentRepository.query(
+      'TRUNCATE TABLE "media_contents" RESTART IDENTITY CASCADE',
     );
     await this.productionCompanyRepository.query(
       'TRUNCATE TABLE "production_companies" RESTART IDENTITY CASCADE',

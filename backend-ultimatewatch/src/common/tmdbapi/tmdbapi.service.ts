@@ -13,10 +13,11 @@ import { TmdbListMediaDto } from './dto/media/tmdb-media-list-dto';
 import { TmdbApiMapper } from './mapper/tmdbapi-mapper';
 import { ExternalApiError } from 'src/common/exceptions/external-api-error';
 import { TmdbMovieDto } from './dto/media/tmdb-movie-dto';
+import { TmdbGenreDto, tmdbListGenreResponseDto } from './dto/tmdb-genre-dto';
 import {
-  TmdbGenreDto,
-  tmdbListGenreResponseDto,
-} from './dto/media/tmdb-genre-dto';
+  TmdbProviderInfoDto,
+  TmdbProviderResponse,
+} from './dto/tmdb-provider-response-dto';
 
 @Injectable()
 export class TmdbApiService {
@@ -191,6 +192,30 @@ export class TmdbApiService {
     const movie: TmdbMovieDto = response.data;
 
     return movie;
+  }
+
+  async getProvidersForMovie(id: number) {
+    const url = `https://api.themoviedb.org/3/movie/${id}/watch/providers`;
+    const options = {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+    };
+    const response: AxiosResponse<TmdbProviderResponse> = await firstValueFrom(
+      this.httpService.get<TmdbProviderResponse>(url, options).pipe(
+        catchError((error: AxiosError) => {
+          throw new ExternalApiError(
+            `TMDB API Error: ${error.response?.statusText || 'Unknown Error'}`,
+          );
+        }),
+      ),
+    );
+
+    const provider: TmdbProviderInfoDto | undefined = response.data.results.ES;
+
+    return provider;
   }
 
   async getMovieGenres() {

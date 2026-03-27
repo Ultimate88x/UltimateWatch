@@ -13,6 +13,7 @@ import { TmdbApiModule } from './common/tmdbapi/tmdbapi.module';
 import { MoviesModule } from './movies/movies.module';
 import { GenresModule } from './genres/genres.module';
 import { ProductionCompaniesModule } from './production-companies/production-companies.module';
+import { ProvidersModule } from './providers/providers.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { ProductionCompaniesModule } from './production-companies/production-com
     MoviesModule,
     GenresModule,
     ProductionCompaniesModule,
+    ProvidersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

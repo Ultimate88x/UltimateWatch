@@ -12,9 +12,9 @@ export type TmdbListMoviesResultDto = {
   release_date: string;
 };
 
-export class TmdbListResponseDto<T> {
+export type TmdbListResponseDto<T> = {
   page: number;
   results: T[];
   total_pages: number;
   total_results: number;
-}
+};

@@ -7,10 +7,15 @@ import {
 import { TmdbMovieDto } from '../dto/media/tmdb-movie-dto';
 import { Movie } from 'src/movies/entities/movie.entity';
 import { Genre } from 'src/genres/entities/genre.entity';
-import { TmdbGenreDto } from '../dto/media/tmdb-genre-dto';
-import { MediaType } from 'src/genres/enums/media.type.enum';
-import { TmdbProductionCompanyDto } from '../dto/media/tmdb-production-company-dto';
+import { TmdbGenreDto } from '../dto/tmdb-genre-dto';
+import { MediaType } from 'src/common/tmdbapi/enums/media.type.enum';
+import { TmdbProductionCompanyDto } from '../dto/tmdb-production-company-dto';
 import { ProductionCompany } from 'src/production-companies/entities/production-company.entity';
+import {
+  TmdbProviderDto,
+  TmdbProviderInfoDto,
+} from '../dto/tmdb-provider-response-dto';
+import { Provider } from 'src/providers/entities/provider.entity';
 
 export class TmdbApiMapper {
   static tmdbListSeriesResultDtoToTmdbListMediaDto(
@@ -20,7 +25,7 @@ export class TmdbApiMapper {
       (tmdbSeries: TmdbListSeriesResultDto): TmdbListMediaDto => ({
         id: tmdbSeries.id,
         title: tmdbSeries.name,
-        posterPath: `https://image.tmdb.org/t/p/w500${tmdbSeries.poster_path}`,
+        posterPath: `https://image.tmdb.org/t/p/w500/${tmdbSeries.poster_path}`,
         releaseDate: tmdbSeries.first_air_date,
       }),
     );
@@ -33,7 +38,7 @@ export class TmdbApiMapper {
       (tmdbMovie: TmdbListMoviesResultDto): TmdbListMediaDto => ({
         id: tmdbMovie.id,
         title: tmdbMovie.title,
-        posterPath: `https://image.tmdb.org/t/p/w500${tmdbMovie.poster_path}`,
+        posterPath: `https://image.tmdb.org/t/p/w500/${tmdbMovie.poster_path}`,
         releaseDate: tmdbMovie.release_date,
       }),
     );
@@ -45,7 +50,7 @@ export class TmdbApiMapper {
     movie.tmdbId = response.id;
     movie.title = response.title;
     movie.overview = response.overview;
-    movie.imagePath = `https://image.tmdb.org/t/p/w500${response.poster_path}`;
+    movie.imagePath = `https://image.tmdb.org/t/p/w500/${response.poster_path}`;
     movie.status = response.status;
     movie.budget = response.budget;
     movie.runtime = response.runtime;
@@ -86,11 +91,48 @@ export class TmdbApiMapper {
         const productionCompany: ProductionCompany = new ProductionCompany();
 
         productionCompany.tmdbId = tmdbProductionCompany.id;
-        productionCompany.logoPath = `https://image.tmdb.org/t/p/w500${tmdbProductionCompany.logo_path}`;
+        productionCompany.logoPath = `https://image.tmdb.org/t/p/w500/${tmdbProductionCompany.logo_path}`;
         productionCompany.name = tmdbProductionCompany.name;
 
         return productionCompany;
       },
     );
+  }
+
+  static tmdbProviderDtoListToProviderList(
+    response: TmdbProviderDto[],
+  ): Provider[] {
+    return response.map((tmdbProvider: TmdbProviderDto): Provider => {
+      const provider: Provider = new Provider();
+
+      provider.tmdbId = tmdbProvider.provider_id;
+      provider.name = tmdbProvider.provider_name;
+      provider.logoPath = tmdbProvider.logo_path;
+
+      return provider;
+    });
+  }
+
+  static tmdbProviderInfoDtoToProviderList(
+    response: TmdbProviderInfoDto,
+  ): Provider[] {
+    const buyProviders: Provider[] = this.tmdbProviderDtoListToProviderList(
+      response.buy,
+    );
+    const flatrateProviders: Provider[] =
+      this.tmdbProviderDtoListToProviderList(response.flatrate);
+    const rentProviders: Provider[] = this.tmdbProviderDtoListToProviderList(
+      response.rent,
+    );
+
+    const providers: Provider[] = [
+      ...new Map(
+        [...buyProviders, ...flatrateProviders, ...rentProviders].map(
+          (provider: Provider) => [provider.tmdbId, provider],
+        ),
+      ).values(),
+    ];
+
+    return providers;
   }
 }

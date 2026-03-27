@@ -1,7 +1,7 @@
-import { TmdbGenreDto } from './tmdb-genre-dto';
-import { TmdbProductionCompanyDto } from './tmdb-production-company-dto';
+import { TmdbGenreDto } from '../tmdb-genre-dto';
+import { TmdbProductionCompanyDto } from '../tmdb-production-company-dto';
 
-export class TmdbMovieDto {
+export type TmdbMovieDto = {
   id: number;
   title: string;
   overview: string;
@@ -14,4 +14,4 @@ export class TmdbMovieDto {
   release_date: string;
   genres: TmdbGenreDto[];
   production_companies: TmdbProductionCompanyDto[];
-}
+};

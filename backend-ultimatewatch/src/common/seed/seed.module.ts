@@ -6,6 +6,7 @@ import { Movie } from 'src/movies/entities/movie.entity';
 import { Genre } from 'src/genres/entities/genre.entity';
 import { GenresModule } from 'src/genres/genres.module';
 import { ProductionCompany } from 'src/production-companies/entities/production-company.entity';
+import { Provider } from 'src/providers/entities/provider.entity';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { ProductionCompany } from 'src/production-companies/entities/production-
     TypeOrmModule.forFeature([Movie]),
     TypeOrmModule.forFeature([Genre]),
     TypeOrmModule.forFeature([ProductionCompany]),
+    TypeOrmModule.forFeature([Provider]),
     GenresModule,
   ],
   providers: [SeedService],

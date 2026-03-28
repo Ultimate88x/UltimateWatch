@@ -5,8 +5,8 @@ import { Provider } from './provider.entity';
 
 @Entity('media_providers')
 export class MediaProvider extends BaseEntity {
-  @Column({ nullable: true })
-  link?: string;
+  @Column({ type: 'text', nullable: true })
+  link?: string | null;
 
   @ManyToOne(() => Provider, {
     onDelete: 'CASCADE',

@@ -10,6 +10,7 @@ import { MediaContentsService } from 'src/media-contents/media-contents.service'
 import { WatchmodeService } from 'src/common/watchmode/watchmode.service';
 import { MediaType } from 'src/common/enums/media.type.enum';
 import { WatchmodeProviderDto } from 'src/common/watchmode/dto/watchmode-provider-dto';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class ProvidersService {
@@ -153,6 +154,8 @@ export class ProvidersService {
 
     if (matchedWatchmode) {
       mediaProvider.link = matchedWatchmode.web_url;
+    } else {
+      mediaProvider.link = null;
     }
 
     return mediaProvider;
@@ -165,22 +168,61 @@ export class ProvidersService {
       where: { mediaContent: { tmdbId: mediaTmdbId } },
       relations: ['mediaContent', 'provider'],
     });
-    let mediaProvidersToUpdate = mediaProviders.filter(
-      (mediaProvider) => !mediaProvider.link,
+
+    if (mediaProviders.length === 0) return [];
+
+    const isStale = this.isDataStale(mediaProviders[0].updatedAt);
+    const hasAnyLink = mediaProviders.some(
+      (mediaProvider) => !!mediaProvider.link,
     );
 
-    if (mediaProvidersToUpdate.length > 0) {
+    if (isStale || !hasAnyLink) {
       const watchmodeProviders =
         await this.watchmodeService.getProvidersForMediaFromWatchmode(
           mediaTmdbId,
           mediaProviders[0].mediaContent.type as MediaType,
         );
-      mediaProvidersToUpdate = mediaProvidersToUpdate.map((mediaProvider) =>
-        this.assignUrlToMediaProvider(mediaProvider, watchmodeProviders),
-      );
 
-      await this.mediaProviderRepository.save(mediaProvidersToUpdate);
+      const updatedProviders = mediaProviders.map((mediaProvider) => {
+        const updatedMediaProvider = this.assignUrlToMediaProvider(
+          mediaProvider,
+          watchmodeProviders,
+        );
+
+        updatedMediaProvider.updatedAt = new Date();
+        return updatedMediaProvider;
+      });
+
+      await this.mediaProviderRepository.save(updatedProviders);
+
+      return updatedProviders;
     }
+
     return mediaProviders;
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  async handleDataCleanup() {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    await this.mediaProviderRepository
+      .createQueryBuilder()
+      .update(MediaProvider)
+      .set({ link: null })
+      .where('updatedAt < :date', { date: thirtyDaysAgo })
+      .execute();
+
+    console.log(
+      '-------------------- Obsolete provider links cleared --------------------',
+    );
+  }
+
+  private isDataStale(lastUpdate: Date): boolean {
+    const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
+    const now = new Date().getTime();
+    const last = new Date(lastUpdate).getTime();
+
+    return now - last > ONE_DAY_IN_MS;
   }
 }

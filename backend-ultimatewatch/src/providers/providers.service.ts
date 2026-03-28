@@ -5,9 +5,11 @@ import { Repository } from 'typeorm';
 import { MediaProvider } from './entities/media.provider.entity';
 import { TmdbApiService } from 'src/common/tmdbapi/tmdbapi.service';
 import { TmdbProviderInfoDto } from 'src/common/tmdbapi/dto/tmdb-provider-response-dto';
-import { MediaType } from 'src/common/tmdbapi/enums/media.type.enum';
 import { TmdbApiMapper } from 'src/common/tmdbapi/mapper/tmdbapi-mapper';
 import { MediaContentsService } from 'src/media-contents/media-contents.service';
+import { WatchmodeService } from 'src/common/watchmode/watchmode.service';
+import { MediaType } from 'src/common/enums/media.type.enum';
+import { WatchmodeProviderDto } from 'src/common/watchmode/dto/watchmode-provider-dto';
 
 @Injectable()
 export class ProvidersService {
@@ -17,6 +19,7 @@ export class ProvidersService {
     @InjectRepository(MediaProvider)
     private readonly mediaProviderRepository: Repository<MediaProvider>,
     private readonly tmdbapiService: TmdbApiService,
+    private readonly watchmodeService: WatchmodeService,
     private readonly mediaContentService: MediaContentsService,
   ) {}
 
@@ -105,5 +108,79 @@ export class ProvidersService {
         this.findOrCreate(provider.tmdbId, mediaTmdbId, provider),
       ),
     );
+  }
+
+  private normalize(name: string): string {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/[+\s]/g, '')
+      .replace(/plus/g, '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }
+
+  private getProviderAlias(name: string): string {
+    const normalized = name.toLowerCase().trim();
+
+    const aliases: Record<string, string> = {
+      'google play movies': 'google',
+      'google play': 'google',
+      'google tv': 'google',
+      'apple tv plus': 'apple',
+      'apple tv+': 'apple',
+      'amazon prime video': 'amazon',
+      'prime video': 'amazon',
+      'hbo max': 'max',
+    };
+
+    return aliases[normalized] || normalized;
+  }
+
+  assignUrlToMediaProvider(
+    mediaProvider: MediaProvider,
+    watchmodeProviders: WatchmodeProviderDto[],
+  ) {
+    const ourName = this.normalize(
+      this.getProviderAlias(mediaProvider.provider.name),
+    );
+
+    const matchedWatchmode = watchmodeProviders.find((wm) => {
+      const wmName = this.normalize(this.getProviderAlias(wm.name));
+
+      return wmName.includes(ourName) || ourName.includes(wmName);
+    });
+
+    if (matchedWatchmode) {
+      mediaProvider.link = matchedWatchmode.web_url;
+    }
+
+    return mediaProvider;
+  }
+
+  async findProviderUrlsForMedia(
+    mediaTmdbId: number,
+  ): Promise<MediaProvider[]> {
+    const mediaProviders = await this.mediaProviderRepository.find({
+      where: { mediaContent: { tmdbId: mediaTmdbId } },
+      relations: ['mediaContent', 'provider'],
+    });
+    let mediaProvidersToUpdate = mediaProviders.filter(
+      (mediaProvider) => !mediaProvider.link,
+    );
+
+    if (mediaProvidersToUpdate.length > 0) {
+      const watchmodeProviders =
+        await this.watchmodeService.getProvidersForMediaFromWatchmode(
+          mediaTmdbId,
+          mediaProviders[0].mediaContent.type as MediaType,
+        );
+      mediaProvidersToUpdate = mediaProvidersToUpdate.map((mediaProvider) =>
+        this.assignUrlToMediaProvider(mediaProvider, watchmodeProviders),
+      );
+
+      await this.mediaProviderRepository.save(mediaProvidersToUpdate);
+    }
+    return mediaProviders;
   }
 }

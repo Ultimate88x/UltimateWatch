@@ -12,6 +12,9 @@ export class MediaContent extends MediaEntity {
   @Column()
   status: string;
 
+  @Column()
+  type: string;
+
   @OneToOne(() => Movie, (movie) => movie.mediaContent)
   movie?: Movie;
 

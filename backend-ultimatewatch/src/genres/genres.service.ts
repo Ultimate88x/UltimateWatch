@@ -5,8 +5,8 @@ import { TmdbApiService } from 'src/common/tmdbapi/tmdbapi.service';
 import { Repository } from 'typeorm';
 import { TmdbGenreDto } from 'src/common/tmdbapi/dto/tmdb-genre-dto';
 import { TmdbApiMapper } from 'src/common/tmdbapi/mapper/tmdbapi-mapper';
-import { MediaType } from '../common/tmdbapi/enums/media.type.enum';
 import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
+import { MediaType } from 'src/common/enums/media.type.enum';
 
 @Injectable()
 export class GenresService {

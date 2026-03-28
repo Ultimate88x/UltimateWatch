@@ -8,7 +8,6 @@ import { TmdbMovieDto } from '../dto/media/tmdb-movie-dto';
 import { Movie } from 'src/movies/entities/movie.entity';
 import { Genre } from 'src/genres/entities/genre.entity';
 import { TmdbGenreDto } from '../dto/tmdb-genre-dto';
-import { MediaType } from 'src/common/tmdbapi/enums/media.type.enum';
 import { TmdbProductionCompanyDto } from '../dto/tmdb-production-company-dto';
 import { ProductionCompany } from 'src/production-companies/entities/production-company.entity';
 import {
@@ -17,6 +16,7 @@ import {
 } from '../dto/tmdb-provider-response-dto';
 import { Provider } from 'src/providers/entities/provider.entity';
 import { MediaContent } from 'src/media-contents/entities/media.content.entity';
+import { MediaType } from 'src/common/enums/media.type.enum';
 
 export class TmdbApiMapper {
   static tmdbListSeriesResultDtoToTmdbListMediaDto(
@@ -54,6 +54,7 @@ export class TmdbApiMapper {
     mediaContent.overview = response.overview;
     mediaContent.imagePath = `https://image.tmdb.org/t/p/w500/${response.poster_path}`;
     mediaContent.status = response.status;
+    mediaContent.type = MediaType.MOVIE;
     mediaContent.genres = this.tmdbGenreDtoListToGenreList(
       response.genres,
       MediaType.MOVIE,

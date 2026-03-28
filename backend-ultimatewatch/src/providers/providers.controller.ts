@@ -1,6 +1,6 @@
 import { Controller, Get, Param } from '@nestjs/common';
 import { ProvidersService } from './providers.service';
-import { MediaType } from 'src/common/tmdbapi/enums/media.type.enum';
+import { MediaType } from 'src/common/enums/media.type.enum';
 
 @Controller('providers')
 export class ProvidersController {
@@ -13,6 +13,15 @@ export class ProvidersController {
         +mediaTmdbId,
         MediaType.MOVIE,
       );
+
+    return data;
+  }
+
+  @Get('links/:mediaTmdbId')
+  async getProviderLinksByMediaTmdbId(
+    @Param('mediaTmdbId') mediaTmdbId: string,
+  ) {
+    const data = this.providersService.findProviderUrlsForMedia(+mediaTmdbId);
 
     return data;
   }

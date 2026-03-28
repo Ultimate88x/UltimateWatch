@@ -39,15 +39,12 @@ export class ProvidersService {
   }
 
   async findProvidersByTmdbId(mediaTmdbId: number): Promise<Provider[]> {
-    const providers = await this.mediaProviderRepository
-      .createQueryBuilder('mp')
-      .innerJoinAndSelect('mp.provider', 'p')
-      .innerJoin('mp.mediaContent', 'm')
-      .where('m.tmdbId = :mediaTmdbId', { mediaTmdbId })
-      .getMany()
-      .then((mediaProviders) => mediaProviders.map((mp) => mp.provider));
+    const mediaProviders = await this.mediaProviderRepository.find({
+      where: { mediaContent: { tmdbId: mediaTmdbId } },
+      relations: ['provider'],
+    });
 
-    return providers;
+    return mediaProviders.map((mp) => mp.provider);
   }
 
   async findOrCreate(

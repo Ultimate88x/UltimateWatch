@@ -7,7 +7,7 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { SeedModule } from './common/seed/seed.module';
 import { CloudinaryModule } from './common/cloudinary/cloudinary.module';
-import { EmailModule } from './email/email.module';
+import { EmailModule } from './common/email/email.module';
 import { SeriesModule } from './series/series.module';
 import { TmdbApiModule } from './common/tmdbapi/tmdbapi.module';
 import { MoviesModule } from './movies/movies.module';
@@ -16,6 +16,7 @@ import { ProductionCompaniesModule } from './production-companies/production-com
 import { ProvidersModule } from './providers/providers.module';
 import { MediaContentsModule } from './media-contents/media-contents.module';
 import { WatchmodeModule } from './common/watchmode/watchmode.module';
+import { ComplianceModule } from './compliance/compliance.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { WatchmodeModule } from './common/watchmode/watchmode.module';
     ProvidersModule,
     MediaContentsModule,
     WatchmodeModule,
+    ComplianceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -10,8 +10,7 @@ import { WatchmodeModule } from 'src/common/watchmode/watchmode.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Provider]),
-    TypeOrmModule.forFeature([MediaProvider]),
+    TypeOrmModule.forFeature([Provider, MediaProvider]),
     TmdbApiModule,
     WatchmodeModule,
     MediaContentsModule,

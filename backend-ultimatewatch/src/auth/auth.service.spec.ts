@@ -5,7 +5,7 @@ import { UsersService } from 'src/users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { EmailService } from 'src/email/email.service';
+import { EmailService } from 'src/common/email/email.service';
 
 jest.mock('bcrypt');
 

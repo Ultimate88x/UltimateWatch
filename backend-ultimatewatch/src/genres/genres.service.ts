@@ -16,7 +16,7 @@ export class GenresService {
     private readonly tmdbApiService: TmdbApiService,
   ) {}
 
-  async storeTmdbGenres(): Promise<void> {
+  async storeTmdbGenres(): Promise<number> {
     const genreDtoList: TmdbGenreDto[] =
       await this.tmdbApiService.getMovieGenres();
 
@@ -25,7 +25,8 @@ export class GenresService {
       MediaType.MOVIE,
     );
 
-    await this.genreRepository.save(genreList);
+    await this.genreRepository.upsert(genreList, ['tmdbId']);
+    return genreList.length;
   }
 
   async findByTmdbId(tmdbId: number): Promise<Genre> {

@@ -5,7 +5,7 @@ import { AuthController } from './auth.controller';
 import { JwtModule } from '@nestjs/jwt';
 
 import { UsersModule } from 'src/users/users.module';
-import { EmailModule } from 'src/email/email.module';
+import { EmailModule } from 'src/common/email/email.module';
 import { CloudinaryModule } from 'src/common/cloudinary/cloudinary.module';
 
 @Module({

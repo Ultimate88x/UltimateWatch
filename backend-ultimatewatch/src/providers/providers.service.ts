@@ -10,7 +10,7 @@ import { MediaContentsService } from 'src/media-contents/media-contents.service'
 import { WatchmodeService } from 'src/common/watchmode/watchmode.service';
 import { MediaType } from 'src/common/enums/media.type.enum';
 import { WatchmodeProviderDto } from 'src/common/watchmode/dto/watchmode-provider-dto';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { isDataStale } from 'src/common/helpers/data-stale.helper';
 
 @Injectable()
 export class ProvidersService {
@@ -171,7 +171,7 @@ export class ProvidersService {
 
     if (mediaProviders.length === 0) return [];
 
-    const isStale = this.isDataStale(mediaProviders[0].updatedAt);
+    const isStale = isDataStale(mediaProviders[0].updatedAt);
     const hasAnyLink = mediaProviders.some(
       (mediaProvider) => !!mediaProvider.link,
     );
@@ -199,30 +199,5 @@ export class ProvidersService {
     }
 
     return mediaProviders;
-  }
-
-  @Cron(CronExpression.EVERY_DAY_AT_3AM)
-  async handleDataCleanup() {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    await this.mediaProviderRepository
-      .createQueryBuilder()
-      .update(MediaProvider)
-      .set({ link: null })
-      .where('updatedAt < :date', { date: thirtyDaysAgo })
-      .execute();
-
-    console.log(
-      '-------------------- Obsolete provider links cleared --------------------',
-    );
-  }
-
-  private isDataStale(lastUpdate: Date): boolean {
-    const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
-    const now = new Date().getTime();
-    const last = new Date(lastUpdate).getTime();
-
-    return now - last > ONE_DAY_IN_MS;
   }
 }

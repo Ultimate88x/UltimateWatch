@@ -18,6 +18,7 @@ import {
   TmdbProviderInfoDto,
   TmdbProviderResponse,
 } from './dto/tmdb-provider-response-dto';
+import { TmdbProductionCompanyDto } from './dto/tmdb-production-company-dto';
 
 @Injectable()
 export class TmdbApiService {
@@ -241,5 +242,30 @@ export class TmdbApiService {
     const genreList: TmdbGenreDto[] = response.data.genres;
 
     return genreList;
+  }
+
+  async getProductionCompanyFromTmdb(id: number) {
+    const url = `https://api.themoviedb.org/3/company/${id}`;
+    const options = {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+    };
+    const response: AxiosResponse<TmdbProductionCompanyDto> =
+      await firstValueFrom(
+        this.httpService.get<TmdbProductionCompanyDto>(url, options).pipe(
+          catchError((error: AxiosError) => {
+            throw new ExternalApiError(
+              `TMDB API Error: ${error.response?.statusText || 'Unknown Error'}`,
+            );
+          }),
+        ),
+      );
+
+    const productionCompany: TmdbProductionCompanyDto = response.data;
+
+    return productionCompany;
   }
 }

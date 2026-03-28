@@ -10,6 +10,7 @@ import { Genre } from 'src/genres/entities/genre.entity';
 import { GenresService } from 'src/genres/genres.service';
 import { ProductionCompany } from 'src/production-companies/entities/production-company.entity';
 import { ProductionCompaniesService } from 'src/production-companies/production-companies.service';
+import { isDataStale } from 'src/common/helpers/data-stale.helper';
 
 @Injectable()
 export class MoviesService {
@@ -80,7 +81,7 @@ export class MoviesService {
       },
     });
 
-    if (existingMovie) {
+    if (existingMovie && !isDataStale(existingMovie.mediaContent.updatedAt)) {
       existingMovie.mediaContent.popularity++;
       return await this.movieRepository.save(existingMovie);
     }

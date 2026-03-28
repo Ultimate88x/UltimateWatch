@@ -88,6 +88,18 @@ export class TmdbApiMapper {
     });
   }
 
+  static tmdbProductionCompanyDtoToProductionCompany(
+    response: TmdbProductionCompanyDto,
+  ): ProductionCompany {
+    const productionCompany: ProductionCompany = new ProductionCompany();
+
+    productionCompany.tmdbId = response.id;
+    productionCompany.logoPath = `https://image.tmdb.org/t/p/w500/${response.logo_path}`;
+    productionCompany.name = response.name;
+
+    return productionCompany;
+  }
+
   static tmdbProductionCompanyDtoListToProductionCompanyList(
     response: TmdbProductionCompanyDto[],
   ): ProductionCompany[] {

@@ -16,6 +16,8 @@ import { MediaCastDto } from './dto/media-cast-dto';
 import { MediaCrewDto } from './dto/media-crew-dto';
 import { PersonType } from 'src/common/enums/person.type.enum';
 import { MediaPeopleResponseDto } from './dto/media-people-dto';
+import { MediaCastResponseDto } from './dto/media-cast-response-dto';
+import { MediaCrewResponseDto } from './dto/media-crew-response-dto';
 
 @Injectable()
 export class PersonService {
@@ -44,13 +46,60 @@ export class PersonService {
     return person;
   }
 
-  async findMediaPeopleByTmdbId(mediaTmdbId: number): Promise<MediaPerson[]> {
-    const mediaPeople = await this.mediaPersonRepository.find({
-      where: { mediaContent: { tmdbId: mediaTmdbId } },
+  async findCastByTmdbId(
+    mediaTmdbId: number,
+    page: number = 1,
+    limit: number = 6,
+  ): Promise<{
+    data: MediaPerson[];
+    total: number;
+    page: number;
+    lastPage: number;
+  }> {
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await this.mediaPersonRepository.findAndCount({
+      where: { mediaContent: { tmdbId: mediaTmdbId }, type: PersonType.CAST },
       relations: ['person'],
+      order: { order: 'ASC' },
+      take: limit,
+      skip: skip,
     });
 
-    return mediaPeople;
+    return {
+      data,
+      total,
+      page,
+      lastPage: Math.ceil(total / limit),
+    };
+  }
+
+  async findCrewByTmdbId(
+    mediaTmdbId: number,
+    page: number = 1,
+    limit: number = 6,
+  ): Promise<{
+    data: MediaPerson[];
+    total: number;
+    page: number;
+    lastPage: number;
+  }> {
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await this.mediaPersonRepository.findAndCount({
+      where: { mediaContent: { tmdbId: mediaTmdbId }, type: PersonType.CREW },
+      relations: ['person'],
+      order: { order: 'ASC' },
+      take: limit,
+      skip: skip,
+    });
+
+    return {
+      data,
+      total,
+      page,
+      lastPage: Math.ceil(total / limit),
+    };
   }
 
   async findOrCreate(
@@ -90,54 +139,62 @@ export class PersonService {
     mediaTmdbId: number,
     mediaType: MediaType,
   ): Promise<MediaPeopleResponseDto | null> {
-    const mediaPeople: MediaPerson[] =
-      await this.findMediaPeopleByTmdbId(mediaTmdbId);
+    let castResult = await this.findCastByTmdbId(mediaTmdbId);
+    let crewResult = await this.findCrewByTmdbId(mediaTmdbId);
 
-    if (mediaPeople.length > 0) {
-      const dtos = mediaPeople.map((mp) => this.createPeopleDetailDto(mp));
+    if (castResult.data.length === 0 || crewResult.data.length === 0) {
+      const peopleInfo = await (mediaType === MediaType.MOVIE
+        ? this.tmdbapiService.getMoviePeople(mediaTmdbId)
+        : this.tmdbapiService.getMoviePeople(mediaTmdbId));
 
-      return {
-        cast: dtos.filter((p): p is MediaCastDto => p instanceof MediaCastDto),
-        crew: dtos.filter((p): p is MediaCrewDto => p instanceof MediaCrewDto),
-      };
+      if (!peopleInfo) return null;
+
+      const people =
+        TmdbApiMapper.tmdbPeopleResponseDtoToPersonList(peopleInfo);
+
+      await Promise.all(
+        people.map((p) =>
+          this.findOrCreate(p.tmdbId, mediaTmdbId, p, peopleInfo),
+        ),
+      );
+
+      castResult = await this.findCastByTmdbId(mediaTmdbId);
+      crewResult = await this.findCrewByTmdbId(mediaTmdbId);
     }
-
-    let peopleInfo: TmdbPeopleResponseDto | undefined;
-
-    switch (mediaType) {
-      case MediaType.MOVIE:
-        peopleInfo = await this.tmdbapiService.getMoviePeople(mediaTmdbId);
-        break;
-
-      default:
-        peopleInfo = await this.tmdbapiService.getMoviePeople(mediaTmdbId);
-        break;
-    }
-
-    if (!peopleInfo) {
-      return null;
-    }
-
-    const people: Person[] =
-      TmdbApiMapper.tmdbPeopleResponseDtoToPersonList(peopleInfo);
-
-    const allPeople = await Promise.all(
-      people.map((person) =>
-        this.findOrCreate(person.tmdbId, mediaTmdbId, person, peopleInfo),
-      ),
-    );
 
     return {
-      cast: allPeople.filter(
-        (p): p is MediaCastDto => p instanceof MediaCastDto,
-      ),
-      crew: allPeople.filter(
-        (p): p is MediaCrewDto => p instanceof MediaCrewDto,
-      ),
+      cast: this.mapToResponseDto(MediaCastResponseDto, castResult),
+      crew: this.mapToResponseDto(MediaCrewResponseDto, crewResult),
     };
   }
 
-  createPeopleDetailDto(mediaPerson: MediaPerson): MediaCastDto | MediaCrewDto {
+  private mapToResponseDto<T>(
+    ResponseClass: new (data: any) => T,
+    result: {
+      data: MediaPerson[];
+      total: number;
+      page: number;
+      lastPage: number;
+    },
+  ): T {
+    const dtoList = result.data.map((mp) => this.createPeopleDetailDto(mp));
+
+    const listKey =
+      ResponseClass.name === 'MediaCastResponseDto'
+        ? 'mediaCastDtoList'
+        : 'mediaCrewDtoList';
+
+    return new ResponseClass({
+      [listKey]: dtoList,
+      total: result.total,
+      page: result.page,
+      lastPage: result.lastPage,
+    });
+  }
+
+  private createPeopleDetailDto(
+    mediaPerson: MediaPerson,
+  ): MediaCastDto | MediaCrewDto {
     switch (mediaPerson.type) {
       case PersonType.CAST:
         return this.createCastPersonDetailDto(mediaPerson);
@@ -148,7 +205,7 @@ export class PersonService {
     }
   }
 
-  createCastPersonDetailDto(mediaPerson: MediaPerson): MediaCastDto {
+  private createCastPersonDetailDto(mediaPerson: MediaPerson): MediaCastDto {
     return new MediaCastDto({
       name: mediaPerson.person.name,
       profilePath: mediaPerson.person.profilePath,
@@ -157,7 +214,7 @@ export class PersonService {
     });
   }
 
-  createCrewPersonDetailDto(mediaPerson: MediaPerson): MediaCrewDto {
+  private createCrewPersonDetailDto(mediaPerson: MediaPerson): MediaCrewDto {
     return new MediaCrewDto({
       name: mediaPerson.person.name,
       profilePath: mediaPerson.person.profilePath,

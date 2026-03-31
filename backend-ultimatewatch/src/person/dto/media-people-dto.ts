@@ -1,7 +1,7 @@
-import { MediaCastDto } from './media-cast-dto';
-import { MediaCrewDto } from './media-crew-dto';
+import { MediaCastResponseDto } from './media-cast-response-dto';
+import { MediaCrewResponseDto } from './media-crew-response-dto';
 
 export type MediaPeopleResponseDto = {
-  cast: MediaCastDto[];
-  crew: MediaCrewDto[];
+  cast: MediaCastResponseDto;
+  crew: MediaCrewResponseDto;
 };

@@ -13,8 +13,8 @@ export class Movie extends BaseEntity {
   @Column()
   revenue: number;
 
-  @Column()
-  releaseDate: Date;
+  @Column({ type: 'date', nullable: true })
+  releaseDate: Date | null;
 
   @OneToOne(() => MediaContent, (mediaContent) => mediaContent.movie, {
     onDelete: 'CASCADE',
@@ -23,7 +23,7 @@ export class Movie extends BaseEntity {
   @JoinColumn()
   mediaContent: MediaContent;
 
-  getReleaseDate(): Date {
+  getReleaseDate(): Date | null {
     return this.releaseDate;
   }
 }

@@ -72,10 +72,13 @@ export class TmdbApiMapper {
         response.production_companies,
       );
 
-    movie.budget = response.budget;
-    movie.runtime = response.runtime;
-    movie.revenue = response.revenue;
-    movie.releaseDate = new Date(response.release_date);
+    movie.budget = response.budget || 0;
+    movie.runtime = response.runtime || 0;
+    movie.revenue = response.revenue || 0;
+    movie.releaseDate =
+      response.release_date && response.release_date.trim() !== ''
+        ? new Date(response.release_date)
+        : null;
     movie.mediaContent = mediaContent;
 
     return movie;

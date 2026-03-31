@@ -9,7 +9,7 @@ export class MovieDetailDto {
   budget: number;
   runtime: number;
   revenue: number;
-  releaseDate: string;
+  releaseDate: string | null;
 
   constructor(init?: Partial<MovieDetailDto>) {
     Object.assign(this, init);

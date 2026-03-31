@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { Cache } from 'cache-manager';
 import { TmdbListMediaDto } from 'src/common/tmdbapi/dto/media/tmdb-media-list-dto';
 import { TmdbApiMapper } from 'src/common/tmdbapi/mapper/tmdbapi-mapper';
 import { TmdbApiService } from 'src/common/tmdbapi/tmdbapi.service';
@@ -22,6 +23,8 @@ export class MoviesService {
     private readonly tmdbApiService: TmdbApiService,
     private readonly genresService: GenresService,
     private readonly productionCompaniesService: ProductionCompaniesService,
+    @Inject('CACHE_MANAGER')
+    private readonly cacheManager: Cache,
   ) {}
 
   private async fetchFourPages(
@@ -37,19 +40,38 @@ export class MoviesService {
       finalList.push(...list);
     }
 
-    return finalList;
+    return finalList.filter(
+      (movie, index, self) =>
+        index === self.findIndex((m) => m.id === movie.id),
+    );
   }
 
   async getMovieListForWholePage(page: number = 1) {
-    return this.fetchFourPages(page, (p) =>
+    const cacheKey = `movies_page_${page}`;
+    const cachedList: TmdbListMediaDto[] | undefined =
+      await this.cacheManager.get<TmdbListMediaDto[]>(cacheKey);
+
+    if (cachedList) return cachedList;
+
+    const movieList = await this.fetchFourPages(page, (p) =>
       this.tmdbApiService.getMovieListFromTmdb(p),
     );
+    await this.cacheManager.set(cacheKey, movieList, 600000);
+    return movieList;
   }
 
   async searchMoviesForWholePage(query: string, page: number = 1) {
-    return this.fetchFourPages(page, (p) =>
+    const cacheKey = `search_movies_${query}_page_${page}`;
+    const cachedList: TmdbListMediaDto[] | undefined =
+      await this.cacheManager.get<TmdbListMediaDto[]>(cacheKey);
+
+    if (cachedList) return cachedList;
+
+    const movieList = await this.fetchFourPages(page, (p) =>
       this.tmdbApiService.searchMoviesFromTmdb(query, p),
     );
+    await this.cacheManager.set(cacheKey, movieList, 600000);
+    return movieList;
   }
 
   async create(movie: TmdbMovieDto) {
@@ -143,7 +165,12 @@ export class MoviesService {
       budget: movie?.budget,
       runtime: movie?.runtime,
       revenue: movie?.revenue,
-      releaseDate: movie?.getReleaseDate().toISOString(),
+      releaseDate:
+        movie.releaseDate && !(movie.releaseDate instanceof Date)
+          ? new Date(movie.releaseDate).toISOString()
+          : movie.releaseDate instanceof Date
+            ? movie.releaseDate.toISOString()
+            : null,
     });
   }
 }

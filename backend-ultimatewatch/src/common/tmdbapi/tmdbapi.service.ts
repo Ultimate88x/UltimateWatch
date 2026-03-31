@@ -68,7 +68,7 @@ export class TmdbApiService {
     const seriesList: TmdbListMediaDto[] =
       TmdbApiMapper.tmdbListSeriesResultDtoToTmdbListMediaDto(response.data);
 
-    return seriesList;
+    return this.filterDuplicateMedia(seriesList);
   }
 
   async getMovieListFromTmdb(page: number = 1) {
@@ -98,10 +98,10 @@ export class TmdbApiService {
         ),
     );
 
-    const seriesList: TmdbListMediaDto[] =
+    const movieList: TmdbListMediaDto[] =
       TmdbApiMapper.tmdbListMoviesResultDtoToTmdbListMediaDto(response.data);
 
-    return seriesList;
+    return this.filterDuplicateMedia(movieList);
   }
 
   async searchSeriesFromTmdb(query: string, page: number = 1) {
@@ -135,7 +135,7 @@ export class TmdbApiService {
     const seriesList: TmdbListMediaDto[] =
       TmdbApiMapper.tmdbListSeriesResultDtoToTmdbListMediaDto(response.data);
 
-    return seriesList;
+    return this.filterDuplicateMedia(seriesList);
   }
 
   async searchMoviesFromTmdb(query: string, page: number = 1) {
@@ -169,7 +169,7 @@ export class TmdbApiService {
     const movieList: TmdbListMediaDto[] =
       TmdbApiMapper.tmdbListMoviesResultDtoToTmdbListMediaDto(response.data);
 
-    return movieList;
+    return this.filterDuplicateMedia(movieList);
   }
 
   async getMovieFromTmdb(id: number) {
@@ -292,5 +292,16 @@ export class TmdbApiService {
     const productionCompany: TmdbProductionCompanyDto = response.data;
 
     return productionCompany;
+  }
+
+  private filterDuplicateMedia(
+    mediaList: TmdbListMediaDto[],
+  ): TmdbListMediaDto[] {
+    const seen = new Set();
+    return mediaList.filter((item) => {
+      const duplicate = seen.has(item.id);
+      seen.add(item.id);
+      return !duplicate;
+    });
   }
 }

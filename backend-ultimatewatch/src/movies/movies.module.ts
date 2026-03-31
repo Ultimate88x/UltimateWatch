@@ -8,6 +8,7 @@ import { GenresModule } from 'src/genres/genres.module';
 import { ProductionCompaniesModule } from 'src/production-companies/production-companies.module';
 import { ProvidersModule } from 'src/providers/providers.module';
 import { PersonModule } from 'src/person/person.module';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
@@ -17,6 +18,10 @@ import { PersonModule } from 'src/person/person.module';
     ProductionCompaniesModule,
     ProvidersModule,
     PersonModule,
+    CacheModule.register({
+      ttl: 600000,
+      max: 100,
+    }),
   ],
   providers: [MoviesService],
   controllers: [MoviesController],

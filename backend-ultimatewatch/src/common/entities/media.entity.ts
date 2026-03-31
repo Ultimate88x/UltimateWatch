@@ -11,5 +11,5 @@ export abstract class MediaEntity extends TmdbEntity {
   @Column()
   imagePath: string;
 
-  abstract getReleaseDate(): Date;
+  abstract getReleaseDate(): Date | null;
 }

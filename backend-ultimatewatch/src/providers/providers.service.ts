@@ -79,41 +79,30 @@ export class ProvidersService {
     mediaTmdbId: number,
     mediaType: MediaType,
   ): Promise<ProviderListItemDto[] | null> {
-    let providers: Provider[] = await this.findProvidersByTmdbId(mediaTmdbId);
+    const localProviders = await this.findProvidersByTmdbId(mediaTmdbId);
+    const isStale =
+      localProviders.length > 0
+        ? isDataStale(localProviders[0].updatedAt)
+        : true;
 
-    if (providers.length > 0) {
-      return providers.map((provider) => this.createProviderListItem(provider));
+    if (!isStale) {
+      return localProviders.map((p) => this.createProviderListItem(p));
     }
 
-    let providerInfo: TmdbProviderInfoDto | undefined;
+    const providerInfo: TmdbProviderInfoDto | undefined = await (mediaType ===
+    MediaType.MOVIE
+      ? this.tmdbapiService.getProvidersForMovie(mediaTmdbId)
+      : this.tmdbapiService.getProvidersForMovie(mediaTmdbId));
 
-    switch (mediaType) {
-      case MediaType.MOVIE:
-        providerInfo =
-          await this.tmdbapiService.getProvidersForMovie(mediaTmdbId);
-        break;
+    if (!providerInfo) return null;
 
-      default:
-        providerInfo =
-          await this.tmdbapiService.getProvidersForMovie(mediaTmdbId);
-        break;
-    }
-
-    if (!providerInfo) {
-      return null;
-    }
-
-    providers = TmdbApiMapper.tmdbProviderInfoDtoToProviderList(providerInfo);
-
+    const providers =
+      TmdbApiMapper.tmdbProviderInfoDtoToProviderList(providerInfo);
     const finalProviders = await Promise.all(
-      providers.map((provider: Provider) =>
-        this.findOrCreate(provider.tmdbId, mediaTmdbId, provider),
-      ),
+      providers.map((p) => this.findOrCreate(p.tmdbId, mediaTmdbId, p)),
     );
 
-    return finalProviders.map((provider) =>
-      this.createProviderListItem(provider),
-    );
+    return finalProviders.map((p) => this.createProviderListItem(p));
   }
 
   private normalize(name: string): string {

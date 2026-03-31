@@ -18,6 +18,7 @@ import { PersonType } from 'src/common/enums/person.type.enum';
 import { MediaPeopleResponseDto } from './dto/media-people-dto';
 import { MediaCastResponseDto } from './dto/media-cast-response-dto';
 import { MediaCrewResponseDto } from './dto/media-crew-response-dto';
+import { isDataStale } from 'src/common/helpers/data-stale.helper';
 
 @Injectable()
 export class PersonService {
@@ -141,8 +142,12 @@ export class PersonService {
   ): Promise<MediaPeopleResponseDto | null> {
     let castResult = await this.findCastByTmdbId(mediaTmdbId);
     let crewResult = await this.findCrewByTmdbId(mediaTmdbId);
+    const isCastValid =
+      castResult.data.length > 0 && !isDataStale(castResult.data[0].updatedAt);
+    const isCrewValid =
+      crewResult.data.length > 0 && !isDataStale(crewResult.data[0].updatedAt);
 
-    if (castResult.data.length === 0 || crewResult.data.length === 0) {
+    if (!isCastValid || !isCrewValid) {
       const peopleInfo = await (mediaType === MediaType.MOVIE
         ? this.tmdbapiService.getMoviePeople(mediaTmdbId)
         : this.tmdbapiService.getMoviePeople(mediaTmdbId));

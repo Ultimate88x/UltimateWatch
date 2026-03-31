@@ -4,6 +4,7 @@ import { CronExpression } from '@nestjs/schedule/dist/enums/cron-expression.enum
 import { InjectRepository } from '@nestjs/typeorm';
 import { GenresService } from 'src/genres/genres.service';
 import { MediaContent } from 'src/media-contents/entities/media-content.entity';
+import { Person } from 'src/person/entities/person.entity';
 import { ProductionCompaniesService } from 'src/production-companies/production-companies.service';
 import { MediaProvider } from 'src/providers/entities/media.provider.entity';
 import { Provider } from 'src/providers/entities/provider.entity';
@@ -20,6 +21,8 @@ export class ComplianceService {
     private readonly providerRepository: Repository<Provider>,
     @InjectRepository(MediaContent)
     private readonly mediaContentRepository: Repository<MediaContent>,
+    @InjectRepository(Person)
+    private readonly personRepository: Repository<Person>,
     private readonly genresService: GenresService,
     private readonly productionCompaniesService: ProductionCompaniesService,
   ) {}
@@ -75,6 +78,23 @@ export class ComplianceService {
 
     this.logger.log(
       `-------------------- TMDB: Obsolete data purged. ${(mediaResult.affected || 0) + (providerResult.affected || 0)} records deleted. ---------------------`,
+    );
+  }
+
+  private async purgePeopleData() {
+    const limitDate = new Date();
+    limitDate.setDate(limitDate.getDate() - 30);
+
+    this.logger.log(
+      `-------------------- TMDB: Purging obsolete People data. --------------------`,
+    );
+
+    const result = await this.personRepository.delete({
+      updatedAt: LessThan(limitDate),
+    });
+
+    this.logger.log(
+      `-------------------- TMDB: Obsolete People data purged. ${result.affected || 0} records deleted. ---------------------`,
     );
   }
 

@@ -6,10 +6,11 @@ import { Provider } from 'src/providers/entities/provider.entity';
 import { GenresModule } from 'src/genres/genres.module';
 import { ProductionCompaniesModule } from 'src/production-companies/production-companies.module';
 import { MediaProvider } from 'src/providers/entities/media.provider.entity';
+import { Person } from 'src/person/entities/person.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([MediaContent, MediaProvider, Provider]),
+    TypeOrmModule.forFeature([MediaContent, MediaProvider, Provider, Person]),
     GenresModule,
     ProductionCompaniesModule,
   ],

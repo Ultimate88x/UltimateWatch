@@ -34,21 +34,6 @@ export default function SeriesList() {
           return;
         }
 
-        if (page === 1) {
-          const topSeries = data.slice(0, 27); 
-          const imagePromises = topSeries.map((series: Media) => {
-            return new Promise((resolve) => {
-              const img = new Image();
-              img.src = series.posterPath;
-              img.onload = resolve;
-              img.onerror = resolve;
-              setTimeout(resolve, 500);
-            });
-          });
-
-          await Promise.all(imagePromises);
-        }
-
         setMediaList((prev) => {
           const existingIds = new Set(prev.map(s => s.id));
           const uniqueNewData = data.filter((item: Media) => !existingIds.has(item.id));

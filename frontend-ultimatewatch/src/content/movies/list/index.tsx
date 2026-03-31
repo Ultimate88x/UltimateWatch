@@ -34,21 +34,6 @@ export default function MovieList() {
           return;
         }
 
-        if (page === 1 && data.length > 0) {
-          const topMovies = data.slice(0, 27); 
-          const imagePromises = topMovies.map((movie: Media) => {
-            return new Promise((resolve) => {
-              const img = new Image();
-              img.src = movie.posterPath;
-              img.onload = resolve;
-              img.onerror = resolve;
-              setTimeout(resolve, 500);
-            });
-          });
-
-          await Promise.all(imagePromises);
-        }
-
         setMediaList((prev) => {
           const existingIds = new Set(prev.map(s => s.id));
           const uniqueNewData = data.filter((item: Media) => !existingIds.has(item.id));
@@ -102,6 +87,7 @@ export default function MovieList() {
 
   return (
     <div className="relative w-full min-h-screen bg-cover bg-blue-background flex flex-col justify-start items-start overflow-x-hidden">
+      
       <div className="relative w-full h-fit px-20 flex flex-col justify-start items-start gap-8">
         <ListMedia title={"DISCOVER MOVIES"} mediaItems={mediaList} />
 

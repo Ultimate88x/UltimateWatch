@@ -40,21 +40,6 @@ export default function SearchResultsList() {
           return;
         }
 
-        if (page === 1) {
-          const topMovies = data.slice(0, 27); 
-          const imagePromises = topMovies.map((movie: Media) => {
-            return new Promise((resolve) => {
-              const img = new Image();
-              img.src = movie.posterPath;
-              img.onload = resolve;
-              img.onerror = resolve;
-              setTimeout(resolve, 500);
-            });
-          });
-
-          await Promise.all(imagePromises);
-        }
-
         setMediaList((prev) => {
           if (page === 1) return data;
 

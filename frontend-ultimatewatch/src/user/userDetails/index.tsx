@@ -557,7 +557,7 @@ export default function UserDetails() {
         )}
       </div>
 
-      <div className="relative max-w-2/3 flex flex-1 flex-col justify-start items-start gap-8">
+      <div className="relative max-w-2/3 pr-10 flex flex-1 flex-col justify-start items-start gap-8">
         <ListMedia title="Last Watched" mediaItems={MOCK_MOVIES} columns={6} />
   
         <ListMedia title="Highest Rated" mediaItems={MOCK_MOVIES} columns={6} />

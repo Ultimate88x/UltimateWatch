@@ -5,15 +5,21 @@ import {
   Param,
   Query,
 } from '@nestjs/common';
-import { TmdbApiService } from 'src/common/tmdbapi/tmdbapi.service';
 import { MoviesService } from './movies.service';
 import { TmdbListMediaDto } from 'src/common/tmdbapi/dto/media/tmdb-media-list-dto';
+import { PersonService } from 'src/person/person.service';
+import { MovieDetailDto } from './dto/movie-detail-dto';
+import { MediaType } from 'src/common/enums/media.type.enum';
+import { MediaPeopleResponseDto } from 'src/person/dto/media-people-dto';
+import { ProvidersService } from 'src/providers/providers.service';
+import { ProviderListItemDto } from 'src/providers/dto/provider-list-item-dto';
 
 @Controller('movies')
 export class MoviesController {
   constructor(
     private readonly moviesService: MoviesService,
-    private readonly tmdbapiService: TmdbApiService,
+    private readonly providersService: ProvidersService,
+    private readonly personService: PersonService,
   ) {}
 
   @Get('tmdb-list')
@@ -40,8 +46,30 @@ export class MoviesController {
   }
 
   @Get(':id')
-  async getMovieByTmdbId(@Param('id') id: string) {
-    const data = await this.moviesService.findMovieFromTmdbId(+id);
-    return data;
+  async getMovieByTmdbId(@Param('id') id: string): Promise<{
+    movie: MovieDetailDto;
+    providers: ProviderListItemDto[] | null;
+    people: MediaPeopleResponseDto | null;
+  }> {
+    const movie: MovieDetailDto =
+      await this.moviesService.findMovieFromTmdbId(+id);
+
+    const providers: ProviderListItemDto[] | null =
+      await this.providersService.findProvidersOrGetFromTmdbAndFindOrCreate(
+        +id,
+        MediaType.MOVIE,
+      );
+
+    const people: MediaPeopleResponseDto | null =
+      await this.personService.findPeopleOrGetFromTmdbAndFindOrCreate(
+        +id,
+        MediaType.MOVIE,
+      );
+
+    return {
+      movie: movie,
+      providers: providers,
+      people: people,
+    };
   }
 }

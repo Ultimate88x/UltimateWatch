@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { MediaContent } from './entities/media.content.entity';
+import { MediaContent } from './entities/media-content.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
 

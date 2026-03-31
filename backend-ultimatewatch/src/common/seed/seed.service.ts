@@ -7,7 +7,8 @@ import { Genre } from 'src/genres/entities/genre.entity';
 import { GenresService } from 'src/genres/genres.service';
 import { ProductionCompany } from 'src/production-companies/entities/production-company.entity';
 import { Provider } from 'src/providers/entities/provider.entity';
-import { MediaContent } from 'src/media-contents/entities/media.content.entity';
+import { MediaContent } from 'src/media-contents/entities/media-content.entity';
+import { Person } from 'src/person/entities/person.entity';
 
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
@@ -24,6 +25,8 @@ export class SeedService implements OnApplicationBootstrap {
     private readonly productionCompanyRepository: Repository<ProductionCompany>,
     @InjectRepository(Provider)
     private readonly providerRepository: Repository<Provider>,
+    @InjectRepository(Person)
+    private readonly personRepository: Repository<Person>,
     private readonly genreService: GenresService,
   ) {}
 
@@ -43,6 +46,9 @@ export class SeedService implements OnApplicationBootstrap {
     );
     await this.providerRepository.query(
       'TRUNCATE TABLE "providers" RESTART IDENTITY CASCADE',
+    );
+    await this.personRepository.query(
+      'TRUNCATE TABLE "people" RESTART IDENTITY CASCADE',
     );
 
     this.logger.log('Seeding database...');

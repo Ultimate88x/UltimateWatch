@@ -17,6 +17,7 @@ import { ProvidersModule } from './providers/providers.module';
 import { MediaContentsModule } from './media-contents/media-contents.module';
 import { WatchmodeModule } from './common/watchmode/watchmode.module';
 import { ComplianceModule } from './compliance/compliance.module';
+import { PersonModule } from './person/person.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { ComplianceModule } from './compliance/compliance.module';
     MediaContentsModule,
     WatchmodeModule,
     ComplianceModule,
+    PersonModule,
   ],
   controllers: [AppController],
   providers: [AppService],

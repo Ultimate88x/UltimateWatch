@@ -17,5 +17,6 @@ import { WatchmodeModule } from 'src/common/watchmode/watchmode.module';
   ],
   providers: [ProvidersService],
   controllers: [ProvidersController],
+  exports: [ProvidersService],
 })
 export class ProvidersModule {}

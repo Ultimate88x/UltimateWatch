@@ -6,15 +6,19 @@ import { Genre } from 'src/genres/entities/genre.entity';
 import { GenresModule } from 'src/genres/genres.module';
 import { ProductionCompany } from 'src/production-companies/entities/production-company.entity';
 import { Provider } from 'src/providers/entities/provider.entity';
-import { MediaContent } from 'src/media-contents/entities/media.content.entity';
+import { MediaContent } from 'src/media-contents/entities/media-content.entity';
+import { Person } from 'src/person/entities/person.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
-    TypeOrmModule.forFeature([MediaContent]),
-    TypeOrmModule.forFeature([Genre]),
-    TypeOrmModule.forFeature([ProductionCompany]),
-    TypeOrmModule.forFeature([Provider]),
+    TypeOrmModule.forFeature([
+      User,
+      MediaContent,
+      Genre,
+      ProductionCompany,
+      Provider,
+      Person,
+    ]),
     GenresModule,
   ],
   providers: [SeedService],

@@ -1,5 +1,5 @@
 import { BaseEntity } from 'src/common/entities/base.entity';
-import { MediaContent } from 'src/media-contents/entities/media.content.entity';
+import { MediaContent } from 'src/media-contents/entities/media-content.entity';
 import { Column, Entity, JoinColumn, OneToOne } from 'typeorm';
 
 @Entity('movies')

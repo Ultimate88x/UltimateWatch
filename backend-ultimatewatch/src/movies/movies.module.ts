@@ -6,6 +6,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Movie } from './entities/movie.entity';
 import { GenresModule } from 'src/genres/genres.module';
 import { ProductionCompaniesModule } from 'src/production-companies/production-companies.module';
+import { ProvidersModule } from 'src/providers/providers.module';
+import { PersonModule } from 'src/person/person.module';
 
 @Module({
   imports: [
@@ -13,6 +15,8 @@ import { ProductionCompaniesModule } from 'src/production-companies/production-c
     TmdbApiModule,
     GenresModule,
     ProductionCompaniesModule,
+    ProvidersModule,
+    PersonModule,
   ],
   providers: [MoviesService],
   controllers: [MoviesController],

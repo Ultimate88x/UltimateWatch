@@ -15,8 +15,16 @@ import {
   TmdbProviderInfoDto,
 } from '../dto/tmdb-provider-response-dto';
 import { Provider } from 'src/providers/entities/provider.entity';
-import { MediaContent } from 'src/media-contents/entities/media.content.entity';
+import { MediaContent } from 'src/media-contents/entities/media-content.entity';
 import { MediaType } from 'src/common/enums/media.type.enum';
+import { Person } from 'src/person/entities/person.entity';
+import {
+  TmdbCastDto,
+  TmdbCrewDto,
+  TmdbPeopleResponseDto,
+} from '../dto/tmdb-people-response-dto';
+import { MediaPerson } from 'src/person/entities/media.person.entity';
+import { PersonType } from 'src/common/enums/person.type.enum';
 
 export class TmdbApiMapper {
   static tmdbListSeriesResultDtoToTmdbListMediaDto(
@@ -119,7 +127,7 @@ export class TmdbApiMapper {
   static tmdbProviderDtoListToProviderList(
     response: TmdbProviderDto[],
   ): Provider[] {
-    return response.map((tmdbProvider: TmdbProviderDto): Provider => {
+    return (response || []).map((tmdbProvider: TmdbProviderDto): Provider => {
       const provider: Provider = new Provider();
 
       provider.tmdbId = tmdbProvider.provider_id;
@@ -133,13 +141,15 @@ export class TmdbApiMapper {
   static tmdbProviderInfoDtoToProviderList(
     response: TmdbProviderInfoDto,
   ): Provider[] {
+    if (!response) return [];
+
     const buyProviders: Provider[] = this.tmdbProviderDtoListToProviderList(
-      response.buy,
+      response.buy || [],
     );
     const flatrateProviders: Provider[] =
-      this.tmdbProviderDtoListToProviderList(response.flatrate);
+      this.tmdbProviderDtoListToProviderList(response.flatrate || []);
     const rentProviders: Provider[] = this.tmdbProviderDtoListToProviderList(
-      response.rent,
+      response.rent || [],
     );
 
     const providers: Provider[] = [
@@ -151,5 +161,53 @@ export class TmdbApiMapper {
     ];
 
     return providers;
+  }
+
+  static tmdbPeopleResponseDtoToPersonList(
+    response: TmdbPeopleResponseDto,
+  ): Person[] {
+    const cast: Person[] = response.cast.map((tmdbCast: TmdbCastDto) => {
+      const person: Person = new Person();
+
+      person.tmdbId = tmdbCast.id;
+      person.name = tmdbCast.name;
+      person.profilePath = `https://image.tmdb.org/t/p/w500/${tmdbCast.profile_path}`;
+      return person;
+    });
+
+    const crew: Person[] = response.crew.map((tmdbCrew: TmdbCrewDto) => {
+      const person: Person = new Person();
+
+      person.tmdbId = tmdbCrew.id;
+      person.name = tmdbCrew.name;
+      person.profilePath = `https://image.tmdb.org/t/p/w500/${tmdbCrew.profile_path}`;
+      return person;
+    });
+
+    const people: Person[] = [
+      ...new Map(
+        [...cast, ...crew].map((person: Person) => [person.tmdbId, person]),
+      ).values(),
+    ];
+    return people;
+  }
+
+  static tmdbCastCrewDtoToMediaPerson(
+    tmdbPerson: TmdbCastDto | TmdbCrewDto | undefined,
+  ): MediaPerson {
+    const mediaPerson: MediaPerson = new MediaPerson();
+
+    if (!tmdbPerson) {
+      return mediaPerson;
+    }
+
+    mediaPerson.type =
+      'character' in tmdbPerson ? PersonType.CAST : PersonType.CREW;
+    mediaPerson.character =
+      'character' in tmdbPerson ? tmdbPerson.character : undefined;
+    mediaPerson.order = 'order' in tmdbPerson ? tmdbPerson.order : undefined;
+    mediaPerson.job = 'job' in tmdbPerson ? tmdbPerson.job : undefined;
+
+    return mediaPerson;
   }
 }

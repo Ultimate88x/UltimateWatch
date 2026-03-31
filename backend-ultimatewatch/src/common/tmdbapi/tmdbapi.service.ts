@@ -13,12 +13,13 @@ import { TmdbListMediaDto } from './dto/media/tmdb-media-list-dto';
 import { TmdbApiMapper } from './mapper/tmdbapi-mapper';
 import { ExternalApiError } from 'src/common/exceptions/external-api-error';
 import { TmdbMovieDto } from './dto/media/tmdb-movie-dto';
-import { TmdbGenreDto, tmdbListGenreResponseDto } from './dto/tmdb-genre-dto';
+import { TmdbGenreDto, TmdbListGenreResponseDto } from './dto/tmdb-genre-dto';
 import {
   TmdbProviderInfoDto,
   TmdbProviderResponse,
 } from './dto/tmdb-provider-response-dto';
 import { TmdbProductionCompanyDto } from './dto/tmdb-production-company-dto';
+import { TmdbPeopleResponseDto } from './dto/tmdb-people-response-dto';
 
 @Injectable()
 export class TmdbApiService {
@@ -228,9 +229,9 @@ export class TmdbApiService {
         Authorization: `Bearer ${this.apiKey}`,
       },
     };
-    const response: AxiosResponse<tmdbListGenreResponseDto> =
+    const response: AxiosResponse<TmdbListGenreResponseDto> =
       await firstValueFrom(
-        this.httpService.get<tmdbListGenreResponseDto>(url, options).pipe(
+        this.httpService.get<TmdbListGenreResponseDto>(url, options).pipe(
           catchError((error: AxiosError) => {
             throw new ExternalApiError(
               `TMDB API Error: ${error.response?.statusText || 'Unknown Error'}`,
@@ -242,6 +243,30 @@ export class TmdbApiService {
     const genreList: TmdbGenreDto[] = response.data.genres;
 
     return genreList;
+  }
+
+  async getMoviePeople(id: number) {
+    const url = `https://api.themoviedb.org/3/movie/${id}/credits`;
+    const options = {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+    };
+    const response: AxiosResponse<TmdbPeopleResponseDto> = await firstValueFrom(
+      this.httpService.get<TmdbPeopleResponseDto>(url, options).pipe(
+        catchError((error: AxiosError) => {
+          throw new ExternalApiError(
+            `TMDB API Error: ${error.response?.statusText || 'Unknown Error'}`,
+          );
+        }),
+      ),
+    );
+
+    const peopleList: TmdbPeopleResponseDto = response.data;
+
+    return peopleList;
   }
 
   async getProductionCompanyFromTmdb(id: number) {

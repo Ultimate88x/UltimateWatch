@@ -11,6 +11,8 @@ import { GenresService } from 'src/genres/genres.service';
 import { ProductionCompany } from 'src/production-companies/entities/production-company.entity';
 import { ProductionCompaniesService } from 'src/production-companies/production-companies.service';
 import { isDataStale } from 'src/common/helpers/data-stale.helper';
+import { MovieDetailDto } from './dto/movie-detail-dto';
+import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
 
 @Injectable()
 export class MoviesService {
@@ -74,21 +76,74 @@ export class MoviesService {
     return await this.movieRepository.save(mappedMovie);
   }
 
-  async findMovieFromTmdbId(tmdbId: number) {
+  async findMovieFromTmdbId(tmdbId: number): Promise<MovieDetailDto> {
     const existingMovie = await this.movieRepository.findOne({
       where: {
         mediaContent: { tmdbId },
       },
+      relations: [
+        'mediaContent',
+        'mediaContent.genres',
+        'mediaContent.productionCompanies',
+      ],
     });
 
-    if (existingMovie && !isDataStale(existingMovie.mediaContent.updatedAt)) {
+    if (existingMovie && !isDataStale(existingMovie?.mediaContent?.updatedAt)) {
       existingMovie.mediaContent.popularity++;
-      return await this.movieRepository.save(existingMovie);
+
+      const savedMovie = await this.movieRepository.save(existingMovie);
+
+      return this.createMovieDetailDto(savedMovie);
     }
 
     const movie: TmdbMovieDto =
       await this.tmdbApiService.getMovieFromTmdb(tmdbId);
 
-    return await this.create(movie);
+    try {
+      const savedMovie = await this.create(movie);
+      return this.createMovieDetailDto(savedMovie);
+    } catch (error: unknown) {
+      if (typeof error === 'object' && error !== null && 'code' in error) {
+        if ((error as { code: string }).code === '23505') {
+          const existingMovie = await this.movieRepository.findOne({
+            where: { mediaContent: { tmdbId } },
+            relations: [
+              'mediaContent',
+              'mediaContent.genres',
+              'mediaContent.productionCompanies',
+            ],
+          });
+
+          if (!existingMovie) {
+            throw new ResourceNotFoundException(
+              'Movie',
+              'TMEDB_ID',
+              String(tmdbId),
+            );
+          }
+          return this.createMovieDetailDto(existingMovie);
+        }
+      }
+
+      throw error;
+    }
+  }
+
+  createMovieDetailDto(movie: Movie): MovieDetailDto {
+    return new MovieDetailDto({
+      tmdbId: movie?.mediaContent?.tmdbId,
+      title: movie?.mediaContent?.title,
+      overview: movie?.mediaContent?.overview,
+      imagePath: movie?.mediaContent?.imagePath,
+      status: movie?.mediaContent?.status,
+      genres: movie?.mediaContent?.genres.map((genre) => genre.name),
+      productionCompanies: movie?.mediaContent?.productionCompanies.map(
+        (company) => company.name,
+      ),
+      budget: movie?.budget,
+      runtime: movie?.runtime,
+      revenue: movie?.revenue,
+      releaseDate: movie?.getReleaseDate().toISOString(),
+    });
   }
 }

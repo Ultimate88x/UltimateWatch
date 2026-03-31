@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { MediaContent } from './entities/media.content.entity';
+import { MediaContent } from './entities/media-content.entity';
 import { MediaContentsService } from './media-contents.service';
 
 @Module({

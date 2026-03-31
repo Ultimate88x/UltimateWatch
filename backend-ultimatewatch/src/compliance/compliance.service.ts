@@ -3,7 +3,7 @@ import { Cron } from '@nestjs/schedule';
 import { CronExpression } from '@nestjs/schedule/dist/enums/cron-expression.enum';
 import { InjectRepository } from '@nestjs/typeorm';
 import { GenresService } from 'src/genres/genres.service';
-import { MediaContent } from 'src/media-contents/entities/media.content.entity';
+import { MediaContent } from 'src/media-contents/entities/media-content.entity';
 import { ProductionCompaniesService } from 'src/production-companies/production-companies.service';
 import { MediaProvider } from 'src/providers/entities/media.provider.entity';
 import { Provider } from 'src/providers/entities/provider.entity';

@@ -3,6 +3,6 @@ export type TmdbGenreDto = {
   name: string;
 };
 
-export type tmdbListGenreResponseDto = {
+export type TmdbListGenreResponseDto = {
   genres: TmdbGenreDto[];
 };

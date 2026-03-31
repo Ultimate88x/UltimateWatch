@@ -11,6 +11,7 @@ import { WatchmodeService } from 'src/common/watchmode/watchmode.service';
 import { MediaType } from 'src/common/enums/media.type.enum';
 import { WatchmodeProviderDto } from 'src/common/watchmode/dto/watchmode-provider-dto';
 import { isDataStale } from 'src/common/helpers/data-stale.helper';
+import { ProviderListItemDto } from './dto/provider-list-item-dto';
 
 @Injectable()
 export class ProvidersService {
@@ -77,11 +78,11 @@ export class ProvidersService {
   async findProvidersOrGetFromTmdbAndFindOrCreate(
     mediaTmdbId: number,
     mediaType: MediaType,
-  ): Promise<Provider[] | null> {
+  ): Promise<ProviderListItemDto[] | null> {
     let providers: Provider[] = await this.findProvidersByTmdbId(mediaTmdbId);
 
     if (providers.length > 0) {
-      return providers;
+      return providers.map((provider) => this.createProviderListItem(provider));
     }
 
     let providerInfo: TmdbProviderInfoDto | undefined;
@@ -104,10 +105,14 @@ export class ProvidersService {
 
     providers = TmdbApiMapper.tmdbProviderInfoDtoToProviderList(providerInfo);
 
-    return await Promise.all(
+    const finalProviders = await Promise.all(
       providers.map((provider: Provider) =>
         this.findOrCreate(provider.tmdbId, mediaTmdbId, provider),
       ),
+    );
+
+    return finalProviders.map((provider) =>
+      this.createProviderListItem(provider),
     );
   }
 
@@ -199,5 +204,12 @@ export class ProvidersService {
     }
 
     return mediaProviders;
+  }
+
+  createProviderListItem(provider: Provider): ProviderListItemDto {
+    return new ProviderListItemDto({
+      name: provider.name,
+      logoPath: provider.logoPath,
+    });
   }
 }

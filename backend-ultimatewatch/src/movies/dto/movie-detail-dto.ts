@@ -1,3 +1,5 @@
+import { ProductionCompanyDto } from 'src/production-companies/dto/production-company-dto';
+
 export class MovieDetailDto {
   tmdbId: number;
   title: string;
@@ -5,7 +7,7 @@ export class MovieDetailDto {
   imagePath: string;
   status: string;
   genres: string[];
-  productionCompanies: string[];
+  productionCompanies: ProductionCompanyDto[];
   budget: number;
   runtime: number;
   revenue: number;

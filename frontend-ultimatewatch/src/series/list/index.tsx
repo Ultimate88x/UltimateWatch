@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import ListMedia from "../../../components/content/ListMedia";
+import ListMedia from "../../components/content/ListMedia";
 import toast from "react-hot-toast";
-import { Button } from "../../../components/Button";
+import { Button } from "../../components/Button";
 import { Plus } from "lucide-react";
-import type { Media } from "../../../types/media";
+import type { Media } from "../../types/media";
 import { motion } from "framer-motion";
 
 export default function SeriesList() {
@@ -71,7 +71,7 @@ export default function SeriesList() {
         <motion.div
           animate={{ rotate: [0, 360] }}
           transition={{
-            duration: 2,
+            duration: 1.5,
             repeat: Infinity,
             ease: "easeInOut",
           }}

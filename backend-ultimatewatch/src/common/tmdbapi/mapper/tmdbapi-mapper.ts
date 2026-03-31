@@ -105,7 +105,7 @@ export class TmdbApiMapper {
     const productionCompany: ProductionCompany = new ProductionCompany();
 
     productionCompany.tmdbId = response.id;
-    productionCompany.logoPath = `https://image.tmdb.org/t/p/w500/${response.logo_path}`;
+    productionCompany.logoPath = `https://image.tmdb.org/t/p/original/${response.logo_path}`;
     productionCompany.name = response.name;
 
     return productionCompany;
@@ -119,7 +119,7 @@ export class TmdbApiMapper {
         const productionCompany: ProductionCompany = new ProductionCompany();
 
         productionCompany.tmdbId = tmdbProductionCompany.id;
-        productionCompany.logoPath = `https://image.tmdb.org/t/p/w500/${tmdbProductionCompany.logo_path}`;
+        productionCompany.logoPath = `https://image.tmdb.org/t/p/original/${tmdbProductionCompany.logo_path}`;
         productionCompany.name = tmdbProductionCompany.name;
 
         return productionCompany;
@@ -135,7 +135,7 @@ export class TmdbApiMapper {
 
       provider.tmdbId = tmdbProvider.provider_id;
       provider.name = tmdbProvider.provider_name;
-      provider.logoPath = tmdbProvider.logo_path;
+      provider.logoPath = `https://image.tmdb.org/t/p/original/${tmdbProvider.logo_path}`;
 
       return provider;
     });
@@ -196,20 +196,15 @@ export class TmdbApiMapper {
   }
 
   static tmdbCastCrewDtoToMediaPerson(
-    tmdbPerson: TmdbCastDto | TmdbCrewDto | undefined,
+    tmdbPerson: TmdbCastDto | TmdbCrewDto,
   ): MediaPerson {
     const mediaPerson: MediaPerson = new MediaPerson();
-
-    if (!tmdbPerson) {
-      return mediaPerson;
-    }
 
     mediaPerson.type =
       'character' in tmdbPerson ? PersonType.CAST : PersonType.CREW;
     mediaPerson.character =
-      'character' in tmdbPerson ? tmdbPerson.character : undefined;
-    mediaPerson.order = 'order' in tmdbPerson ? tmdbPerson.order : undefined;
-    mediaPerson.job = 'job' in tmdbPerson ? tmdbPerson.job : undefined;
+      'character' in tmdbPerson ? tmdbPerson.character : 'N/A';
+    mediaPerson.job = 'job' in tmdbPerson ? tmdbPerson.job : 'N/A';
 
     return mediaPerson;
   }

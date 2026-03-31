@@ -14,6 +14,7 @@ import { ProductionCompaniesService } from 'src/production-companies/production-
 import { isDataStale } from 'src/common/helpers/data-stale.helper';
 import { MovieDetailDto } from './dto/movie-detail-dto';
 import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
+import { ProductionCompanyDto } from 'src/production-companies/dto/production-company-dto';
 
 @Injectable()
 export class MoviesService {
@@ -160,7 +161,11 @@ export class MoviesService {
       status: movie?.mediaContent?.status,
       genres: movie?.mediaContent?.genres.map((genre) => genre.name),
       productionCompanies: movie?.mediaContent?.productionCompanies.map(
-        (company) => company.name,
+        (company) =>
+          new ProductionCompanyDto({
+            name: company.name,
+            logoPath: company.logoPath,
+          }),
       ),
       budget: movie?.budget,
       runtime: movie?.runtime,

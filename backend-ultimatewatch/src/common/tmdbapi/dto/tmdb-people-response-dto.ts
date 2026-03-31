@@ -3,7 +3,6 @@ export type TmdbCastDto = {
   name: string;
   profile_path: string;
   character: string;
-  order: number;
 };
 
 export type TmdbCrewDto = {

@@ -1,7 +1,7 @@
 import { MediaCastDto } from './media-cast-dto';
 
 export class MediaCastResponseDto {
-  mediaCastDtoList: MediaCastDto[];
+  data: MediaCastDto[];
   total: number;
   page: number;
   lastPage: number;

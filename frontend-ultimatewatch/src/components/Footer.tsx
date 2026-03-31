@@ -46,11 +46,19 @@ export default function Footer() {
 
           <div className="pt-6 border-t border-gray-100 flex flex-row items-center gap-4">
             <a 
-							href="https://www.themoviedb.org/" 
-							target="_blank" 
-							rel="noreferrer"
-							className="bg-[#01b4e4] text-white px-2 py-1 rounded flex justify-center items-center text-[10px] font-black tracking-tighter select-none">
-              	TMDB
+              href="https://www.themoviedb.org/" 
+              target="_blank" 
+              rel="noreferrer"
+              className="flex items-center transition-opacity hover:opacity-80 active:scale-95"
+            >
+              <img 
+                src="https://www.themoviedb.org/assets/2/v4/logos/v2/blue_short-8e7b30f73a4020692ccca9c88bafe5dcb6f8a62a4c6bc55cd9ba82bb2cd95f6c.svg" 
+                alt="TMDB Logo"
+                className="h-3 w-auto object-contain"
+                onError={(e) => {
+                  e.currentTarget.src = "https://upload.wikimedia.org/wikipedia/commons/8/89/The_Movie_Database_Lighthouse.svg";
+                }}
+              />
             </a>
             <p className="max-w-2xl text-[11px] text-gray-500 font-medium leading-snug">
               This website uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.

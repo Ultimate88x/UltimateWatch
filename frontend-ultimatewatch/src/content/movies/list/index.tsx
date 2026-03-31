@@ -2,18 +2,18 @@ import { useEffect, useState } from "react";
 import ListMedia from "../../../components/content/ListMedia";
 import toast from "react-hot-toast";
 import { Button } from "../../../components/Button";
-import { Plus } from "lucide-react";
+import { Plus, SearchX } from "lucide-react";
 import type { Media } from "../../../types/media";
 import { motion } from "framer-motion";
+import { EmptyState } from "../../../components/EmptyState";
 
 export default function MovieList() {
   const [page, setPage] = useState(1);
   const [mediaList, setMediaList] = useState<Media[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchMedia = async () => {
-      setIsLoading(true);
       const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
       try {
@@ -24,7 +24,7 @@ export default function MovieList() {
               'Content-Type': 'application/json'
             },
           }),
-          wait(1000)
+          wait(750)
         ]);
 
         const data = await response.json();
@@ -34,7 +34,7 @@ export default function MovieList() {
           return;
         }
 
-        if (page === 1) {
+        if (page === 1 && data.length > 0) {
           const topMovies = data.slice(0, 27); 
           const imagePromises = topMovies.map((movie: Media) => {
             return new Promise((resolve) => {
@@ -71,7 +71,7 @@ export default function MovieList() {
         <motion.div
           animate={{ rotate: [0, 360] }}
           transition={{
-            duration: 2,
+            duration: 1.5,
             repeat: Infinity,
             ease: "easeInOut",
           }}
@@ -90,6 +90,16 @@ export default function MovieList() {
     );
   }
 
+  if (!isLoading && mediaList.length === 0) {
+    return (
+      <EmptyState 
+        title="No Titles Found"
+        description="We couldn't find any movie discoveries for you right now."
+        icon={SearchX}
+      />
+    );
+  }
+
   return (
     <div className="relative w-full min-h-screen bg-cover bg-blue-background flex flex-col justify-start items-start overflow-x-hidden">
       <div className="relative w-full h-fit px-20 flex flex-col justify-start items-start gap-8">
@@ -103,7 +113,10 @@ export default function MovieList() {
             isLoading={isLoading}
             showShine={true}
             className="w-80 border border-purple-main/20 hover:border-purple-main/50 rounded-full hover:bg-purple-main/10 text-white/80 hover:text-white transition-all duration-300 shadow-[0_0_10px_rgba(168,85,247,0)] hover:shadow-[0_0_20px_rgba(168,85,247,0.3)] [&_svg]:hover:rotate-180"
-            onClick={() => setPage((prev) => prev + 1)}
+            onClick={() => {
+              setPage((prev) => prev + 1);
+              setIsLoading(true);
+            }}
           >
             Explore More Titles
           </Button>

@@ -41,7 +41,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 w-full h-16 px-8 mb-8 bg-purple-main shadow-2xl flex items-center justify-between z-50 font-inter">
+<nav className="sticky top-0 w-full h-16 px-8 mb-8 bg-linear-to-br from-purple-500 via-purple-main to-purple-900 shadow-2xl flex items-center justify-between z-50 font-inter border-white/10 backdrop-blur-sm">
       
       <div className="flex items-center gap-10">
         <Link to="/" className="flex items-center gap-2 shrink-0 cursor-pointer">
@@ -83,7 +83,7 @@ export default function Navbar() {
 
       <div className="flex flex-1 justify-end items-center gap-6">
         <form 
-          className="relative w-2/3 flex items-center bg-white/70 backdrop-blur-md border border-white/10 rounded-xl focus-within:bg-white focus-within:ring-2 focus-within:ring-purple-main/20 transition-all group overflow-hidden"
+          className="relative w-2/3 flex items-center bg-white/90 backdrop-blur-md border border-white/10 rounded-xl focus-within:bg-white focus-within:ring-2 focus-within:ring-purple-main/20 transition-all group overflow-hidden"
           onSubmit={handleSubmit}
         >
           <div className="relative flex items-center px-4 border-r border-black/10">

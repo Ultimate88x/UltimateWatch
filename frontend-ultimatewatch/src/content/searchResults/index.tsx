@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import ListMedia from "../../components/content/ListMedia";
 import toast from "react-hot-toast";
 import { Button } from "../../components/Button";
-import { Plus } from "lucide-react";
+import { Plus, SearchX } from "lucide-react";
 import type { Media } from "../../types/media";
 import { motion } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
+import { EmptyState } from "../../components/EmptyState";
 
 export default function SearchResultsList() {
   const [page, setPage] = useState(1);
@@ -83,7 +84,7 @@ export default function SearchResultsList() {
         <motion.div
           animate={{ rotate: [0, 360] }}
           transition={{
-            duration: 2,
+            duration: 1.5,
             repeat: Infinity,
             ease: "easeInOut",
           }}
@@ -99,6 +100,17 @@ export default function SearchResultsList() {
           Loading Discoveries...
         </motion.p>
       </div>
+    );
+  }
+
+  
+  if (!isLoading && mediaList.length === 0) {
+    return (
+      <EmptyState 
+        title="No Titles Found"
+        description="We couldn't find any media that matches the query."
+        icon={SearchX}
+      />
     );
   }
 

@@ -510,7 +510,7 @@ export default function UserDetails() {
             rotate: [0, 360],
           }}
           transition={{
-            duration: 2,
+            duration: 1.5,
             repeat: Infinity,
             ease: "easeInOut",
           }}
@@ -535,7 +535,7 @@ export default function UserDetails() {
         </div>
 
         {!isUpdating && (
-          <div className="absolute top-213.5 pt-8 border-t border-white/10 w-60">
+          <div className="absolute top-272 pt-8 border-t border-white/10 w-60">
             <div className="flex flex-col items-start gap-2">
               <h3 className="text-xl font-bold text-red-danger uppercase tracking-widest">
                 Danger Zone

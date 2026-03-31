@@ -1,7 +1,7 @@
 import { MediaCrewDto } from './media-crew-dto';
 
 export class MediaCrewResponseDto {
-  mediaCrewDtoList: MediaCrewDto[];
+  data: MediaCrewDto[];
   total: number;
   page: number;
   lastPage: number;

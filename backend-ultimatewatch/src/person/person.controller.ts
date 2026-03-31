@@ -1,21 +1,32 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { PersonService } from './person.service';
-import { MediaPeopleResponseDto } from './dto/media-people-dto';
-import { MediaType } from 'src/common/enums/media.type.enum';
+import { MediaCastResponseDto } from './dto/media-cast-response-dto';
+import { MediaCrewResponseDto } from './dto/media-crew-response-dto';
 
 @Controller('person')
 export class PersonController {
   constructor(private readonly personService: PersonService) {}
 
-  @Get('movie/:id')
-  async getMovieByTmdbId(
-    @Param('id') id: string,
-  ): Promise<MediaPeopleResponseDto | null> {
-    const people: MediaPeopleResponseDto | null =
-      await this.personService.findPeopleOrGetFromTmdbAndFindOrCreate(
-        +id,
-        MediaType.MOVIE,
-      );
+  @Get('cast/:tmdbId')
+  async getCastForMediaByMediaTmdbId(
+    @Param('tmdbId') tmdbId: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 6,
+  ): Promise<MediaCastResponseDto | null> {
+    const people: MediaCastResponseDto | null =
+      await this.personService.findCastByTmdbId(+tmdbId, page, limit);
+
+    return people;
+  }
+
+  @Get('crew/:tmdbId')
+  async getCrewForMediaByMediaTmdbId(
+    @Param('tmdbId') tmdbId: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 6,
+  ): Promise<MediaCrewResponseDto | null> {
+    const people: MediaCrewResponseDto | null =
+      await this.personService.findCrewByTmdbId(+tmdbId, page, limit);
 
     return people;
   }

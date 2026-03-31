@@ -1,13 +1,7 @@
+import { BaseEntity } from 'src/common/entities/base.entity';
 import { MediaContent } from 'src/media-contents/entities/media-content.entity';
 import { Season } from 'src/season/entities/season.entity';
-import {
-  BaseEntity,
-  Column,
-  Entity,
-  JoinColumn,
-  OneToMany,
-  OneToOne,
-} from 'typeorm';
+import { Column, Entity, JoinColumn, OneToMany, OneToOne } from 'typeorm';
 
 @Entity('series')
 export class Series extends BaseEntity {

@@ -17,10 +17,10 @@ export class MediaContent extends MediaEntity {
   })
   type: MediaType;
 
-  @OneToOne(() => Movie, (movie) => movie.mediaContent)
+  @OneToOne(() => Movie, (movie) => movie.mediaContent, { nullable: true })
   movie?: Movie;
 
-  @OneToOne(() => Series, (series) => series.mediaContent)
+  @OneToOne(() => Series, (series) => series.mediaContent, { nullable: true })
   series?: Series;
 
   @ManyToMany(() => Genre, { onDelete: 'CASCADE' })

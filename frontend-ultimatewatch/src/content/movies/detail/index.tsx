@@ -107,7 +107,7 @@ export default function MovieDetail() {
   useEffect(() => {
     const fetchCastPage = async () => {
       try {
-        const response = await fetch(`http://localhost:3000/person/cast/${movie?.tmdbId}?page=${castPage}`, {
+        const response = await fetch(`http://localhost:3000/person/movies/cast/${movie?.tmdbId}?page=${castPage}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'
@@ -135,7 +135,7 @@ export default function MovieDetail() {
     useEffect(() => {
     const fetchCrewPage = async () => {
       try {
-        const response = await fetch(`http://localhost:3000/person/crew/${movie?.tmdbId}?page=${crewPage}`, {
+        const response = await fetch(`http://localhost:3000/person/movies/crew/${movie?.tmdbId}?page=${crewPage}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'

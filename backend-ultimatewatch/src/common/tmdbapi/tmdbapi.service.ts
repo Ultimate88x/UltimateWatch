@@ -20,6 +20,9 @@ import {
 } from './dto/tmdb-provider-response-dto';
 import { TmdbProductionCompanyDto } from './dto/tmdb-production-company-dto';
 import { TmdbPeopleResponseDto } from './dto/tmdb-people-response-dto';
+import { TmdbSeriesDto } from './dto/media/tmdb-series-dto';
+import { TmdbSeasonDto } from './dto/media/tmdb-season-dto';
+import { MediaType } from '../enums/media.type.enum';
 
 @Injectable()
 export class TmdbApiService {
@@ -205,8 +208,8 @@ export class TmdbApiService {
         Authorization: `Bearer ${this.apiKey}`,
       },
     };
-    const response: AxiosResponse<TmdbMovieDto> = await firstValueFrom(
-      this.httpService.get<TmdbMovieDto>(url, options).pipe(
+    const response: AxiosResponse<TmdbSeriesDto> = await firstValueFrom(
+      this.httpService.get<TmdbSeriesDto>(url, options).pipe(
         catchError((error: AxiosError) => {
           throw new ExternalApiError(
             `TMDB API Error: ${error.response?.statusText || 'Unknown Error'}`,
@@ -215,13 +218,37 @@ export class TmdbApiService {
       ),
     );
 
-    const movie: TmdbMovieDto = response.data;
+    const series: TmdbSeriesDto = response.data;
 
-    return movie;
+    return series;
   }
 
-  async getProvidersForMovie(id: number) {
-    const url = `https://api.themoviedb.org/3/movie/${id}/watch/providers`;
+  async getSeasonFromTmdb(seriesId: number, seasonId: number) {
+    const url = `https://api.themoviedb.org/3/tv/${seriesId}/season/${seasonId}`;
+    const options = {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+    };
+    const response: AxiosResponse<TmdbSeasonDto> = await firstValueFrom(
+      this.httpService.get<TmdbSeasonDto>(url, options).pipe(
+        catchError((error: AxiosError) => {
+          throw new ExternalApiError(
+            `TMDB API Error: ${error.response?.statusText || 'Unknown Error'}`,
+          );
+        }),
+      ),
+    );
+
+    const season: TmdbSeasonDto = response.data;
+
+    return season;
+  }
+
+  async getProvidersForMedia(id: number, mediaType: MediaType) {
+    const url = `https://api.themoviedb.org/3/${mediaType}/${id}/watch/providers`;
     const options = {
       method: 'GET',
       headers: {
@@ -244,8 +271,8 @@ export class TmdbApiService {
     return provider;
   }
 
-  async getMovieGenres() {
-    const url = `https://api.themoviedb.org/3/genre/movie/list`;
+  async getMediaGenres(mediaType: MediaType) {
+    const url = `https://api.themoviedb.org/3/genre/${mediaType}/list`;
     const options = {
       method: 'GET',
       headers: {
@@ -269,8 +296,8 @@ export class TmdbApiService {
     return genreList;
   }
 
-  async getMoviePeople(id: number) {
-    const url = `https://api.themoviedb.org/3/movie/${id}/credits`;
+  async getMediaPeople(id: number, mediaType: MediaType) {
+    const url = `https://api.themoviedb.org/3/${mediaType}/${id}/credits`;
     const options = {
       method: 'GET',
       headers: {

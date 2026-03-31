@@ -89,10 +89,8 @@ export class ProvidersService {
       return localProviders.map((p) => this.createProviderListItem(p));
     }
 
-    const providerInfo: TmdbProviderInfoDto | undefined = await (mediaType ===
-    MediaType.MOVIE
-      ? this.tmdbapiService.getProvidersForMovie(mediaTmdbId)
-      : this.tmdbapiService.getProvidersForMovie(mediaTmdbId));
+    const providerInfo: TmdbProviderInfoDto | undefined =
+      await this.tmdbapiService.getProvidersForMedia(mediaTmdbId, mediaType);
 
     if (!providerInfo) return null;
 
@@ -174,7 +172,7 @@ export class ProvidersService {
       const watchmodeProviders =
         await this.watchmodeService.getProvidersForMediaFromWatchmode(
           mediaTmdbId,
-          mediaProviders[0].mediaContent.type as MediaType,
+          mediaProviders[0].mediaContent.type,
         );
 
       const updatedProviders = mediaProviders.map((mediaProvider) => {

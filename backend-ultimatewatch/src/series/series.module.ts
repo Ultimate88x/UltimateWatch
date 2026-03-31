@@ -3,10 +3,19 @@ import { SeriesService } from './series.service';
 import { SeriesController } from './series.controller';
 import { TmdbApiModule } from 'src/common/tmdbapi/tmdbapi.module';
 import { CacheModule } from '@nestjs/cache-manager';
+import { Series } from './entities/series.entity';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { GenresModule } from 'src/genres/genres.module';
+import { ProductionCompaniesModule } from 'src/production-companies/production-companies.module';
+import { ProvidersModule } from 'src/providers/providers.module';
 
 @Module({
   imports: [
+    TypeOrmModule.forFeature([Series]),
     TmdbApiModule,
+    GenresModule,
+    ProductionCompaniesModule,
+    ProvidersModule,
     CacheModule.register({
       ttl: 600000,
       max: 100,

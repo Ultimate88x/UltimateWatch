@@ -146,7 +146,7 @@ export class MoviesService {
     }
   }
 
-  createMovieDetailDto(movie: Movie): MovieDetailDto {
+  private createMovieDetailDto(movie: Movie): MovieDetailDto {
     return new MovieDetailDto({
       tmdbId: movie?.mediaContent?.tmdbId,
       title: movie?.mediaContent?.title,

@@ -1,13 +1,22 @@
-import { BadRequestException, Controller, Get, Query } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  Param,
+  Query,
+} from '@nestjs/common';
 import { SeriesService } from './series.service';
-import { TmdbApiService } from 'src/common/tmdbapi/tmdbapi.service';
 import { TmdbListMediaDto } from 'src/common/tmdbapi/dto/media/tmdb-media-list-dto';
+import { ProvidersService } from 'src/providers/providers.service';
+import { SeriesDetailDto } from './dto/series-detail-dto';
+import { ProviderListItemDto } from 'src/providers/dto/provider-list-item-dto';
+import { MediaType } from 'src/common/enums/media.type.enum';
 
 @Controller('series')
 export class SeriesController {
   constructor(
     private readonly seriesService: SeriesService,
-    private readonly tmdbapiService: TmdbApiService,
+    private readonly providersService: ProvidersService,
   ) {}
 
   @Get('tmdb-list')
@@ -31,5 +40,25 @@ export class SeriesController {
     const data: TmdbListMediaDto[] =
       await this.seriesService.searchSeriesForWholePage(query, +page);
     return data;
+  }
+
+  @Get(':id')
+  async getSeriesByTmdbId(@Param('id') id: string): Promise<{
+    series: SeriesDetailDto;
+    providers: ProviderListItemDto[] | null;
+  }> {
+    const series: SeriesDetailDto =
+      await this.seriesService.findSeriesFromTmdbId(+id);
+
+    const providers: ProviderListItemDto[] | null =
+      await this.providersService.findProvidersOrGetFromTmdbAndFindOrCreate(
+        +id,
+        MediaType.SERIES,
+      );
+
+    return {
+      series: series,
+      providers: providers,
+    };
   }
 }

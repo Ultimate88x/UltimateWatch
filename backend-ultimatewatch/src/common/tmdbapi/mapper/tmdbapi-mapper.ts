@@ -25,6 +25,8 @@ import {
 } from '../dto/tmdb-people-response-dto';
 import { MediaPerson } from 'src/person/entities/media.person.entity';
 import { PersonType } from 'src/common/enums/person.type.enum';
+import { Series } from 'src/series/entities/series.entity';
+import { TmdbSeriesDto } from '../dto/media/tmdb-series-dto';
 
 export class TmdbApiMapper {
   static tmdbListSeriesResultDtoToTmdbListMediaDto(
@@ -82,6 +84,38 @@ export class TmdbApiMapper {
     movie.mediaContent = mediaContent;
 
     return movie;
+  }
+
+  static tmdbSeriesDtoToSeries(response: TmdbSeriesDto): Series {
+    const mediaContent = new MediaContent();
+    const series = new Series();
+
+    mediaContent.tmdbId = response.id;
+    mediaContent.title = response.name;
+    mediaContent.overview = response.overview;
+    mediaContent.imagePath = `https://image.tmdb.org/t/p/w500/${response.poster_path}`;
+    mediaContent.releaseDate =
+      response.first_air_date && response.first_air_date.trim() !== ''
+        ? new Date(response.first_air_date)
+        : null;
+    mediaContent.status = response.status;
+    mediaContent.type = MediaType.MOVIE;
+    mediaContent.genres = this.tmdbGenreDtoListToGenreList(
+      response.genres,
+      MediaType.MOVIE,
+    );
+    mediaContent.productionCompanies =
+      this.tmdbProductionCompanyDtoListToProductionCompanyList(
+        response.production_companies,
+      );
+
+    series.lastAirDate =
+      response.last_air_date && response.last_air_date.trim() !== ''
+        ? new Date(response.last_air_date)
+        : null;
+    series.mediaContent = mediaContent;
+
+    return series;
   }
 
   static tmdbGenreDtoListToGenreList(

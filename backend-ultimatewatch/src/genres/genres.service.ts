@@ -17,16 +17,40 @@ export class GenresService {
   ) {}
 
   async storeTmdbGenres(): Promise<number> {
-    const genreDtoList: TmdbGenreDto[] =
-      await this.tmdbApiService.getMovieGenres();
+    const [movieGenreDtoList, seriesGenreDtoList]: [
+      TmdbGenreDto[],
+      TmdbGenreDto[],
+    ] = await Promise.all([
+      this.tmdbApiService.getMediaGenres(MediaType.MOVIE),
+      this.tmdbApiService.getMediaGenres(MediaType.SERIES),
+    ]);
 
-    const genreList: Genre[] = TmdbApiMapper.tmdbGenreDtoListToGenreList(
-      genreDtoList,
+    const movieGenres: Genre[] = TmdbApiMapper.tmdbGenreDtoListToGenreList(
+      movieGenreDtoList,
       MediaType.MOVIE,
     );
 
-    await this.genreRepository.upsert(genreList, ['tmdbId']);
-    return genreList.length;
+    const seriesGenres: Genre[] = TmdbApiMapper.tmdbGenreDtoListToGenreList(
+      seriesGenreDtoList,
+      MediaType.SERIES,
+    );
+
+    const rawGenres = [...movieGenres, ...seriesGenres];
+
+    const uniqueGenresMap = new Map();
+    rawGenres.forEach((genre) => {
+      if (!uniqueGenresMap.has(genre.tmdbId)) {
+        uniqueGenresMap.set(genre.tmdbId, genre);
+      }
+    });
+
+    const finalGenres = Array.from(uniqueGenresMap.values());
+
+    if (finalGenres.length > 0) {
+      await this.genreRepository.upsert(finalGenres, ['tmdbId']);
+    }
+
+    return finalGenres.length;
   }
 
   async findByTmdbId(tmdbId: number): Promise<Genre> {

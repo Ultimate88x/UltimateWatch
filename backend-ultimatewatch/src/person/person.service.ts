@@ -53,8 +53,9 @@ export class PersonService {
     mediaTmdbId: number,
     page: number = 1,
     limit: number = 6,
+    mediaType: MediaType,
   ): Promise<MediaCastResponseDto> {
-    await this.ensurePeopleAreLoaded(mediaTmdbId, MediaType.MOVIE);
+    await this.ensurePeopleAreLoaded(mediaTmdbId, mediaType);
 
     const skip = (page - 1) * limit;
     const [data, total] = await this.mediaPersonRepository.findAndCount({
@@ -81,8 +82,9 @@ export class PersonService {
     mediaTmdbId: number,
     page: number = 1,
     limit: number = 6,
+    mediaType: MediaType,
   ): Promise<MediaCrewResponseDto> {
-    await this.ensurePeopleAreLoaded(mediaTmdbId, MediaType.MOVIE);
+    await this.ensurePeopleAreLoaded(mediaTmdbId, mediaType);
 
     const skip = (page - 1) * limit;
     const [data, total] = await this.mediaPersonRepository.findAndCount({
@@ -176,9 +178,10 @@ export class PersonService {
 
     if (isValid) return;
 
-    const peopleInfo = await (mediaType === MediaType.MOVIE
-      ? this.tmdbapiService.getMoviePeople(mediaTmdbId)
-      : this.tmdbapiService.getMoviePeople(mediaTmdbId));
+    const peopleInfo = await this.tmdbapiService.getMediaPeople(
+      mediaTmdbId,
+      mediaType,
+    );
 
     const people = TmdbApiMapper.tmdbPeopleResponseDtoToPersonList(peopleInfo);
 

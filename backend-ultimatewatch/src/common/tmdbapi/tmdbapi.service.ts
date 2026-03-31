@@ -196,6 +196,30 @@ export class TmdbApiService {
     return movie;
   }
 
+  async getSeriesFromTmdb(id: number) {
+    const url = `https://api.themoviedb.org/3/tv/${id}`;
+    const options = {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+    };
+    const response: AxiosResponse<TmdbMovieDto> = await firstValueFrom(
+      this.httpService.get<TmdbMovieDto>(url, options).pipe(
+        catchError((error: AxiosError) => {
+          throw new ExternalApiError(
+            `TMDB API Error: ${error.response?.statusText || 'Unknown Error'}`,
+          );
+        }),
+      ),
+    );
+
+    const movie: TmdbMovieDto = response.data;
+
+    return movie;
+  }
+
   async getProvidersForMovie(id: number) {
     const url = `https://api.themoviedb.org/3/movie/${id}/watch/providers`;
     const options = {

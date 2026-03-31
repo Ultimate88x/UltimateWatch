@@ -61,6 +61,10 @@ export class TmdbApiMapper {
     mediaContent.title = response.title;
     mediaContent.overview = response.overview;
     mediaContent.imagePath = `https://image.tmdb.org/t/p/w500/${response.poster_path}`;
+    mediaContent.releaseDate =
+      response.release_date && response.release_date.trim() !== ''
+        ? new Date(response.release_date)
+        : null;
     mediaContent.status = response.status;
     mediaContent.type = MediaType.MOVIE;
     mediaContent.genres = this.tmdbGenreDtoListToGenreList(
@@ -75,10 +79,6 @@ export class TmdbApiMapper {
     movie.budget = response.budget || 0;
     movie.runtime = response.runtime || 0;
     movie.revenue = response.revenue || 0;
-    movie.releaseDate =
-      response.release_date && response.release_date.trim() !== ''
-        ? new Date(response.release_date)
-        : null;
     movie.mediaContent = mediaContent;
 
     return movie;

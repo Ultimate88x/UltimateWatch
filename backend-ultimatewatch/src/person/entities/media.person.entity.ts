@@ -7,7 +7,10 @@ import { BaseEntity } from 'src/common/entities/base.entity';
 @Entity('media_people')
 @Unique(['person', 'mediaContent', 'character', 'job'])
 export class MediaPerson extends BaseEntity {
-  @Column()
+  @Column({
+    type: 'enum',
+    enum: PersonType,
+  })
   @Index()
   type: PersonType;
 

@@ -1,16 +1,16 @@
 import { TmdbGenreDto } from '../tmdb-genre-dto';
 import { TmdbProductionCompanyDto } from '../tmdb-production-company-dto';
+import { TmdbSeasonDto } from './tmdb-season-dto';
 
-export type TmdbMovieDto = {
+export type TmdbSeriesDto = {
   id: number;
-  title: string;
+  name: string;
   overview: string;
   poster_path: string;
   status: string;
-  budget: number;
-  runtime: number;
-  revenue: number;
-  release_date: string;
+  first_air_date: string;
+  last_air_date: string;
   genres: TmdbGenreDto[];
   production_companies: TmdbProductionCompanyDto[];
+  seasons: TmdbSeasonDto[];
 };

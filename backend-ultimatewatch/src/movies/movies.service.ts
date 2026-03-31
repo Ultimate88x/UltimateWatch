@@ -94,8 +94,6 @@ export class MoviesService {
       ),
     );
 
-    mappedMovie.mediaContent.popularity = 1;
-
     return await this.movieRepository.save(mappedMovie);
   }
 
@@ -112,11 +110,7 @@ export class MoviesService {
     });
 
     if (existingMovie && !isDataStale(existingMovie?.mediaContent?.updatedAt)) {
-      existingMovie.mediaContent.popularity++;
-
-      const savedMovie = await this.movieRepository.save(existingMovie);
-
-      return this.createMovieDetailDto(savedMovie);
+      return this.createMovieDetailDto(existingMovie);
     }
 
     const movie: TmdbMovieDto =
@@ -171,10 +165,11 @@ export class MoviesService {
       runtime: movie?.runtime,
       revenue: movie?.revenue,
       releaseDate:
-        movie.releaseDate && !(movie.releaseDate instanceof Date)
-          ? new Date(movie.releaseDate).toISOString()
-          : movie.releaseDate instanceof Date
-            ? movie.releaseDate.toISOString()
+        movie?.mediaContent?.releaseDate &&
+        !(movie?.mediaContent?.releaseDate instanceof Date)
+          ? new Date(movie?.mediaContent?.releaseDate).toISOString()
+          : movie?.mediaContent?.releaseDate instanceof Date
+            ? movie?.mediaContent?.releaseDate.toISOString()
             : null,
     });
   }

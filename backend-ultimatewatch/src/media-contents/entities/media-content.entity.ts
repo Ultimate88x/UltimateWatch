@@ -3,20 +3,25 @@ import { MediaEntity } from '../../common/entities/media.entity';
 import { Genre } from 'src/genres/entities/genre.entity';
 import { ProductionCompany } from 'src/production-companies/entities/production-company.entity';
 import { Movie } from 'src/movies/entities/movie.entity';
+import { Series } from 'src/series/entities/series.entity';
+import { MediaType } from 'src/common/enums/media.type.enum';
 
 @Entity('media_contents')
 export class MediaContent extends MediaEntity {
   @Column()
-  popularity: number;
-
-  @Column()
   status: string;
 
-  @Column()
-  type: string;
+  @Column({
+    type: 'enum',
+    enum: MediaType,
+  })
+  type: MediaType;
 
   @OneToOne(() => Movie, (movie) => movie.mediaContent)
   movie?: Movie;
+
+  @OneToOne(() => Series, (series) => series.mediaContent)
+  series?: Series;
 
   @ManyToMany(() => Genre, { onDelete: 'CASCADE' })
   @JoinTable({
@@ -45,8 +50,4 @@ export class MediaContent extends MediaEntity {
     },
   })
   productionCompanies: ProductionCompany[];
-
-  getReleaseDate(): Date {
-    return new Date();
-  }
 }

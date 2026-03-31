@@ -8,5 +8,6 @@ import { Season } from './entities/season.entity';
   imports: [TypeOrmModule.forFeature([Season])],
   controllers: [SeasonController],
   providers: [SeasonService],
+  exports: [SeasonService],
 })
 export class SeasonModule {}

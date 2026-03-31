@@ -1,6 +1,7 @@
-import { Column } from 'typeorm';
+import { Column, Unique } from 'typeorm';
 import { TmdbEntity } from './tmdb.entity';
 
+@Unique(['tmdbId'])
 export abstract class MediaEntity extends TmdbEntity {
   @Column()
   title: string;

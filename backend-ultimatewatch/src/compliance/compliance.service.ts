@@ -35,6 +35,7 @@ export class ComplianceService {
 
     await this.purgeWatchmodeLinks();
     await this.purgeTmdbData();
+    await this.purgePeopleData();
     await this.refreshTmdbData();
 
     this.logger.log(
@@ -62,7 +63,7 @@ export class ComplianceService {
 
   private async purgeTmdbData() {
     const limitDate = new Date();
-    limitDate.setDate(limitDate.getDate() - 150);
+    limitDate.setDate(limitDate.getDate() - 60);
 
     this.logger.log(
       `-------------------- TMDB: Purging obsolete data. --------------------`,
@@ -100,7 +101,7 @@ export class ComplianceService {
 
   private async refreshTmdbData() {
     const limitDate = new Date();
-    limitDate.setDate(limitDate.getDate() - 150);
+    limitDate.setDate(limitDate.getDate() - 90);
 
     this.logger.log(
       `-------------------- TMDB: Refreshing obsolete data. --------------------`,

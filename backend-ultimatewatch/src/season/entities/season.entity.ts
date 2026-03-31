@@ -12,10 +12,10 @@ export class Season extends MediaEntity {
   @JoinColumn()
   series: Series;
 
-  @OneToMany(() => Episode, (episode) => episode.season)
-  episodes: Episode[];
+  @OneToMany(() => Episode, (episode) => episode.season, { nullable: true })
+  episodes: Episode[] | null;
 
   getEpisodesNumber(): number {
-    return this.episodes.length;
+    return this.episodes ? this.episodes.length : 0;
   }
 }

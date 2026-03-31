@@ -15,6 +15,8 @@ import { GenresService } from 'src/genres/genres.service';
 import { ProductionCompany } from 'src/production-companies/entities/production-company.entity';
 import { ProductionCompaniesService } from 'src/production-companies/production-companies.service';
 import { Repository } from 'typeorm';
+import { Season } from 'src/season/entities/season.entity';
+import { SeasonService } from 'src/season/season.service';
 
 @Injectable()
 export class SeriesService {
@@ -24,6 +26,7 @@ export class SeriesService {
     private readonly tmdbApiService: TmdbApiService,
     private readonly genresService: GenresService,
     private readonly productionCompaniesService: ProductionCompaniesService,
+    private readonly seasonService: SeasonService,
     @Inject('CACHE_MANAGER')
     private readonly cacheManager: Cache,
   ) {}
@@ -93,6 +96,12 @@ export class SeriesService {
             productionCompany.tmdbId,
             productionCompany,
           ),
+      ),
+    );
+
+    mappedSeries.seasons = await Promise.all(
+      mappedSeries.seasons.map((season: Season) =>
+        this.seasonService.create(season),
       ),
     );
 

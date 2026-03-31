@@ -8,6 +8,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { GenresModule } from 'src/genres/genres.module';
 import { ProductionCompaniesModule } from 'src/production-companies/production-companies.module';
 import { ProvidersModule } from 'src/providers/providers.module';
+import { SeasonModule } from 'src/season/season.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { ProvidersModule } from 'src/providers/providers.module';
     GenresModule,
     ProductionCompaniesModule,
     ProvidersModule,
+    SeasonModule,
     CacheModule.register({
       ttl: 600000,
       max: 100,

@@ -27,6 +27,8 @@ import { MediaPerson } from 'src/person/entities/media.person.entity';
 import { PersonType } from 'src/common/enums/person.type.enum';
 import { Series } from 'src/series/entities/series.entity';
 import { TmdbSeriesDto } from '../dto/media/tmdb-series-dto';
+import { TmdbSeasonDto } from '../dto/media/tmdb-season-dto';
+import { Season } from 'src/season/entities/season.entity';
 
 export class TmdbApiMapper {
   static tmdbListSeriesResultDtoToTmdbListMediaDto(
@@ -113,6 +115,7 @@ export class TmdbApiMapper {
       response.last_air_date && response.last_air_date.trim() !== ''
         ? new Date(response.last_air_date)
         : null;
+    series.seasons = this.tmdbSeasonDtoListToSeasonList(response.seasons);
     series.mediaContent = mediaContent;
 
     return series;
@@ -149,15 +152,8 @@ export class TmdbApiMapper {
     response: TmdbProductionCompanyDto[],
   ): ProductionCompany[] {
     return response.map(
-      (tmdbProductionCompany: TmdbProductionCompanyDto): ProductionCompany => {
-        const productionCompany: ProductionCompany = new ProductionCompany();
-
-        productionCompany.tmdbId = tmdbProductionCompany.id;
-        productionCompany.logoPath = `https://image.tmdb.org/t/p/original/${tmdbProductionCompany.logo_path}`;
-        productionCompany.name = tmdbProductionCompany.name;
-
-        return productionCompany;
-      },
+      (tmdbProductionCompany: TmdbProductionCompanyDto): ProductionCompany =>
+        this.tmdbProductionCompanyDtoToProductionCompany(tmdbProductionCompany),
     );
   }
 
@@ -241,5 +237,28 @@ export class TmdbApiMapper {
     mediaPerson.job = 'job' in tmdbPerson ? tmdbPerson.job : 'N/A';
 
     return mediaPerson;
+  }
+
+  static tmdbSeasonDtoToSeason(response: TmdbSeasonDto): Season {
+    const season: Season = new Season();
+
+    season.tmdbId = response.id;
+    season.title = response.name;
+    season.overview = response.overview;
+    season.imagePath = `https://image.tmdb.org/t/p/w500/${response.poster_path}`;
+    season.releaseDate =
+      response.air_date && response.air_date.trim() !== ''
+        ? new Date(response.air_date)
+        : null;
+    season.number = response.season_number;
+
+    return season;
+  }
+
+  static tmdbSeasonDtoListToSeasonList(response: TmdbSeasonDto[]): Season[] {
+    return response.map(
+      (tmdbSeason: TmdbSeasonDto): Season =>
+        this.tmdbSeasonDtoToSeason(tmdbSeason),
+    );
   }
 }

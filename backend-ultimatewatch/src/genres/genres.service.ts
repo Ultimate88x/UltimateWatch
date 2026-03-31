@@ -35,22 +35,13 @@ export class GenresService {
       MediaType.SERIES,
     );
 
-    const rawGenres = [...movieGenres, ...seriesGenres];
+    const allGenres = [...movieGenres, ...seriesGenres];
 
-    const uniqueGenresMap = new Map();
-    rawGenres.forEach((genre) => {
-      if (!uniqueGenresMap.has(genre.tmdbId)) {
-        uniqueGenresMap.set(genre.tmdbId, genre);
-      }
-    });
-
-    const finalGenres = Array.from(uniqueGenresMap.values());
-
-    if (finalGenres.length > 0) {
-      await this.genreRepository.upsert(finalGenres, ['tmdbId']);
+    if (allGenres.length > 0) {
+      await this.genreRepository.upsert(allGenres, ['tmdbId', 'mediaType']);
     }
 
-    return finalGenres.length;
+    return allGenres.length;
   }
 
   async findByTmdbId(tmdbId: number): Promise<Genre> {

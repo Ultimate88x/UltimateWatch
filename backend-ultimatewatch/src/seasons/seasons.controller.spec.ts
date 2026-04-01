@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { SeasonController } from './season.controller';
-import { SeasonService } from './season.service';
+import { SeasonController } from './seasons.controller';
+import { SeasonService } from './seasons.service';
 
 describe('SeasonController', () => {
   let controller: SeasonController;

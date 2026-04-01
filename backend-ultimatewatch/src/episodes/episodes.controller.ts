@@ -6,7 +6,7 @@ import { EpisodeResponseDto } from './dto/episode-response-dto';
 export class EpisodeController {
   constructor(private readonly episodeService: EpisodeService) {}
 
-  @Get('/season/:id')
+  @Get('/seasons/:id')
   async getEpisodesByTmdbId(
     @Param('id') id: string,
   ): Promise<EpisodeResponseDto> {

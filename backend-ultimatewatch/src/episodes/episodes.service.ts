@@ -4,12 +4,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EpisodeResponseDto } from './dto/episode-response-dto';
 import { EpisodeDetailDto } from './dto/episode-detail-dto';
-import { SeasonService } from 'src/season/season.service';
-import { Season } from 'src/season/entities/season.entity';
+import { SeasonService } from 'src/seasons/seasons.service';
 import { isDataStale } from 'src/common/helpers/data-stale.helper';
 import { TmdbApiService } from 'src/common/tmdbapi/tmdbapi.service';
 import { TmdbSeasonDto } from 'src/common/tmdbapi/dto/media/tmdb-season-dto';
 import { TmdbApiMapper } from 'src/common/tmdbapi/mapper/tmdbapi-mapper';
+import { Season } from 'src/seasons/entities/seasons.entity';
 
 @Injectable()
 export class EpisodeService {

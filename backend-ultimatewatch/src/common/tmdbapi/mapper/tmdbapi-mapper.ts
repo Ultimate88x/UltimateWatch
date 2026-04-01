@@ -28,9 +28,9 @@ import { PersonType } from 'src/common/enums/person.type.enum';
 import { Series } from 'src/series/entities/series.entity';
 import { TmdbSeriesDto } from '../dto/media/tmdb-series-dto';
 import { TmdbSeasonDto } from '../dto/media/tmdb-season-dto';
-import { Season } from 'src/season/entities/season.entity';
 import { TmdbEpisodeDto } from '../dto/media/tmdb-episode-dto';
 import { Episode } from 'src/episodes/entities/episode.entity';
+import { Season } from 'src/seasons/entities/seasons.entity';
 
 export class TmdbApiMapper {
   static tmdbListSeriesResultDtoToTmdbListMediaDto(

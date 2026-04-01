@@ -1,5 +1,5 @@
 import { Controller, Get, Param } from '@nestjs/common';
-import { SeasonService } from './season.service';
+import { SeasonService } from './seasons.service';
 import { SeasonDetailDto } from './dto/season-detail-dto';
 
 @Controller('season')

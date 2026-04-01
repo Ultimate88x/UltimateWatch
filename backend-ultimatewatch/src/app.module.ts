@@ -18,7 +18,7 @@ import { MediaContentsModule } from './media-contents/media-contents.module';
 import { WatchmodeModule } from './common/watchmode/watchmode.module';
 import { ComplianceModule } from './compliance/compliance.module';
 import { PersonModule } from './person/person.module';
-import { SeasonModule } from './season/season.module';
+import { SeasonModule } from './seasons/seasons.module';
 import { EpisodeModule } from './episodes/episodes.module';
 
 @Module({

@@ -14,9 +14,9 @@ import { GenresService } from 'src/genres/genres.service';
 import { ProductionCompany } from 'src/production-companies/entities/production-company.entity';
 import { ProductionCompaniesService } from 'src/production-companies/production-companies.service';
 import { Repository } from 'typeorm';
-import { Season } from 'src/season/entities/season.entity';
-import { SeasonService } from 'src/season/season.service';
-import { SeasonListDto } from 'src/season/dto/season-list-dto';
+import { SeasonService } from 'src/seasons/seasons.service';
+import { SeasonListDto } from 'src/seasons/dto/season-list-dto';
+import { Season } from 'src/seasons/entities/seasons.entity';
 
 @Injectable()
 export class SeriesService {
@@ -126,7 +126,7 @@ export class SeriesService {
     );
 
     mappedSeries.seasons = await Promise.all(
-      mappedSeries.seasons.map(async (season) => {
+      mappedSeries.seasons.map(async (season: Season) => {
         season.series = existingSeries;
         return await this.seasonService.upsert(season);
       }),

@@ -1,5 +1,5 @@
 import { MediaEntity } from 'src/common/entities/media.entity';
-import { Season } from 'src/season/entities/season.entity';
+import { Season } from 'src/seasons/entities/seasons.entity';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
 @Entity('episodes')

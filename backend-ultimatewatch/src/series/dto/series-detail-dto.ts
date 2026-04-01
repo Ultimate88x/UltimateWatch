@@ -1,5 +1,5 @@
 import { ProductionCompanyDto } from 'src/production-companies/dto/production-company-dto';
-import { SeasonListDto } from 'src/season/dto/season-list-dto';
+import { SeasonListDto } from 'src/seasons/dto/season-list-dto';
 
 export class SeriesDetailDto {
   tmdbId: number;

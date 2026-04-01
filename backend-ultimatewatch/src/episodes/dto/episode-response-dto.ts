@@ -1,4 +1,4 @@
-import { SeasonDetailDto } from 'src/season/dto/season-detail-dto';
+import { SeasonDetailDto } from 'src/seasons/dto/season-detail-dto';
 
 export class EpisodeResponseDto {
   data: SeasonDetailDto[];

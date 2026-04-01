@@ -1,6 +1,6 @@
 import { BaseEntity } from 'src/common/entities/base.entity';
 import { MediaContent } from 'src/media-contents/entities/media-content.entity';
-import { Season } from 'src/season/entities/season.entity';
+import { Season } from 'src/seasons/entities/seasons.entity';
 import { Column, Entity, JoinColumn, OneToMany, OneToOne } from 'typeorm';
 
 @Entity('series')

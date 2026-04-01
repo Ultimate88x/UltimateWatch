@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Season } from './entities/season.entity';
+import { Season } from './entities/seasons.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SeasonDetailDto } from './dto/season-detail-dto';

@@ -5,7 +5,6 @@ import { TmdbApiService } from 'src/common/tmdbapi/tmdbapi.service';
 import { SeriesDetailDto } from './dto/series-detail-dto';
 import { Series } from './entities/series.entity';
 import { ProductionCompanyDto } from 'src/production-companies/dto/production-company-dto';
-import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
 import { TmdbSeriesDto } from 'src/common/tmdbapi/dto/media/tmdb-series-dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { isDataStale } from 'src/common/helpers/data-stale.helper';
@@ -92,27 +91,52 @@ export class SeriesService {
     mappedSeries.mediaContent.productionCompanies = await Promise.all(
       mappedSeries.mediaContent.productionCompanies.map(
         (productionCompany: ProductionCompany) =>
-          this.productionCompaniesService.findOrCreate(
-            productionCompany.tmdbId,
-            productionCompany,
-          ),
+          this.productionCompaniesService.upsert(productionCompany),
       ),
     );
 
     mappedSeries.seasons = await Promise.all(
       mappedSeries.seasons.map((season: Season) =>
-        this.seasonService.create(season),
+        this.seasonService.upsert(season),
       ),
     );
 
     return await this.seriesRepository.save(mappedSeries);
   }
 
+  async update(existingSeries: Series, series: TmdbSeriesDto) {
+    const mappedSeries: Series = TmdbApiMapper.tmdbSeriesDtoToSeries(series);
+    mappedSeries.mediaContent.id = existingSeries.mediaContent.id;
+
+    mappedSeries.mediaContent.genres = await Promise.all(
+      mappedSeries.mediaContent.genres.map((genre: Genre) =>
+        this.genresService.findByTmdbId(genre.tmdbId),
+      ),
+    );
+
+    mappedSeries.mediaContent.productionCompanies = await Promise.all(
+      mappedSeries.mediaContent.productionCompanies.map(
+        (productionCompany: ProductionCompany) =>
+          this.productionCompaniesService.upsert(productionCompany),
+      ),
+    );
+
+    mappedSeries.seasons = await Promise.all(
+      mappedSeries.seasons.map((season: Season) =>
+        this.seasonService.upsert(season),
+      ),
+    );
+
+    mappedSeries.mediaContent.updatedAt = new Date();
+    mappedSeries.updatedAt = new Date();
+
+    this.seriesRepository.merge(existingSeries, mappedSeries);
+    return await this.seriesRepository.save(existingSeries);
+  }
+
   async findSeriesFromTmdbId(tmdbId: number): Promise<SeriesDetailDto> {
     const existingSeries = await this.seriesRepository.findOne({
-      where: {
-        mediaContent: { tmdbId },
-      },
+      where: { mediaContent: { tmdbId } },
       relations: [
         'mediaContent',
         'mediaContent.genres',
@@ -120,44 +144,22 @@ export class SeriesService {
       ],
     });
 
-    if (
-      existingSeries &&
-      !isDataStale(existingSeries?.mediaContent?.updatedAt)
-    ) {
+    if (existingSeries && !isDataStale(existingSeries.mediaContent.updatedAt)) {
       return this.createSeriesDetailDto(existingSeries);
     }
 
-    const series: TmdbSeriesDto =
+    const tmdbSeries: TmdbSeriesDto =
       await this.tmdbApiService.getSeriesFromTmdb(tmdbId);
 
-    try {
-      const savedSeries = await this.create(series);
-      return this.createSeriesDetailDto(savedSeries);
-    } catch (error: unknown) {
-      if (typeof error === 'object' && error !== null && 'code' in error) {
-        if ((error as { code: string }).code === '23505') {
-          const existingSeries = await this.seriesRepository.findOne({
-            where: { mediaContent: { tmdbId } },
-            relations: [
-              'mediaContent',
-              'mediaContent.genres',
-              'mediaContent.productionCompanies',
-            ],
-          });
+    let seriesToReturn: Series;
 
-          if (!existingSeries) {
-            throw new ResourceNotFoundException(
-              'Series',
-              'TMEDB_ID',
-              String(tmdbId),
-            );
-          }
-          return this.createSeriesDetailDto(existingSeries);
-        }
-      }
-
-      throw error;
+    if (!existingSeries) {
+      seriesToReturn = await this.create(tmdbSeries);
+    } else {
+      seriesToReturn = await this.update(existingSeries, tmdbSeries);
     }
+
+    return this.createSeriesDetailDto(seriesToReturn);
   }
 
   private createSeriesDetailDto(series: Series): SeriesDetailDto {

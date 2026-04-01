@@ -12,6 +12,7 @@ import { MediaType } from 'src/common/enums/media.type.enum';
 import { WatchmodeProviderDto } from 'src/common/watchmode/dto/watchmode-provider-dto';
 import { isDataStale } from 'src/common/helpers/data-stale.helper';
 import { ProviderListItemDto } from './dto/provider-list-item-dto';
+import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
 
 @Injectable()
 export class ProvidersService {
@@ -43,34 +44,50 @@ export class ProvidersService {
     return provider;
   }
 
-  async findProvidersByTmdbId(mediaTmdbId: number): Promise<Provider[]> {
+  async findMediaProvidersByTmdbId(
+    mediaTmdbId: number,
+  ): Promise<MediaProvider[]> {
     const mediaProviders = await this.mediaProviderRepository.find({
       where: { mediaContent: { tmdbId: mediaTmdbId } },
       relations: ['provider'],
     });
 
-    return mediaProviders.map((mp) => mp.provider);
+    return mediaProviders;
   }
 
   async findOrCreate(
-    providerTmdbId: number,
     mediaTmdbId: number,
-    provider: Provider,
+    providerData: Provider,
   ): Promise<Provider> {
-    let savedProvider = await this.findByTmdbId(providerTmdbId);
-
-    if (!savedProvider) {
-      savedProvider = await this.createProvider(provider);
-    }
+    await this.providerRepository.upsert(providerData, ['tmdbId']);
+    const savedProvider = await this.findByTmdbId(providerData.tmdbId);
 
     const mediaContent =
       await this.mediaContentService.findByTmdbId(mediaTmdbId);
 
-    const mediaProvider = new MediaProvider();
-    mediaProvider.mediaContent = mediaContent;
-    mediaProvider.provider = savedProvider;
+    if (!mediaContent) {
+      throw new ResourceNotFoundException(
+        'Media Content',
+        'TMDB_ID',
+        mediaTmdbId.toString(),
+      );
+    }
 
-    await this.createMediaProvider(mediaProvider);
+    if (!savedProvider) {
+      throw new ResourceNotFoundException(
+        'Provider',
+        'TMDB_ID',
+        providerData.tmdbId.toString(),
+      );
+    }
+
+    await this.mediaProviderRepository.upsert(
+      {
+        mediaContent: mediaContent,
+        provider: savedProvider,
+      },
+      ['mediaContent', 'provider'],
+    );
 
     return savedProvider;
   }
@@ -79,16 +96,19 @@ export class ProvidersService {
     mediaTmdbId: number,
     mediaType: MediaType,
   ): Promise<ProviderListItemDto[] | null> {
-    const localProviders = await this.findProvidersByTmdbId(mediaTmdbId);
+    const localProviders = await this.findMediaProvidersByTmdbId(mediaTmdbId);
     const isStale =
       localProviders.length > 0
-        ? isDataStale(localProviders[0].updatedAt)
+        ? localProviders.some((mediaProvider: MediaProvider) =>
+            isDataStale(mediaProvider.updatedAt),
+          )
         : true;
 
     if (!isStale) {
-      return localProviders.map((p) => this.createProviderListItem(p));
+      return localProviders.map((mp) =>
+        this.createProviderListItem(mp.provider),
+      );
     }
-
     const providerInfo: TmdbProviderInfoDto | undefined =
       await this.tmdbapiService.getProvidersForMedia(mediaTmdbId, mediaType);
 
@@ -96,11 +116,31 @@ export class ProvidersService {
 
     const providers =
       TmdbApiMapper.tmdbProviderInfoDtoToProviderList(providerInfo);
+
+    await this.syncProviders(mediaTmdbId, providers);
+
     const finalProviders = await Promise.all(
-      providers.map((p) => this.findOrCreate(p.tmdbId, mediaTmdbId, p)),
+      providers.map((p) => this.findOrCreate(mediaTmdbId, p)),
     );
 
     return finalProviders.map((p) => this.createProviderListItem(p));
+  }
+
+  async syncProviders(mediaTmdbId: number, providersFromTmdb: Provider[]) {
+    const currentMediaProviders =
+      await this.findMediaProvidersByTmdbId(mediaTmdbId);
+
+    const apiTmdbIds = providersFromTmdb.map((p) => p.tmdbId);
+
+    const providersToRemove = currentMediaProviders.filter(
+      (mp) => !apiTmdbIds.includes(mp.provider.tmdbId),
+    );
+
+    if (providersToRemove.length > 0) {
+      const idsToDelete = providersToRemove.map((mp) => mp.id);
+
+      await this.mediaProviderRepository.delete(idsToDelete);
+    }
   }
 
   private normalize(name: string): string {

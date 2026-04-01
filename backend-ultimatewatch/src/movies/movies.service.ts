@@ -13,7 +13,6 @@ import { ProductionCompany } from 'src/production-companies/entities/production-
 import { ProductionCompaniesService } from 'src/production-companies/production-companies.service';
 import { isDataStale } from 'src/common/helpers/data-stale.helper';
 import { MovieDetailDto } from './dto/movie-detail-dto';
-import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
 import { ProductionCompanyDto } from 'src/production-companies/dto/production-company-dto';
 
 @Injectable()
@@ -87,21 +86,40 @@ export class MoviesService {
     mappedMovie.mediaContent.productionCompanies = await Promise.all(
       mappedMovie.mediaContent.productionCompanies.map(
         (productionCompany: ProductionCompany) =>
-          this.productionCompaniesService.findOrCreate(
-            productionCompany.tmdbId,
-            productionCompany,
-          ),
+          this.productionCompaniesService.upsert(productionCompany),
       ),
     );
 
     return await this.movieRepository.save(mappedMovie);
   }
 
+  async update(existingMovie: Movie, movie: TmdbMovieDto) {
+    const mappedMovie: Movie = TmdbApiMapper.tmdbMovieDtoToMovie(movie);
+    mappedMovie.mediaContent.id = existingMovie.mediaContent.id;
+
+    mappedMovie.mediaContent.genres = await Promise.all(
+      mappedMovie.mediaContent.genres.map((genre: Genre) =>
+        this.genresService.findByTmdbId(genre.tmdbId),
+      ),
+    );
+
+    mappedMovie.mediaContent.productionCompanies = await Promise.all(
+      mappedMovie.mediaContent.productionCompanies.map(
+        (productionCompany: ProductionCompany) =>
+          this.productionCompaniesService.upsert(productionCompany),
+      ),
+    );
+
+    mappedMovie.mediaContent.updatedAt = new Date();
+    mappedMovie.updatedAt = new Date();
+
+    this.movieRepository.merge(existingMovie, mappedMovie);
+    return await this.movieRepository.save(existingMovie);
+  }
+
   async findMovieFromTmdbId(tmdbId: number): Promise<MovieDetailDto> {
     const existingMovie = await this.movieRepository.findOne({
-      where: {
-        mediaContent: { tmdbId },
-      },
+      where: { mediaContent: { tmdbId } },
       relations: [
         'mediaContent',
         'mediaContent.genres',
@@ -109,41 +127,22 @@ export class MoviesService {
       ],
     });
 
-    if (existingMovie && !isDataStale(existingMovie?.mediaContent?.updatedAt)) {
+    if (existingMovie && !isDataStale(existingMovie.mediaContent.updatedAt)) {
       return this.createMovieDetailDto(existingMovie);
     }
 
-    const movie: TmdbMovieDto =
+    const tmdbMovie: TmdbMovieDto =
       await this.tmdbApiService.getMovieFromTmdb(tmdbId);
 
-    try {
-      const savedMovie = await this.create(movie);
-      return this.createMovieDetailDto(savedMovie);
-    } catch (error: unknown) {
-      if (typeof error === 'object' && error !== null && 'code' in error) {
-        if ((error as { code: string }).code === '23505') {
-          const existingMovie = await this.movieRepository.findOne({
-            where: { mediaContent: { tmdbId } },
-            relations: [
-              'mediaContent',
-              'mediaContent.genres',
-              'mediaContent.productionCompanies',
-            ],
-          });
+    let movieToReturn: Movie;
 
-          if (!existingMovie) {
-            throw new ResourceNotFoundException(
-              'Movie',
-              'TMEDB_ID',
-              String(tmdbId),
-            );
-          }
-          return this.createMovieDetailDto(existingMovie);
-        }
-      }
-
-      throw error;
+    if (!existingMovie) {
+      movieToReturn = await this.create(tmdbMovie);
+    } else {
+      movieToReturn = await this.update(existingMovie, tmdbMovie);
     }
+
+    return this.createMovieDetailDto(movieToReturn);
   }
 
   private createMovieDetailDto(movie: Movie): MovieDetailDto {

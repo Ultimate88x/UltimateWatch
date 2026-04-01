@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { LessThan, Repository } from 'typeorm';
 import { TmdbApiService } from 'src/common/tmdbapi/tmdbapi.service';
 import { TmdbApiMapper } from 'src/common/tmdbapi/mapper/tmdbapi-mapper';
+import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
 
 @Injectable()
 export class ProductionCompaniesService {
@@ -13,31 +14,30 @@ export class ProductionCompaniesService {
     private readonly tmdbApiService: TmdbApiService,
   ) {}
 
-  async create(
-    productionCompany: ProductionCompany,
-  ): Promise<ProductionCompany> {
-    return await this.productionCompanyRepository.save(productionCompany);
-  }
-
-  async findByTmdbId(tmdbId: number): Promise<ProductionCompany | null> {
+  async findByTmdbId(tmdbId: number): Promise<ProductionCompany> {
     const productionCompany = await this.productionCompanyRepository.findOne({
       where: { tmdbId },
     });
 
+    if (!productionCompany) {
+      throw new ResourceNotFoundException(
+        'Production Company',
+        'TMDB_ID',
+        tmdbId.toString(),
+      );
+    }
+
     return productionCompany;
   }
 
-  async findOrCreate(
-    tmdbId: number,
+  async upsert(
     productionCompany: ProductionCompany,
   ): Promise<ProductionCompany> {
-    const existingCompany = await this.findByTmdbId(tmdbId);
+    await this.productionCompanyRepository.upsert(productionCompany, [
+      'tmdbId',
+    ]);
 
-    if (existingCompany) {
-      return existingCompany;
-    }
-
-    return await this.create(productionCompany);
+    return await this.findByTmdbId(productionCompany.tmdbId);
   }
 
   async refreshTmdbProductionCompanies(limitDate: Date): Promise<number> {

@@ -1,9 +1,10 @@
 import { BaseEntity } from 'src/common/entities/base.entity';
 import { MediaContent } from 'src/media-contents/entities/media-content.entity';
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, Unique } from 'typeorm';
 import { Provider } from './provider.entity';
 
 @Entity('media_providers')
+@Unique(['mediaContent', 'provider'])
 export class MediaProvider extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   link?: string | null;

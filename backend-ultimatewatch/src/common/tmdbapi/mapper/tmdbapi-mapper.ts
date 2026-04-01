@@ -30,7 +30,7 @@ import { TmdbSeriesDto } from '../dto/media/tmdb-series-dto';
 import { TmdbSeasonDto } from '../dto/media/tmdb-season-dto';
 import { Season } from 'src/season/entities/season.entity';
 import { TmdbEpisodeDto } from '../dto/media/tmdb-episode-dto';
-import { Episode } from 'src/episode/entities/episode.entity';
+import { Episode } from 'src/episodes/entities/episode.entity';
 
 export class TmdbApiMapper {
   static tmdbListSeriesResultDtoToTmdbListMediaDto(

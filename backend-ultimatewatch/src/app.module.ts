@@ -19,7 +19,7 @@ import { WatchmodeModule } from './common/watchmode/watchmode.module';
 import { ComplianceModule } from './compliance/compliance.module';
 import { PersonModule } from './person/person.module';
 import { SeasonModule } from './season/season.module';
-import { EpisodeModule } from './episode/episode.module';
+import { EpisodeModule } from './episodes/episodes.module';
 
 @Module({
   imports: [

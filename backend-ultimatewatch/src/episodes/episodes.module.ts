@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { EpisodeService } from './episode.service';
-import { EpisodeController } from './episode.controller';
+import { EpisodeService } from './episodes.service';
+import { EpisodeController } from './episodes.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Episode } from './entities/episode.entity';
 import { SeasonModule } from 'src/season/season.module';

@@ -22,5 +22,7 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
     "strictPropertyInitialization": false,
+    "types": ["node", "jest", "multer", "express"],
+    "ignoreDeprecations": 6.0,
   }
 }

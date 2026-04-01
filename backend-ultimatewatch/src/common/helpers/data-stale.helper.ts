@@ -1,5 +1,5 @@
 export const isDataStale = (
-  lastUpdate: Date | string,
+  lastUpdate: Date | string | null | undefined,
   days: number = 1,
 ): boolean => {
   if (!lastUpdate) return true;

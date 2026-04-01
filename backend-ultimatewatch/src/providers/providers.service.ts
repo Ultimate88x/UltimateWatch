@@ -85,6 +85,7 @@ export class ProvidersService {
       {
         mediaContent: mediaContent,
         provider: savedProvider,
+        uniqueLastRetrieved: new Date(),
       },
       ['mediaContent', 'provider'],
     );
@@ -100,7 +101,7 @@ export class ProvidersService {
     const isStale =
       localProviders.length > 0
         ? localProviders.some((mediaProvider: MediaProvider) =>
-            isDataStale(mediaProvider.updatedAt),
+            isDataStale(mediaProvider.uniqueLastRetrieved),
           )
         : true;
 
@@ -203,7 +204,9 @@ export class ProvidersService {
 
     if (mediaProviders.length === 0) return [];
 
-    const isStale = isDataStale(mediaProviders[0].updatedAt);
+    const isStale = mediaProviders.some((mp: MediaProvider) =>
+      isDataStale(mp.lastLinkUpdate),
+    );
     const hasAnyLink = mediaProviders.some(
       (mediaProvider) => !!mediaProvider.link,
     );
@@ -222,6 +225,7 @@ export class ProvidersService {
         );
 
         updatedMediaProvider.updatedAt = new Date();
+        updatedMediaProvider.lastLinkUpdate = new Date();
         return updatedMediaProvider;
       });
 

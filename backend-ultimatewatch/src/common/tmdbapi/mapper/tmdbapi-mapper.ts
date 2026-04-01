@@ -29,6 +29,8 @@ import { Series } from 'src/series/entities/series.entity';
 import { TmdbSeriesDto } from '../dto/media/tmdb-series-dto';
 import { TmdbSeasonDto } from '../dto/media/tmdb-season-dto';
 import { Season } from 'src/season/entities/season.entity';
+import { TmdbEpisodeDto } from '../dto/media/tmdb-episode-dto';
+import { Episode } from 'src/episode/entities/episode.entity';
 
 export class TmdbApiMapper {
   static tmdbListSeriesResultDtoToTmdbListMediaDto(
@@ -38,7 +40,7 @@ export class TmdbApiMapper {
       (tmdbSeries: TmdbListSeriesResultDto): TmdbListMediaDto => ({
         id: tmdbSeries.id,
         title: tmdbSeries.name,
-        posterPath: `https://image.tmdb.org/t/p/w500/${tmdbSeries.poster_path}`,
+        posterPath: `https://image.tmdb.org/t/p/w500${tmdbSeries.poster_path}`,
         releaseDate: tmdbSeries.first_air_date,
       }),
     );
@@ -51,7 +53,7 @@ export class TmdbApiMapper {
       (tmdbMovie: TmdbListMoviesResultDto): TmdbListMediaDto => ({
         id: tmdbMovie.id,
         title: tmdbMovie.title,
-        posterPath: `https://image.tmdb.org/t/p/w500/${tmdbMovie.poster_path}`,
+        posterPath: `https://image.tmdb.org/t/p/w500${tmdbMovie.poster_path}`,
         releaseDate: tmdbMovie.release_date,
       }),
     );
@@ -64,7 +66,7 @@ export class TmdbApiMapper {
     mediaContent.tmdbId = response.id;
     mediaContent.title = response.title;
     mediaContent.overview = response.overview;
-    mediaContent.imagePath = `https://image.tmdb.org/t/p/w500/${response.poster_path}`;
+    mediaContent.imagePath = `https://image.tmdb.org/t/p/w500${response.poster_path}`;
     mediaContent.releaseDate =
       response.release_date && response.release_date.trim() !== ''
         ? new Date(response.release_date)
@@ -95,7 +97,7 @@ export class TmdbApiMapper {
     mediaContent.tmdbId = response.id;
     mediaContent.title = response.name;
     mediaContent.overview = response.overview;
-    mediaContent.imagePath = `https://image.tmdb.org/t/p/w500/${response.poster_path}`;
+    mediaContent.imagePath = `https://image.tmdb.org/t/p/w500${response.poster_path}`;
     mediaContent.releaseDate =
       response.first_air_date && response.first_air_date.trim() !== ''
         ? new Date(response.first_air_date)
@@ -115,7 +117,9 @@ export class TmdbApiMapper {
       response.last_air_date && response.last_air_date.trim() !== ''
         ? new Date(response.last_air_date)
         : null;
-    series.seasons = this.tmdbSeasonDtoListToSeasonList(response.seasons);
+    series.seasons = response.seasons
+      ? this.tmdbSeasonDtoListToSeasonList(response.seasons)
+      : [];
     series.mediaContent = mediaContent;
 
     return series;
@@ -142,7 +146,7 @@ export class TmdbApiMapper {
     const productionCompany: ProductionCompany = new ProductionCompany();
 
     productionCompany.tmdbId = response.id;
-    productionCompany.logoPath = `https://image.tmdb.org/t/p/original/${response.logo_path}`;
+    productionCompany.logoPath = `https://image.tmdb.org/t/p/original${response.logo_path}`;
     productionCompany.name = response.name;
 
     return productionCompany;
@@ -165,7 +169,7 @@ export class TmdbApiMapper {
 
       provider.tmdbId = tmdbProvider.provider_id;
       provider.name = tmdbProvider.provider_name;
-      provider.logoPath = `https://image.tmdb.org/t/p/original/${tmdbProvider.logo_path}`;
+      provider.logoPath = `https://image.tmdb.org/t/p/original${tmdbProvider.logo_path}`;
 
       return provider;
     });
@@ -204,7 +208,7 @@ export class TmdbApiMapper {
 
       person.tmdbId = tmdbCast.id;
       person.name = tmdbCast.name;
-      person.profilePath = `https://image.tmdb.org/t/p/w500/${tmdbCast.profile_path}`;
+      person.profilePath = `https://image.tmdb.org/t/p/w500${tmdbCast.profile_path}`;
       return person;
     });
 
@@ -213,7 +217,7 @@ export class TmdbApiMapper {
 
       person.tmdbId = tmdbCrew.id;
       person.name = tmdbCrew.name;
-      person.profilePath = `https://image.tmdb.org/t/p/w500/${tmdbCrew.profile_path}`;
+      person.profilePath = `https://image.tmdb.org/t/p/w500${tmdbCrew.profile_path}`;
       return person;
     });
 
@@ -245,12 +249,15 @@ export class TmdbApiMapper {
     season.tmdbId = response.id;
     season.title = response.name;
     season.overview = response.overview;
-    season.imagePath = `https://image.tmdb.org/t/p/w500/${response.poster_path}`;
+    season.imagePath = `https://image.tmdb.org/t/p/w500${response.poster_path}`;
     season.releaseDate =
       response.air_date && response.air_date.trim() !== ''
         ? new Date(response.air_date)
         : null;
     season.number = response.season_number;
+    season.episodes = response.episodes
+      ? this.tmdbEpisodeDtoListToEpisodeList(response.episodes)
+      : [];
 
     return season;
   }
@@ -259,6 +266,33 @@ export class TmdbApiMapper {
     return response.map(
       (tmdbSeason: TmdbSeasonDto): Season =>
         this.tmdbSeasonDtoToSeason(tmdbSeason),
+    );
+  }
+
+  static tmdbEpisodeDtoToEpisode(response: TmdbEpisodeDto): Episode {
+    const episode: Episode = new Episode();
+
+    episode.tmdbId = response.id;
+    episode.title = response.name;
+    episode.overview = response.overview;
+    episode.imagePath = `https://image.tmdb.org/t/p/w500${response.still_path}`;
+    episode.releaseDate =
+      response.air_date && response.air_date.trim() !== ''
+        ? new Date(response.air_date)
+        : null;
+    episode.number = response.episode_number;
+    episode.runtime = response.runtime;
+    episode.type = response.episode_type;
+
+    return episode;
+  }
+
+  static tmdbEpisodeDtoListToEpisodeList(
+    response: TmdbEpisodeDto[],
+  ): Episode[] {
+    return response.map(
+      (tmdbEpisode: TmdbEpisodeDto): Episode =>
+        this.tmdbEpisodeDtoToEpisode(tmdbEpisode),
     );
   }
 }

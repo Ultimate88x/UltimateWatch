@@ -9,6 +9,12 @@ export class MediaProvider extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   link?: string | null;
 
+  @Column({ type: 'date', nullable: true })
+  lastLinkUpdate: Date | null | undefined;
+
+  @Column({ type: 'date', nullable: true })
+  uniqueLastRetrieved: Date | null | undefined;
+
   @ManyToOne(() => Provider, {
     onDelete: 'CASCADE',
   })

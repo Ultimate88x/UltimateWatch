@@ -16,6 +16,7 @@ import { ProductionCompaniesService } from 'src/production-companies/production-
 import { Repository } from 'typeorm';
 import { Season } from 'src/season/entities/season.entity';
 import { SeasonService } from 'src/season/season.service';
+import { SeasonListDto } from 'src/season/dto/season-list-dto';
 
 @Injectable()
 export class SeriesService {
@@ -95,13 +96,16 @@ export class SeriesService {
       ),
     );
 
+    const savedSeries: Series = await this.seriesRepository.save(mappedSeries);
+
     mappedSeries.seasons = await Promise.all(
-      mappedSeries.seasons.map((season: Season) =>
-        this.seasonService.upsert(season),
-      ),
+      savedSeries.seasons.map(async (season: Season) => {
+        season.series = savedSeries;
+        return await this.seasonService.upsert(season);
+      }),
     );
 
-    return await this.seriesRepository.save(mappedSeries);
+    return await this.seriesRepository.save(savedSeries);
   }
 
   async update(existingSeries: Series, series: TmdbSeriesDto) {
@@ -122,9 +126,10 @@ export class SeriesService {
     );
 
     mappedSeries.seasons = await Promise.all(
-      mappedSeries.seasons.map((season: Season) =>
-        this.seasonService.upsert(season),
-      ),
+      mappedSeries.seasons.map(async (season) => {
+        season.series = existingSeries;
+        return await this.seasonService.upsert(season);
+      }),
     );
 
     mappedSeries.mediaContent.updatedAt = new Date();
@@ -141,6 +146,7 @@ export class SeriesService {
         'mediaContent',
         'mediaContent.genres',
         'mediaContent.productionCompanies',
+        'seasons',
       ],
     });
 
@@ -190,6 +196,15 @@ export class SeriesService {
           : series?.lastAirDate instanceof Date
             ? series?.lastAirDate.toISOString()
             : null,
+
+      seasonsNumber: series.getSeasonsNumber(),
+      seasonsInfo: series.seasons.map(
+        (season: Season) =>
+          new SeasonListDto({
+            tmdbId: season.tmdbId,
+            title: season.title,
+          }),
+      ),
     });
   }
 }

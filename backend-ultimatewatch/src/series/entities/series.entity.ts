@@ -24,7 +24,7 @@ export class Series extends BaseEntity {
 
   getEpisodesNumber(): number {
     return this.seasons.reduce((total: number, season: Season) => {
-      return total + (season.getEpisodesNumber() || 0);
+      return total + (season.getEpisodeNumber() || 0);
     }, 0);
   }
 }

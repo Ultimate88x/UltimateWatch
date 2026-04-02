@@ -5,10 +5,17 @@ import { EpisodeService } from './episodes.service';
 describe('EpisodeController', () => {
   let controller: EpisodeController;
 
+  const mockEpisodeService = {};
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [EpisodeController],
-      providers: [EpisodeService],
+      providers: [
+        {
+          provide: EpisodeService,
+          useValue: mockEpisodeService,
+        },
+      ],
     }).compile();
 
     controller = module.get<EpisodeController>(EpisodeController);

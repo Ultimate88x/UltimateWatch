@@ -47,6 +47,10 @@ describe('AuthService', () => {
     jwtService = module.get<JwtService>(JwtService);
   });
 
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+
   describe('validateUser', () => {
     it('should return user data if password is correct', async () => {
       const mockUser = { id: 1, username: 'user1', password: 'hashedPassword' };

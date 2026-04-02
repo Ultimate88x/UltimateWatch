@@ -17,6 +17,7 @@ import { Repository } from 'typeorm';
 import { SeasonService } from 'src/seasons/seasons.service';
 import { SeasonListDto } from 'src/seasons/dto/season-list-dto';
 import { Season } from 'src/seasons/entities/seasons.entity';
+import { MediaFilterDto } from 'src/common/dto/media-filter-dto';
 
 @Injectable()
 export class SeriesService {
@@ -31,14 +32,14 @@ export class SeriesService {
     private readonly cacheManager: Cache,
   ) {}
 
-  private async fetchFourPages(
+  private async fetchThreePages(
     page: number,
     fetchFn: (page: number) => Promise<TmdbListMediaDto[]>,
   ): Promise<TmdbListMediaDto[]> {
     const finalList: TmdbListMediaDto[] = [];
-    const startPage = (page - 1) * 4 + 1;
+    const startPage = (page - 1) * 3 + 1;
 
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 3; i++) {
       const currentPage = startPage + i;
       const list = await fetchFn(currentPage);
       finalList.push(...list);
@@ -50,15 +51,19 @@ export class SeriesService {
     );
   }
 
-  async getSeriesListForWholePage(page: number = 1) {
-    const cacheKey = `series_page_${page}`;
+  async getSeriesListForWholePage(
+    page: number = 1,
+    sort?: string,
+    filters?: MediaFilterDto,
+  ) {
+    const cacheKey = `series_page_${page}_${sort}_${filters?.toString()}`;
     const cachedList: TmdbListMediaDto[] | undefined =
       await this.cacheManager.get<TmdbListMediaDto[]>(cacheKey);
 
     if (cachedList) return cachedList;
 
-    const seriesList = await this.fetchFourPages(page, (p) =>
-      this.tmdbApiService.getSeriesListFromTmdb(p),
+    const seriesList = await this.fetchThreePages(page, (p) =>
+      this.tmdbApiService.getSeriesListFromTmdb(p, sort, filters),
     );
 
     await this.cacheManager.set(cacheKey, seriesList, 600000);
@@ -72,7 +77,7 @@ export class SeriesService {
 
     if (cachedList) return cachedList;
 
-    const seriesList = await this.fetchFourPages(page, (p) =>
+    const seriesList = await this.fetchThreePages(page, (p) =>
       this.tmdbApiService.searchSeriesFromTmdb(query, p),
     );
 

@@ -44,19 +44,32 @@ export class TmdbApiService {
     this.apiKey = key;
   }
 
-  async getSeriesListFromTmdb(page: number = 1) {
+  async getSeriesListFromTmdb(
+    page: number = 1,
+    sort?: string,
+    mediaFilter?: MediaFilterDto,
+  ) {
     const url = 'https://api.themoviedb.org/3/discover/tv';
+    const validSort = getSafeSortBy(MediaType.SERIES, sort);
+
+    const params: TmdbParamsDto = {
+      include_adult: false,
+      page: page,
+      sort_by: validSort,
+      ...(mediaFilter
+        ? TmdbApiMapper.mapFiltersToTmdb(mediaFilter, MediaType.SERIES)
+        : {}),
+    };
+
     const options = {
       method: 'GET',
       headers: {
         accept: 'application/json',
         Authorization: `Bearer ${this.apiKey}`,
       },
-      params: {
-        include_adult: false,
-        page: page,
-      },
+      params: params,
     };
+
     const response: AxiosResponse<
       TmdbListResponseDto<TmdbListSeriesResultDto>
     > = await firstValueFrom(

@@ -11,6 +11,7 @@ import { ProvidersService } from 'src/providers/providers.service';
 import { SeriesDetailDto } from './dto/series-detail-dto';
 import { ProviderListItemDto } from 'src/providers/dto/provider-list-item-dto';
 import { MediaType } from 'src/common/enums/media.type.enum';
+import { MediaFilterDto } from 'src/common/dto/media-filter-dto';
 
 @Controller('series')
 export class SeriesController {
@@ -21,10 +22,12 @@ export class SeriesController {
 
   @Get('tmdb-list')
   async getTmdbSeries(
-    @Query('page') page: string = '1',
+    @Query() filters: MediaFilterDto,
   ): Promise<TmdbListMediaDto[]> {
+    const page = filters.page || 1;
+    const sort = filters.sort;
     const data: TmdbListMediaDto[] =
-      await this.seriesService.getSeriesListForWholePage(+page);
+      await this.seriesService.getSeriesListForWholePage(+page, sort, filters);
     return data;
   }
 

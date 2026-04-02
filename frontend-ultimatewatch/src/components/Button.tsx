@@ -70,7 +70,13 @@ export const Button = ({
       `}
     >
       {showShine && !isDisabled && !isLink && (
-        <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
+        <div className="
+          absolute inset-0 -translate-x-full 
+          bg-linear-to-r from-transparent via-white/25 to-transparent 
+          transition-transform duration-700 ease-in-out
+          group-hover:translate-x-full
+          skew-x-[-20deg] /* Añade una inclinación al brillo para que sea más dinámico */
+        " />
       )}
 
       {isLoading ? (

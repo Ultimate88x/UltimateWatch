@@ -28,14 +28,14 @@ export class MoviesService {
     private readonly cacheManager: Cache,
   ) {}
 
-  private async fetchFourPages(
+  private async fetchThreePages(
     page: number,
     fetchFn: (page: number) => Promise<TmdbListMediaDto[]>,
   ): Promise<TmdbListMediaDto[]> {
     const finalList: TmdbListMediaDto[] = [];
-    const startPage = (page - 1) * 4 + 1;
+    const startPage = (page - 1) * 3 + 1;
 
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 3; i++) {
       const currentPage = startPage + i;
       const list = await fetchFn(currentPage);
       finalList.push(...list);
@@ -58,7 +58,7 @@ export class MoviesService {
 
     if (cachedList) return cachedList;
 
-    const movieList = await this.fetchFourPages(page, (p) =>
+    const movieList = await this.fetchThreePages(page, (p) =>
       this.tmdbApiService.getMovieListFromTmdb(p, sort, filters),
     );
     await this.cacheManager.set(cacheKey, movieList, 600000);
@@ -72,7 +72,7 @@ export class MoviesService {
 
     if (cachedList) return cachedList;
 
-    const movieList = await this.fetchFourPages(page, (p) =>
+    const movieList = await this.fetchThreePages(page, (p) =>
       this.tmdbApiService.searchMoviesFromTmdb(query, p),
     );
     await this.cacheManager.set(cacheKey, movieList, 600000);

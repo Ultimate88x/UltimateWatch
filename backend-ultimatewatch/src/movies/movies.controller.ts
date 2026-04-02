@@ -22,10 +22,10 @@ export class MoviesController {
 
   @Get('tmdb-list')
   async getTmdbMovies(
-    @Query('page') page: string = '1',
-    @Query('sort') sort?: string,
-    @Query() filters?: MediaFilterDto,
+    @Query() filters: MediaFilterDto,
   ): Promise<TmdbListMediaDto[]> {
+    const page = filters.page || 1;
+    const sort = filters.sort;
     const data: TmdbListMediaDto[] =
       await this.moviesService.getMovieListForWholePage(+page, sort, filters);
     return data;

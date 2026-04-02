@@ -1,7 +1,16 @@
 import { Type } from 'class-transformer';
-import { IsOptional, IsString, IsDate } from 'class-validator';
+import { IsOptional, IsString, IsDate, IsNumber } from 'class-validator';
 
 export class MediaFilterDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  page?: number;
+
+  @IsOptional()
+  @IsString()
+  sort?: string;
+
   @IsOptional()
   @IsString()
   withGenres?: string;

@@ -7,7 +7,7 @@ import type { Media } from "../../../types/media";
 import { motion } from "framer-motion";
 import { EmptyState } from "../../../components/EmptyState";
 import type { Genre } from "../../../types/genre";
-import { MoviesSortEnum, type MoviesSortOption } from "../../../enums/MoviesSortEnum";
+import { SortEnum, type SortOption } from "../../../enums/SortEnum";
 import { useAdvancedNavigation } from "../../../components/utilities/SmartNavigate";
 import { FilterSidebar } from "../../../components/content/FilterSidebar";
 
@@ -17,7 +17,7 @@ export default function MovieList() {
   const [page, setPage] = useState(1);
   const [mediaList, setMediaList] = useState<Media[]>([]);
 
-  const [sortBy, setSortBy] = useState<MoviesSortOption>(MoviesSortEnum.POPULARITY_DESC);
+  const [sortBy, setSortBy] = useState<SortOption>(SortEnum.POPULARITY_DESC);
 
   const [genres, setGenres] = useState<Genre[]>([]);
   const [selectedGenres, setSelectedGenres] = useState<number[]>([]);
@@ -186,6 +186,7 @@ export default function MovieList() {
     <div className="relative w-full min-h-screen bg-cover bg-blue-background flex flex-col justify-start items-start overflow-x-hidden">
       <div className="flex flex-row w-full pl-10 gap-10">
         <FilterSidebar 
+          isMovie={true}
           genres={genres}
           selectedGenres={selectedGenres}
           onToggleGenre={toggleGenre}

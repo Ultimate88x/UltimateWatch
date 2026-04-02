@@ -1,16 +1,17 @@
 import { ChevronDown, Search } from "lucide-react";
 import { Button } from "../Button";
 import type { Genre } from "../../types/genre";
-import { MoviesSortEnum, type MoviesSortOption } from "../../enums/MoviesSortEnum";
+import { SortEnum, type SortOption } from "../../enums/SortEnum";
 
 interface FilterSidebarProps {
+  isMovie: boolean,
   genres: Genre[];
   selectedGenres: number[];
   onToggleGenre: (id: number) => void;
   isExcludeMode: boolean;
   onToggleExcludeMode: () => void;
-  sortBy: MoviesSortOption;
-  onSortChange: (value: MoviesSortOption) => void;
+  sortBy: SortOption;
+  onSortChange: (value: SortOption) => void;
   dateFrom: string;
   onDateFromChange: (value: string) => void;
   dateTo: string;
@@ -21,6 +22,7 @@ interface FilterSidebarProps {
 }
 
 export const FilterSidebar = ({
+  isMovie,
   genres,
   selectedGenres,
   onToggleGenre,
@@ -53,15 +55,15 @@ export const FilterSidebar = ({
         <div className="relative group">
           <select 
             value={sortBy}
-            onChange={(e) => onSortChange(e.target.value as MoviesSortOption)}
+            onChange={(e) => onSortChange(e.target.value as SortOption)}
             className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-white/80 appearance-none outline-hidden focus:border-purple-main/50 transition-all cursor-pointer"
           >
-            <option value={MoviesSortEnum.POPULARITY_DESC} className="bg-blue-background text-white">Most Popular</option>
-            <option value={MoviesSortEnum.POPULARITY_ASC} className="bg-blue-background text-white">Least Popular</option>
-            <option value={MoviesSortEnum.REVENUE_DESC} className="bg-blue-background text-white">Highest Revenue</option>
-            <option value={MoviesSortEnum.REVENUE_ASC} className="bg-blue-background text-white">Lowest Revenue</option>
-            <option value={MoviesSortEnum.PRIMARY_RELEASE_DATE_DESC} className="bg-blue-background text-white">Newest First</option>
-            <option value={MoviesSortEnum.PRIMARY_RELEASE_DATE_ASC} className="bg-blue-background text-white">Oldest First</option>
+            <option value={SortEnum.POPULARITY_DESC} className="bg-blue-background text-white">Most Popular</option>
+            <option value={SortEnum.POPULARITY_ASC} className="bg-blue-background text-white">Least Popular</option>
+            {isMovie && (<option value={SortEnum.REVENUE_DESC} className="bg-blue-background text-white">Highest Revenue</option>)}
+            {isMovie && (<option value={SortEnum.REVENUE_ASC} className="bg-blue-background text-white">Lowest Revenue</option>)}
+            <option value={isMovie ? SortEnum.PRIMARY_RELEASE_DATE_DESC : SortEnum.FIRST_AIR_DATE_DESC} className="bg-blue-background text-white">Newest First</option>
+            <option value={isMovie ? SortEnum.PRIMARY_RELEASE_DATE_ASC : SortEnum.FIRST_AIR_DATE_ASC} className="bg-blue-background text-white">Oldest First</option>
           </select>
           <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white/20 group-hover:text-purple-main transition-all duration-300">
             <ChevronDown size={16} strokeWidth={3} />

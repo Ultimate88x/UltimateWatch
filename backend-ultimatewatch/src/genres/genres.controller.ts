@@ -11,4 +11,10 @@ export class GenresController {
     const data: GenreDetailDto[] = await this.genreService.findForMovies();
     return data;
   }
+
+  @Get('/series')
+  async getSeriesGenres(): Promise<GenreDetailDto[]> {
+    const data: GenreDetailDto[] = await this.genreService.findForSeries();
+    return data;
+  }
 }

@@ -65,6 +65,14 @@ export class GenresService {
     return genres.map((genre: Genre) => this.createGenreDetailDto(genre));
   }
 
+  async findForSeries(): Promise<GenreDetailDto[]> {
+    const genres: Genre[] = await this.genreRepository.find({
+      where: { mediaType: MediaType.SERIES },
+    });
+
+    return genres.map((genre: Genre) => this.createGenreDetailDto(genre));
+  }
+
   private createGenreDetailDto(genre: Genre): GenreDetailDto {
     return new GenreDetailDto({
       tmdbId: genre?.tmdbId,

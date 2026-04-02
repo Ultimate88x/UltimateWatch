@@ -64,6 +64,9 @@ export class PersonService {
         type: PersonType.CAST,
       },
       relations: ['person'],
+      order: {
+        order: 'ASC',
+      },
       take: limit,
       skip: skip,
     });
@@ -87,20 +90,55 @@ export class PersonService {
     await this.ensurePeopleAreLoaded(mediaTmdbId, mediaType);
 
     const skip = (page - 1) * limit;
-    const [data, total] = await this.mediaPersonRepository.findAndCount({
-      where: {
-        mediaContent: { tmdbId: mediaTmdbId },
-        type: PersonType.CREW,
-      },
-      relations: ['person'],
-      take: limit,
-      skip: skip,
-    });
+    const query = this.mediaPersonRepository
+      .createQueryBuilder('mp')
+      .leftJoinAndSelect('mp.person', 'person')
+      .leftJoin('mp.mediaContent', 'mc')
+      .addSelect(
+        `CASE 
+          WHEN mp.job LIKE '%Director%' THEN 1 
+          WHEN mp.job LIKE '%Screenplay%' THEN 2 
+          WHEN mp.job LIKE '%Writer%' THEN 3 
+          WHEN mp.job LIKE '%Producer%' THEN 4 
+          WHEN mp.job LIKE '%Executive Producer%' THEN 5
+          WHEN mp.job LIKE '%Director of Photography%' THEN 6
+          WHEN mp.job LIKE '%Original Music Composer%' THEN 7
+          ELSE 99 END`,
+        'priority',
+      )
+      .where('mc.tmdbId = :tmdbId', { tmdbId: mediaTmdbId })
+      .andWhere('mp.type = :type', { type: PersonType.CREW })
+      .orderBy('priority', 'ASC')
+      .addOrderBy('mp.id', 'ASC')
+      .take(limit)
+      .skip(skip);
+
+    const [data, total] = await query.getManyAndCount();
 
     const crewData = data.map((mp) => this.createCrewPersonDetailDto(mp));
 
+    const JOB_PRIORITY: Record<string, number> = {
+      Director: 1,
+      Screenplay: 2,
+      Writer: 3,
+      Producer: 4,
+      'Executive Producer': 5,
+      'Director of Photography': 6,
+      'Original Music Composer': 7,
+    };
+
+    const sortedCrew = crewData.sort((a, b) => {
+      const jobA = a.job.split(', ')[0];
+      const jobB = b.job.split(', ')[0];
+
+      const priorityA = JOB_PRIORITY[jobA] ?? 99;
+      const priorityB = JOB_PRIORITY[jobB] ?? 99;
+
+      return priorityA - priorityB;
+    });
+
     return new MediaCrewResponseDto({
-      data: crewData,
+      data: sortedCrew,
       total: total,
       page: page,
       lastPage: Math.ceil(total / limit),
@@ -139,6 +177,8 @@ export class PersonService {
         type: mediaPersonEntity.type,
         character: mediaPersonEntity.character || 'N/A',
         job: mediaPersonEntity.job || 'N/A',
+        order: mediaPersonEntity.order,
+        episodeCount: mediaPersonEntity.episodeCount || 0,
         person: savedPerson,
         mediaContent: mediaContent,
       },
@@ -178,11 +218,12 @@ export class PersonService {
 
     if (isValid) return;
 
-    const peopleInfo = await this.tmdbapiService.getMediaPeople(
+    const rawPeople = await this.tmdbapiService.getMediaPeople(
       mediaTmdbId,
       mediaType,
     );
 
+    const peopleInfo = TmdbApiMapper.filterAndGroupCredits(rawPeople);
     const people = TmdbApiMapper.tmdbPeopleResponseDtoToPersonList(peopleInfo);
 
     await Promise.all(

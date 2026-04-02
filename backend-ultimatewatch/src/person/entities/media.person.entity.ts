@@ -18,7 +18,13 @@ export class MediaPerson extends BaseEntity {
   character?: string;
 
   @Column({ nullable: true })
+  order?: number;
+
+  @Column({ nullable: true })
   job?: string;
+
+  @Column({ nullable: true })
+  episodeCount?: number;
 
   @ManyToOne(() => Person, {
     onDelete: 'CASCADE',

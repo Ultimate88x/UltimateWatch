@@ -297,7 +297,10 @@ export class TmdbApiService {
   }
 
   async getMediaPeople(id: number, mediaType: MediaType) {
-    const url = `https://api.themoviedb.org/3/${mediaType}/${id}/credits`;
+    const url =
+      mediaType === MediaType.MOVIE
+        ? `https://api.themoviedb.org/3/${mediaType}/${id}/credits`
+        : `https://api.themoviedb.org/3/${mediaType}/${id}/aggregate_credits`;
     const options = {
       method: 'GET',
       headers: {

@@ -20,7 +20,9 @@ import { MediaType } from 'src/common/enums/media.type.enum';
 import { Person } from 'src/person/entities/person.entity';
 import {
   TmdbCastDto,
+  TmdbCastRoles,
   TmdbCrewDto,
+  TmdbCrewJobs,
   TmdbPeopleResponseDto,
 } from '../dto/tmdb-people-response-dto';
 import { MediaPerson } from 'src/person/entities/media.person.entity';
@@ -103,10 +105,10 @@ export class TmdbApiMapper {
         ? new Date(response.first_air_date)
         : null;
     mediaContent.status = response.status;
-    mediaContent.type = MediaType.MOVIE;
+    mediaContent.type = MediaType.SERIES;
     mediaContent.genres = this.tmdbGenreDtoListToGenreList(
       response.genres,
-      MediaType.MOVIE,
+      MediaType.SERIES,
     );
     mediaContent.productionCompanies =
       this.tmdbProductionCompanyDtoListToProductionCompanyList(
@@ -234,11 +236,33 @@ export class TmdbApiMapper {
   ): MediaPerson {
     const mediaPerson: MediaPerson = new MediaPerson();
 
-    mediaPerson.type =
-      'character' in tmdbPerson ? PersonType.CAST : PersonType.CREW;
-    mediaPerson.character =
-      'character' in tmdbPerson ? tmdbPerson.character : 'N/A';
-    mediaPerson.job = 'job' in tmdbPerson ? tmdbPerson.job : 'N/A';
+    const isCast = 'character' in tmdbPerson || 'roles' in tmdbPerson;
+    mediaPerson.type = isCast ? PersonType.CAST : PersonType.CREW;
+
+    if (isCast) {
+      const cast = tmdbPerson;
+      if (cast.roles && cast.roles.length > 0) {
+        mediaPerson.character = cast.roles
+          .map((r: TmdbCastRoles) => r.character || 'N/A')
+          .join(', ');
+      } else {
+        mediaPerson.character = cast.character || 'N/A';
+      }
+      mediaPerson.job = 'N/A';
+    } else {
+      const crew = tmdbPerson as TmdbCrewDto;
+      if (crew.jobs && crew.jobs.length > 0) {
+        mediaPerson.job = crew.jobs
+          .map((j: TmdbCrewJobs) => j.job || 'N/A')
+          .join(', ');
+      } else {
+        mediaPerson.job = crew.job || 'N/A';
+      }
+      mediaPerson.character = 'N/A';
+    }
+
+    mediaPerson.order = 'order' in tmdbPerson ? tmdbPerson.order : undefined;
+    mediaPerson.episodeCount = tmdbPerson.total_episode_count || 0;
 
     return mediaPerson;
   }
@@ -294,5 +318,67 @@ export class TmdbApiMapper {
       (tmdbEpisode: TmdbEpisodeDto): Episode =>
         this.tmdbEpisodeDtoToEpisode(tmdbEpisode),
     );
+  }
+
+  static filterAndGroupCredits(
+    peopleInfo: TmdbPeopleResponseDto,
+  ): TmdbPeopleResponseDto {
+    const SYNC_CONFIG = {
+      MAX_CAST_ORDER: 40,
+      RELEVANT_JOBS: [
+        'Director',
+        'Screenplay',
+        'Writer',
+        'Producer',
+        'Executive Producer',
+        'Director of Photography',
+        'Original Music Composer',
+      ],
+    };
+
+    const relevantCast = peopleInfo.cast.filter(
+      (actor) => (actor.order ?? 99) <= SYNC_CONFIG.MAX_CAST_ORDER,
+    );
+
+    const crewMap = new Map<number, TmdbCrewDto>();
+
+    peopleInfo.crew.forEach((member) => {
+      const currentJobs: string[] = [];
+
+      if (member.job && SYNC_CONFIG.RELEVANT_JOBS.includes(member.job)) {
+        currentJobs.push(member.job);
+      }
+
+      if (member.jobs && member.jobs.length > 0) {
+        member.jobs.forEach((j) => {
+          if (j.job && SYNC_CONFIG.RELEVANT_JOBS.includes(j.job)) {
+            currentJobs.push(j.job);
+          }
+        });
+      }
+
+      if (currentJobs.length === 0) return;
+
+      const existing = crewMap.get(member.id);
+
+      if (existing) {
+        const allJobs = new Set([
+          ...(existing.job?.split(', ') || []),
+          ...currentJobs,
+        ]);
+        existing.job = Array.from(allJobs).join(', ');
+      } else {
+        crewMap.set(member.id, {
+          ...member,
+          job: currentJobs.join(', '),
+        });
+      }
+    });
+
+    return {
+      ...peopleInfo,
+      cast: relevantCast,
+      crew: Array.from(crewMap.values()),
+    };
   }
 }

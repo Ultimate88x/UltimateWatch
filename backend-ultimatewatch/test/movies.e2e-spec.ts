@@ -54,6 +54,34 @@ describe('MoviesController (e2e) - TMDB', () => {
         });
     });
 
+    it('should return 200 and pass all filters to the service', () => {
+      const filters = {
+        page: '2',
+        sort: 'revenue.desc',
+        with_genres: '28,12',
+        primary_release_year: '2024',
+      };
+
+      return request(app.getHttpServer() as App)
+        .get('/movies/tmdb-list')
+        .query(filters)
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body).toEqual(mockMoviesData);
+          expect(
+            mockMoviesService.getMovieListForWholePage,
+          ).toHaveBeenCalledWith(
+            2,
+            filters.sort,
+            expect.objectContaining({
+              page: '2',
+              sort: 'revenue.desc',
+              with_genres: '28,12',
+            }),
+          );
+        });
+    });
+
     it('should use default page 1 if no page is provided', () => {
       return request(app.getHttpServer() as App)
         .get('/movies/tmdb-list')

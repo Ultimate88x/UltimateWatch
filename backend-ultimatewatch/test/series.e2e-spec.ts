@@ -60,6 +60,49 @@ describe('SeriesController (e2e) - TMDB', () => {
           expect(res.body).toEqual([]);
         });
     });
+
+    it('should return 200 and handle series-specific filters', () => {
+      const filters = {
+        page: '3',
+        sort: 'first_air_date.desc',
+        with_networks: '213',
+        with_origin_country: 'JP',
+      };
+
+      return request(app.getHttpServer() as App)
+        .get('/series/tmdb-list')
+        .query(filters)
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body).toHaveLength(2);
+          expect(
+            mockSeriesService.getSeriesListForWholePage,
+          ).toHaveBeenCalledWith(
+            3,
+            filters.sort,
+            expect.objectContaining({
+              with_networks: '213',
+              with_origin_country: 'JP',
+            }),
+          );
+        });
+    });
+
+    it('should handle request with only the sort parameter', () => {
+      return request(app.getHttpServer() as App)
+        .get('/series/tmdb-list')
+        .query({ sort: 'popularity.asc' })
+        .expect(HttpStatus.OK)
+        .expect(() => {
+          expect(
+            mockSeriesService.getSeriesListForWholePage,
+          ).toHaveBeenCalledWith(
+            1,
+            'popularity.asc',
+            expect.objectContaining({ sort: 'popularity.asc' }),
+          );
+        });
+    });
   });
 
   describe('/series/tmdb-search (GET)', () => {

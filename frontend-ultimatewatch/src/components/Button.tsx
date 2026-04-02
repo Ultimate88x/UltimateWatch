@@ -1,7 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'danger' | 'secondary' | 'ghost' | 'outline' | 'success' | 'glass' | 'danger-outline' | 'link';
+  variant?: 'primary' | 'danger' | 'secondary' | 'ghost' | 'outline' | 'success' | 'glass' | 'danger-outline' | 'link' | 'solid-accent' | 'solid-error';
   children: React.ReactNode;
   icon?: LucideIcon;
   isLoading?: boolean;
@@ -37,6 +37,8 @@ export const Button = ({
     link: "bg-transparent p-0 text-white/60 hover:text-white underline-offset-4 hover:underline font-normal",
     success: "bg-emerald-500/80 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/20",
     warning: "bg-amber-500/80 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/20",
+    "solid-accent": "bg-purple-main/10 border border-purple-main/50 text-purple-400 hover:bg-purple-main/20 shadow-[inset_0_0_10px_rgba(168,85,247,0.1)]",
+    "solid-error": "bg-red-danger/10 border border-red-danger/50 text-red-danger hover:bg-red-danger/20 shadow-[inset_0_0_10px_rgba(239,68,68,0.1)]",
   };
 
   const sizes = {

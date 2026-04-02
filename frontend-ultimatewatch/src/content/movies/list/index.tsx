@@ -14,9 +14,15 @@ export default function MovieList() {
 
   const [page, setPage] = useState(1);
   const [mediaList, setMediaList] = useState<Media[]>([]);
+
   const [genres, setGenres] = useState<Genre[]>([]);
   const [selectedGenres, setSelectedGenres] = useState<number[]>([]);
-  const genresRef = useRef<number[]>([]);
+  const [isExcludeMode, setIsExcludeMode] = useState(false);
+
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+
+  const filtersRef = useRef({ genres: [] as number[], dateFrom, dateTo, exclude: false });
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -26,12 +32,20 @@ export default function MovieList() {
     setIsLoading(true);
 
     try {
+      const { genres, dateFrom, dateTo, exclude } = filtersRef.current;
       const params = new URLSearchParams({
         page: currentPage.toString(),
       });
 
-      if (genresRef.current.length > 0) {
-        params.append('withGenres', genresRef.current.join(','));
+      if (genres.length > 0) {
+        const paramKey = exclude ? 'withoutGenres' : 'withGenres';
+        params.append(paramKey, genres.join(','));
+      }
+      if (dateFrom) {
+        params.append('releaseDateGreaterEqualThan', dateFrom);
+      }
+      if (dateTo) {
+        params.append('releaseDateLowerEqualThan', dateTo);
       }
 
       const [response] = await Promise.all([
@@ -99,8 +113,13 @@ export default function MovieList() {
   }, []);
 
   useEffect(() => {
-    genresRef.current = selectedGenres;
-  }, [selectedGenres]);
+    filtersRef.current = { 
+      genres: selectedGenres, 
+      exclude: isExcludeMode,
+      dateFrom,
+      dateTo
+    };
+  }, [selectedGenres, isExcludeMode, dateFrom, dateTo]);
 
   const handleApplyFilters = () => {
     setPage(1);
@@ -114,6 +133,13 @@ export default function MovieList() {
         : [...prev, genreId]
     );
   };
+
+  const clearFilters = () => {
+    setSelectedGenres([]);
+    setIsExcludeMode(false);
+    setDateFrom("");
+    setDateTo("");
+  }
 
   if (isLoading && mediaList.length === 0) {
     return (
@@ -153,35 +179,33 @@ export default function MovieList() {
   return (
     <div className="relative w-full min-h-screen bg-cover bg-blue-background flex flex-col justify-start items-start overflow-x-hidden">
       <div className="flex flex-row w-full pl-10 gap-10">
-        <aside className="w-64 shrink-0 flex flex-col gap-3 sticky top-10 h-fit">
-          <div className="flex flex-col gap-2">
-            <h3 className="text-white font-bold text-xs uppercase tracking-[0.3em] opacity-70">
-              Filters
-            </h3>
-            <div className="h-px w-full bg-linear-to-r from-purple-main/70 to-transparent" />
+        <aside className="w-64 shrink-0 flex flex-col gap-6 sticky top-10 h-fit">
+          <div className="flex flex-col gap-3 mb-2">
+            <div className="flex items-center gap-3">
+              <div className="h-4 w-1 bg-purple-main rounded-full shadow-[0_0_10px_rgba(168,85,247,0.8)]" />
+              <h2 className="text-white font-black text-sm uppercase tracking-[0.4em]">
+                Filters
+              </h2>
+            </div>
+            <div className="h-0.5 w-full bg-linear-to-r from-purple-main via-purple-main/40 to-transparent opacity-100" />
           </div>
-
-          <Button 
-            variant="primary" 
-            fullWidth 
-            icon={Search} 
-            showShine 
-            isLoading={isLoading}
-            onClick={handleApplyFilters}
-            className="
-              mt-2 
-              bg-linear-to-r from-purple-main to-purple-600 
-              hover:shadow-[0_0_25px_rgba(168,85,247,0.4)] 
-              border border-white/10
-              transition-all duration-500
-              [&_svg]:group-hover:scale-125 [&_svg]:group-hover:rotate-12
-            "
-          >
-            Search Content
-          </Button>
-
-          <div className="flex flex-col gap-4">
-            <h4 className="text-white/90 font-bold text-sm">Genres</h4>
+          <div className="-mt-4 flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <h3 className="text-white font-bold text-xs uppercase tracking-[0.3em] opacity-70">
+                  Genres
+                </h3>
+                <Button 
+                  variant={isExcludeMode ? "solid-error" : "solid-accent"} 
+                  size="sm"
+                  className={`w-20! h-7! text-[10px] ${!isExcludeMode && 'text-purple-400'}`}
+                  onClick={() => setIsExcludeMode(!isExcludeMode)}
+                >
+                  {isExcludeMode ? "Exclude" : "Include"}
+                </Button>
+              </div>
+              <div className="h-px w-full bg-linear-to-r from-purple-main/70 to-transparent" />
+            </div>
             <div className="flex flex-wrap gap-2">
               {genres.map((genre) => {
                 const isSelected = selectedGenres.includes(genre.tmdbId);
@@ -204,14 +228,68 @@ export default function MovieList() {
             </div>
           </div>
 
-          {selectedGenres.length > 0 && (
+          <div className="flex flex-col gap-4 mt-2">
+            <div className="flex flex-col gap-2">
+              <h3 className="text-white font-bold text-xs uppercase tracking-[0.3em] opacity-70">
+                Release Period
+              </h3>
+              <div className="h-px w-full bg-linear-to-r from-purple-main/70 to-transparent" />
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <div className="group bg-white/5 border border-white/10 rounded-xl p-3 focus-within:border-purple-main/50 transition-all duration-300">
+                <label className="block text-[10px] uppercase text-white/30 font-black mb-1 tracking-tighter">
+                  Released After
+                </label>
+                <input 
+                  type="date" 
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="w-full bg-transparent text-white text-sm outline-hidden cursor-pointer scheme-dark opacity-60 focus:opacity-100 transition-opacity"
+                />
+              </div>
+
+              <div className="group bg-white/5 border border-white/10 rounded-xl p-3 focus-within:border-purple-main/50 transition-all duration-300">
+                <label className="block text-[10px] uppercase text-white/30 font-black mb-1 tracking-tighter">
+                  Released Before
+                </label>
+                <input 
+                  type="date" 
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="w-full bg-transparent text-white text-sm outline-hidden cursor-pointer scheme-dark opacity-60 focus:opacity-100 transition-opacity"
+                />
+              </div>
+            </div>
+          </div>
+
+          <Button 
+            variant="primary" 
+            fullWidth 
+            icon={Search} 
+            showShine 
+            isLoading={isLoading}
+            onClick={handleApplyFilters}
+            className="
+              mt-2 
+              bg-linear-to-r from-purple-main to-purple-600 
+              hover:shadow-[0_0_25px_rgba(168,85,247,0.4)] 
+              border border-white/10
+              transition-all duration-500
+              [&_svg]:group-hover:scale-125 [&_svg]:group-hover:rotate-12
+            "
+          >
+            Filter Content
+          </Button>
+
+          {(selectedGenres.length > 0 || dateFrom || dateTo || isExcludeMode) && (
             <Button 
               variant="outline" 
               size="sm" 
-              className="mt-3 w-fit text-purple-400 self-start"
-              onClick={() => setSelectedGenres([])}
+              className="w-full text-white/30 hover:text-red-400 transition-colors uppercase text-[10px] tracking-widest font-black"
+              onClick={clearFilters}
             >
-              Clear Filters
+              Reset Filters
             </Button>
           )}
         </aside>

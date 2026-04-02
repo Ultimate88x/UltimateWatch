@@ -16,6 +16,7 @@ describe('SeriesController (e2e) - TMDB', () => {
 
   const mockSeriesService = {
     getSeriesListForWholePage: jest.fn().mockResolvedValue(mockSeriesData),
+    searchSeriesForWholePage: jest.fn().mockResolvedValue(mockSeriesData),
   };
 
   beforeAll(async () => {
@@ -58,6 +59,42 @@ describe('SeriesController (e2e) - TMDB', () => {
         .expect((res) => {
           expect(res.body).toEqual([]);
         });
+    });
+  });
+
+  describe('/series/tmdb-search (GET)', () => {
+    it('should return 200 and search results for series', () => {
+      const query = 'Breaking';
+      return request(app.getHttpServer() as App)
+        .get('/series/tmdb-search')
+        .query({ query, page: '3' })
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body).toHaveLength(2);
+          expect(
+            mockSeriesService.searchSeriesForWholePage,
+          ).toHaveBeenCalledWith(query, 3);
+        });
+    });
+
+    it('should use default page 1 if page query is not provided', () => {
+      const query = 'Dark';
+      return request(app.getHttpServer() as App)
+        .get('/series/tmdb-search')
+        .query({ query })
+        .expect(HttpStatus.OK)
+        .expect(() => {
+          expect(
+            mockSeriesService.searchSeriesForWholePage,
+          ).toHaveBeenCalledWith(query, 1);
+        });
+    });
+
+    it('should return 400 if query is empty', () => {
+      return request(app.getHttpServer() as App)
+        .get('/series/tmdb-search')
+        .query({ query: '' })
+        .expect(HttpStatus.BAD_REQUEST);
     });
   });
 });

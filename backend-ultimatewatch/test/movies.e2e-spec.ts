@@ -20,6 +20,7 @@ describe('MoviesController (e2e) - TMDB', () => {
 
   const mockMoviesService = {
     getMovieListForWholePage: jest.fn().mockResolvedValue(mockMoviesData),
+    searchMoviesForWholePage: jest.fn().mockResolvedValue(mockMoviesData),
   };
 
   beforeAll(async () => {
@@ -62,6 +63,36 @@ describe('MoviesController (e2e) - TMDB', () => {
             mockMoviesService.getMovieListForWholePage,
           ).toHaveBeenCalledWith(1, undefined, expect.any(Object));
         });
+    });
+  });
+
+  describe('/movies/tmdb-search (GET)', () => {
+    it('should return 200 and search results', () => {
+      const query = 'Inception';
+      return request(app.getHttpServer() as App)
+        .get('/movies/tmdb-search')
+        .query({ query, page: '2' })
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body).toEqual(mockMoviesData);
+          expect(
+            mockMoviesService.searchMoviesForWholePage,
+          ).toHaveBeenCalledWith(query, 2);
+        });
+    });
+
+    it('should return 400 Bad Request if query is missing', () => {
+      return request(app.getHttpServer() as App)
+        .get('/movies/tmdb-search')
+        .query({ page: '1' })
+        .expect(HttpStatus.BAD_REQUEST);
+    });
+
+    it('should return 400 Bad Request if query is empty string', () => {
+      return request(app.getHttpServer() as App)
+        .get('/movies/tmdb-search')
+        .query({ query: '   ' })
+        .expect(HttpStatus.BAD_REQUEST);
     });
   });
 });

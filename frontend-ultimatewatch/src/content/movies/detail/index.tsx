@@ -260,7 +260,7 @@ export default function MovieDetail() {
     </div>
 
     <div className="relative w-full h-auto mt-7 pl-8 flex justify-start items-stretch gap-8 overflow-hidden">
-      <div className="relative w-84 flex flex-col gap-6">
+      <div className="relative w-84 shrink-0 flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-1 h-5 bg-purple-main rounded-full"></div>
@@ -395,7 +395,7 @@ export default function MovieDetail() {
                 Information not available
               </span>
             </div>
-            </div>
+          </div>
           )}
         </div>
       </div>

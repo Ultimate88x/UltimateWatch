@@ -6,15 +6,17 @@ import { useParams } from "react-router-dom";
 import { MediaPeopleSection } from "../../../components/person/MediaPeopleSection";
 import { EmptyState } from "../../../components/EmptyState";
 import { formatDate } from "../../../components/utilities/FormatDate";
+import { MediaNavigation } from "../../../components/content/MediaNavigation";
 
 type ProductionCompany = {
   name: string;
   logoPath?: string;
 };
 
-type SeasonList = {
+type Season = {
   tmdbId: number;
-  name: string;
+  title: string;
+  number: number;
 };
 
 type SeriesDetail = {
@@ -28,7 +30,7 @@ type SeriesDetail = {
   releaseDate: string | null;
   lastAirDate: string | null;
   seasonsNumber: number;
-  seasonsInfo: SeasonList[];
+  seasonsInfo: Season[];
 };
 
 type Provider = {
@@ -53,7 +55,7 @@ type CrewMember = {
 export default function SeriesDetail() {
   const { tmdbId } = useParams();
 
-  const [series, setMovie] = useState<SeriesDetail | null>(null);
+  const [series, setSeries] = useState<SeriesDetail | null>(null);
 
   const [providers, setProviders] = useState<Provider[]>([]);
 
@@ -64,6 +66,8 @@ export default function SeriesDetail() {
   const [crew, setCrew] = useState<CrewMember[]>([]);
   const [crewPage, setCrewPage] = useState(1);
   const [crewTotalPages, setCrewTotalPages] = useState(1);
+
+  const [activeSeason, setActiveSeason] = useState<number | 'basic'>( 'basic' );
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -85,7 +89,8 @@ export default function SeriesDetail() {
           return;
         }
 
-        setMovie(data.series);
+        console.log(data.series)
+        setSeries(data.series);
         setProviders(data.providers || []);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'An unexpected error occurred';
@@ -267,7 +272,7 @@ export default function SeriesDetail() {
     </div>
 
     <div className="relative w-full h-auto mt-7 pl-8 flex justify-start items-stretch gap-8 overflow-hidden">
-      <div className="relative w-84 flex flex-col gap-6">
+      <div className="relative w-84 shrink-0 flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-1 h-5 bg-purple-main rounded-full"></div>
@@ -332,79 +337,97 @@ export default function SeriesDetail() {
         )}
       </div>
 
-      <div className="relative flex flex-col gap-8">
-        <MediaPeopleSection 
-          title="Cast"
-          data={cast}
-          currentPage={castPage}
-          totalPages={castTotalPages}
-          onPageChange={(page) => setCastPage(page)}
+      <div className="relative pr-8 flex flex-1 min-w-0 flex-col gap-8">
+        <MediaNavigation 
+          seasons={series.seasonsInfo} 
+          activeId={activeSeason} 
+          onChange={setActiveSeason} 
         />
 
-        <MediaPeopleSection 
-          title="Crew"
-          data={crew}
-          currentPage={crewPage}
-          totalPages={crewTotalPages}
-          onPageChange={(page) => setCrewPage(page)}
-        />
-      </div>
+        {activeSeason === 'basic' ? (
+          <div className="flex flex-row gap-12 animate-in fade-in duration-500">
+            <div className="flex flex-col gap-8">
+              <MediaPeopleSection 
+                title="Cast"
+                data={cast}
+                currentPage={castPage}
+                totalPages={castTotalPages}
+                onPageChange={(page) => setCastPage(page)}
+              />
 
-      <div className="pr-8 flex flex-1 flex-col gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-1 h-5 bg-purple-main rounded-full shadow-[0_0_8px_rgba(168,85,247,0.4)]"></div>
-          <h3 className="text-white font-bold uppercase tracking-[0.2em] text-sm">Producers</h3>
-        </div>
+              <MediaPeopleSection 
+                title="Crew"
+                data={crew}
+                currentPage={crewPage}
+                totalPages={crewTotalPages}
+                onPageChange={(page) => setCrewPage(page)}
+              />
+            </div>
 
-        <div className="flex flex-wrap gap-3">
-          {series?.productionCompanies && series.productionCompanies.length > 0 ? (
-            series.productionCompanies.map((company, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="group relative flex items-center gap-3 px-3 py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 hover:border-purple-main/30 transition-all duration-300"
-              >
-                <div className="w-12 h-12 rounded-lg bg-white/95 p-1.5 flex items-center justify-center overflow-hidden shrink-0 shadow-sm group-hover:bg-white transition-colors">
-                  {company.logoPath ? (
-                    <img
-                      src={company.logoPath}
-                      alt={company.name}
-                      className="w-full h-full object-contain opacity-90 group-hover:opacity-100 transition-opacity"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.parentElement?.querySelector('.fallback-icon')?.classList.remove('hidden');
-                      }}
-                    />
-                  ) : null}
-                  
-                  <div className={`fallback-icon ${company.logoPath ? 'hidden' : ''}`}>
-                    <Film className="w-5 h-5 text-purple-900/40" />
+            <div className="flex flex-col gap-4 w-80 shrink-0 mt-2">
+              <div className="flex items-center gap-3">
+                <div className="w-1 h-5 bg-purple-main rounded-full shadow-[0_0_8px_rgba(168,85,247,0.4)]"></div>
+                <h3 className="text-white font-bold uppercase tracking-[0.2em] text-sm leading-none">
+                  Producers
+                </h3>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                {series?.productionCompanies && series.productionCompanies.length > 0 ? (
+                  series.productionCompanies.map((company, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="group relative flex items-center gap-3 px-3 py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 hover:border-purple-main/30 transition-all duration-300"
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-white/95 p-1.5 flex items-center justify-center overflow-hidden shrink-0 shadow-sm group-hover:bg-white transition-colors">
+                        {company.logoPath ? (
+                        <img
+                          src={company.logoPath}
+                          alt={company.name}
+                          className="w-full h-full object-contain opacity-90 group-hover:opacity-100 transition-opacity"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.parentElement?.querySelector('.fallback-icon')?.classList.remove('hidden');
+                          }}
+                        />
+                        ) : (
+                          <Film className="w-4 h-4 text-purple-900/40" />
+                        )}
+                      </div>
+
+                      <span className="text-[10px] text-purple-100/80 font-bold uppercase tracking-wider truncate max-w-40">
+                        {company.name}
+                      </span>
+                    </motion.div>
+                  ))
+                ) : (
+                <div className="flex items-center gap-3 pl-4 pr-38 py-3 bg-white/5 border border-white/5 rounded-xl group">
+                    <div className="p-2 bg-white/5 rounded-lg">
+                      <Film className="w-4 h-4 text-purple-300/20" />
+                    </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-purple-200/40 font-bold uppercase tracking-widest">
+                      Production
+                    </span>
+                    <span className="text-xs text-purple-100/60 font-medium italic">
+                      Information not available
+                    </span>
                   </div>
                 </div>
-
-                <span className="text-[10px] text-purple-100/80 font-bold uppercase tracking-wider truncate max-w-30">
-                  {company.name}
-                </span>
-              </motion.div>
-            ))
-          ) : (
-          <div className="flex items-center gap-3 pl-4 pr-38 py-3 bg-white/5 border border-white/5 rounded-xl group">
-              <div className="p-2 bg-white/5 rounded-lg">
-                <Film className="w-4 h-4 text-purple-300/20" />
+                )}
               </div>
-            <div className="flex flex-col">
-              <span className="text-[10px] text-purple-200/40 font-bold uppercase tracking-widest">
-                Production
-              </span>
-              <span className="text-xs text-purple-100/60 font-medium italic">
-                Information not available
-              </span>
             </div>
-            </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="min-h-100 flex items-center justify-center">
+            <p className="text-white/20 uppercase tracking-[0.4em] text-xs font-bold">
+              Season {activeSeason} Details coming soon
+            </p>
+          </div>
+        )}
       </div>
     </div>
   </div>

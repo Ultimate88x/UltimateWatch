@@ -198,13 +198,16 @@ export class SeriesService {
             : null,
 
       seasonsNumber: series.getSeasonsNumber(),
-      seasonsInfo: series.seasons.map(
-        (season: Season) =>
-          new SeasonListDto({
-            tmdbId: season.tmdbId,
-            title: season.title,
-          }),
-      ),
+      seasonsInfo: series.seasons
+        .sort((a, b) => a.number - b.number)
+        .map(
+          (season: Season) =>
+            new SeasonListDto({
+              tmdbId: season.tmdbId,
+              title: season.title,
+              number: season.number,
+            }),
+        ),
     });
   }
 }

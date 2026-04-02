@@ -10,7 +10,7 @@ type Person = {
 };
 
 interface MediaPeopleSectionProps {
-  title: "Cast" | "Crew";
+  title: string;
   subtitle?: string;
   data: Person[];
   currentPage: number;
@@ -31,9 +31,9 @@ export const MediaPeopleSection = ({
 
   return (
     <div className="relative w-260 flex flex-col gap-3 bg-blue-background">
-      <div className="flex items-baseline justify-between w-full pr-4 mb-3">
+      <div className="flex items-baseline justify-between w-full pr-4">
         <div className="flex items-center gap-3">
-          <div className="w-1 h-6 bg-purple-main rounded-full shadow-[0_0_10px_rgba(168,85,247,0.5)]"></div>
+          <div className="w-1 h-5 bg-purple-main rounded-full shadow-[0_0_10px_rgba(168,85,247,0.5)]"></div>
           <h3 className="text-white font-bold uppercase tracking-[0.2em] text-sm leading-none">{title}</h3>
           
           {subtitle && (
@@ -65,7 +65,7 @@ export const MediaPeopleSection = ({
               </p>
               <div className="flex flex-col gap-0.5 mt-1">
                 <p className="text-purple-300 text-[10px] truncate opacity-80 italic">
-                  {title === "Cast" ? member.character : member.job}
+                  {title.toLowerCase().includes("cast") ? member.character : member.job}
                 </p>
                 {typeof member.episodeCount === 'number' && member.episodeCount > 0 && (
                   <p className="text-[9px] text-white/40 font-mono uppercase tracking-tighter">
@@ -86,7 +86,7 @@ export const MediaPeopleSection = ({
               className="w-auto! px-4"
               onClick={() => onPageChange(currentPage - 1)}
             >
-              Prev <span className="hidden sm:inline ml-1">{title}</span>
+              Prev
             </Button>
           )}
         </div>
@@ -103,7 +103,7 @@ export const MediaPeopleSection = ({
               className="w-auto! px-4"
               onClick={() => onPageChange(currentPage + 1)}
             >
-              Next <span className="hidden sm:inline ml-1">{title}</span>
+              Next
             </Button>
           )}
         </div>

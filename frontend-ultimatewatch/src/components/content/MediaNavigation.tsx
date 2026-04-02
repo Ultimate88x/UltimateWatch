@@ -15,10 +15,10 @@ export const MediaNavigation = ({
 }) => {
   return (
     <div className="relative w-full border-b border-white/5 bg-blue-background/50 backdrop-blur-sm">
-      <div className="flex items-center gap-8 overflow-x-auto media-scrollbar pb-3">
+      <div className="flex items-center gap-8 overflow-x-auto media-scrollbar pb-2">
         <button
           onClick={() => onChange('basic')}
-          className={`relative pb-4 px-1 text-xs font-bold uppercase tracking-[0.2em] transition-all duration-300 shrink-0 ${
+          className={`relative pb-3 px-1 text-xs font-bold uppercase tracking-[0.2em] transition-all duration-300 shrink-0 ${
             activeId === 'basic' 
               ? 'text-white' 
               : 'text-white/40 hover:text-white/70'
@@ -34,7 +34,7 @@ export const MediaNavigation = ({
           <button
             key={season.tmdbId}
             onClick={() => onChange(season.number)}
-            className={`relative pb-4 px-1 text-xs font-bold uppercase tracking-[0.2em] transition-all duration-300 shrink-0 ${
+            className={`relative pb-3 px-1 text-xs font-bold uppercase tracking-[0.2em] transition-all duration-300 shrink-0 ${
               activeId === season.number 
                 ? 'text-white' 
                 : 'text-white/40 hover:text-white/70'

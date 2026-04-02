@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { Activity, CalendarDays, Film, TvMinimal } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
@@ -9,6 +9,7 @@ import { formatDate } from "../../../components/utilities/FormatDate";
 import { MediaNavigation } from "../../../components/content/MediaNavigation";
 import WatchSection from "../../../components/content/WatchSection";
 import ProductionSection from "../../../components/content/ProductionSection";
+import SeasonDetail from "../../../components/content/SeasonDetail";
 
 type ProductionCompany = {
   name: string;
@@ -16,7 +17,6 @@ type ProductionCompany = {
 };
 
 type Season = {
-  tmdbId: number;
   title: string;
   number: number;
 };
@@ -91,7 +91,6 @@ export default function SeriesDetail() {
           return;
         }
 
-        console.log(data.series)
         setSeries(data.series);
         setProviders(data.providers || []);
       } catch (error) {
@@ -133,7 +132,7 @@ export default function SeriesDetail() {
     if (series?.tmdbId)  fetchCastPage();
   }, [castPage, series?.tmdbId]);
 
-    useEffect(() => {
+  useEffect(() => {
     const fetchCrewPage = async () => {
       try {
         const response = await fetch(`http://localhost:3000/person/series/crew/${series?.tmdbId}?page=${crewPage}`, {
@@ -276,42 +275,53 @@ export default function SeriesDetail() {
     <div className="relative w-full h-auto mt-7 pl-8 flex justify-start items-stretch gap-8 overflow-hidden">
       <WatchSection providers={providers} />
 
-      <div className="relative pr-8 flex flex-1 min-w-0 flex-col gap-8">
+      <div className="relative pr-8 flex flex-1 min-w-0 flex-col gap-6">
         <MediaNavigation 
           seasons={series.seasonsInfo} 
           activeId={activeSeason} 
           onChange={setActiveSeason} 
         />
 
-        {activeSeason === 'basic' ? (
-          <div className="flex gap-12 animate-in fade-in duration-500">
-            <div className="flex flex-col gap-8">
-              <MediaPeopleSection 
-                title="Main Cast"
-                data={cast}
-                currentPage={castPage}
-                totalPages={castTotalPages}
-                onPageChange={(page) => setCastPage(page)}
-              />
-
-              <MediaPeopleSection 
-                title="Main Crew"
-                data={crew}
-                currentPage={crewPage}
-                totalPages={crewTotalPages}
-                onPageChange={(page) => setCrewPage(page)}
-              />
-            </div>
-
-            <ProductionSection companies={series?.productionCompanies} />
-          </div>
-        ) : (
-          <div className="min-h-100 flex items-center justify-center">
-            <p className="text-white/20 uppercase tracking-[0.4em] text-xs font-bold">
-              Season {activeSeason} Details coming soon
-            </p>
-          </div>
-        )}
+        <AnimatePresence mode="wait">
+          {activeSeason === 'basic' ? (
+            <motion.div 
+              key="basic-info"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className="flex gap-12"
+            >
+              <div className="flex flex-col gap-8 flex-1">
+                <MediaPeopleSection 
+                  title="Main Cast"
+                  data={cast}
+                  currentPage={castPage}
+                  totalPages={castTotalPages}
+                  onPageChange={(page) => setCastPage(page)}
+                />
+                <MediaPeopleSection 
+                  title="Main Crew"
+                  data={crew}
+                  currentPage={crewPage}
+                  totalPages={crewTotalPages}
+                  onPageChange={(page) => setCrewPage(page)}
+                />
+              </div>
+              <ProductionSection companies={series?.productionCompanies} />
+            </motion.div>
+          ) : (
+            <motion.div
+              key={`season-${activeSeason}`}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+            >
+              <SeasonDetail seriesTmdbId={series?.tmdbId} activeSeason={activeSeason} />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   </div>

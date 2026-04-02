@@ -22,7 +22,11 @@ export const Button = ({
   ...props 
 }: ButtonProps) => {
   
-const variants = {
+  const isDisabled = isLoading || props.disabled;
+  const isLink = variant === 'link';
+  const isGhost = variant === 'ghost';
+
+  const variants = {
     primary: "bg-purple-main hover:bg-purple-600 text-white shadow-xl shadow-purple-main/20",
     danger: "bg-red-danger hover:bg-red-700 text-white shadow-lg",
     secondary: "bg-white/5 hover:bg-white/10 text-white border border-white/10",
@@ -41,23 +45,31 @@ const variants = {
     lg: "py-4 px-6 text-lg",
   };
 
-  const isLink = variant === 'link';
-
   return (
     <button
       {...props}
-      disabled={isLoading || props.disabled}
+      disabled={isDisabled}
       className={`
-        relative transition-all duration-300 cursor-pointer active:scale-95 flex items-center justify-center gap-2 group
+        relative transition-all duration-300 flex items-center justify-center gap-2 group
         ${isLink ? "" : "rounded-xl font-bold overflow-hidden"}
         ${fullWidth ? "w-full" : isLink ? "w-auto" : "w-60"}
-        ${variants[variant]} 
         ${!isLink && sizes[size]}
-        ${isLoading ? "opacity-70 cursor-not-allowed" : ""}
+        
+        ${!isDisabled ? `cursor-pointer active:scale-95 ${variants[variant]}` : ""}
+
+        ${isDisabled ? `
+          opacity-20 
+          cursor-not-allowed 
+          grayscale 
+          pointer-events-none 
+          shadow-none
+          ${(isLink || isGhost) ? "bg-transparent border-none" : "bg-white/5 border-white/5 text-white/40"}
+        ` : ""}
+
         ${className}
       `}
     >
-      {showShine && !isLoading && !isLink && (
+      {showShine && !isDisabled && !isLink && (
         <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
       )}
 
@@ -71,7 +83,11 @@ const variants = {
         {children}
       </span>
       
-      {isLoading && <span className="absolute inset-0 flex items-center justify-center">Loading...</span>}
+      {isLoading && (
+        <span className="absolute inset-0 flex items-center justify-center font-bold text-[10px] uppercase tracking-tighter">
+          Loading...
+        </span>
+      )}
     </button>
   );
 };

@@ -1,17 +1,18 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { EpisodeService } from './episodes.service';
 import { EpisodeResponseDto } from './dto/episode-response-dto';
 
-@Controller('episode')
+@Controller('episodes')
 export class EpisodeController {
   constructor(private readonly episodeService: EpisodeService) {}
 
-  @Get('/seasons/:id')
-  async getEpisodesByTmdbId(
+  @Get('/season/:id')
+  async getEpisodesBySeasonTmdbId(
     @Param('id') id: string,
+    @Query('page') page: string = '1',
   ): Promise<EpisodeResponseDto> {
     const episodeResponse: EpisodeResponseDto =
-      await this.episodeService.findOrCreate(+id);
+      await this.episodeService.findOrCreate(+id, +page);
 
     return episodeResponse;
   }

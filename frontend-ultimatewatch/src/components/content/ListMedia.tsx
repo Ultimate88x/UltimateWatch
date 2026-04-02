@@ -21,7 +21,7 @@ const ListMedia = ({ title, mediaItems, columns = 9, onClick }: ListMediaProps) 
       </div>
 
       <div 
-        className="relative w-full h-fit grid gap-6 pb-10"
+        className="relative w-full h-fit grid gap-6"
         style={{ 
           gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` 
         }}

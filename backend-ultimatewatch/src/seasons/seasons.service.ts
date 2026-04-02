@@ -33,16 +33,19 @@ export class SeasonService {
     return season;
   }
 
-  async findSeasonDetailDtoByTmdbId(tmdbId: number): Promise<SeasonDetailDto> {
+  async findSeasonDetailDtoBySeriesIdAndNumber(
+    tmdbId: number,
+    number: number,
+  ): Promise<SeasonDetailDto> {
     const season = await this.seasonRepository.findOne({
-      where: { tmdbId },
+      where: { series: { mediaContent: { tmdbId } }, number },
     });
 
     if (!season) {
       throw new ResourceNotFoundException(
         'Season',
-        'TMDB_ID',
-        tmdbId.toString(),
+        'SERIES_TMDB_ID & NUMBER',
+        tmdbId.toString() + ', ' + number.toString(),
       );
     }
 

@@ -23,7 +23,7 @@ export class EpisodeService {
   async findFromSeasonByTmdbId(
     seasonTmdbId: number,
     page: number = 1,
-    limit: number = 6,
+    limit: number = 10,
   ): Promise<EpisodeResponseDto> {
     const skip = (page - 1) * limit;
     const [data, total] = await this.episodeRepository.findAndCount({
@@ -55,7 +55,7 @@ export class EpisodeService {
   async findOrCreate(
     seasonTmdbId: number,
     page: number = 1,
-    limit: number = 6,
+    limit: number = 10,
   ): Promise<EpisodeResponseDto> {
     const existingSeason: Season =
       await this.seasonService.findByTmdbId(seasonTmdbId);

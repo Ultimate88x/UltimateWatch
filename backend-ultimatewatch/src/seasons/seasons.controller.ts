@@ -2,14 +2,20 @@ import { Controller, Get, Param } from '@nestjs/common';
 import { SeasonService } from './seasons.service';
 import { SeasonDetailDto } from './dto/season-detail-dto';
 
-@Controller('season')
+@Controller('seasons')
 export class SeasonController {
   constructor(private readonly seasonService: SeasonService) {}
 
-  @Get(':id')
-  async getSeasonByTmdbId(@Param('id') id: string): Promise<SeasonDetailDto> {
+  @Get('/series/:id/:number')
+  async getSeasonByTmdbId(
+    @Param('id') id: string,
+    @Param('number') number: string,
+  ): Promise<SeasonDetailDto> {
     const season: SeasonDetailDto =
-      await this.seasonService.findSeasonDetailDtoByTmdbId(+id);
+      await this.seasonService.findSeasonDetailDtoBySeriesIdAndNumber(
+        +id,
+        +number,
+      );
 
     return season;
   }

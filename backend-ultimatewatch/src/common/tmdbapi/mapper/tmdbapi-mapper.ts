@@ -305,7 +305,7 @@ export class TmdbApiMapper {
         ? new Date(response.air_date)
         : null;
     episode.number = response.episode_number;
-    episode.runtime = response.runtime;
+    episode.runtime = response.runtime || 0;
     episode.type = response.episode_type;
 
     return episode;

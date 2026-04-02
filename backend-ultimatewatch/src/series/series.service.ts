@@ -203,7 +203,6 @@ export class SeriesService {
         .map(
           (season: Season) =>
             new SeasonListDto({
-              tmdbId: season.tmdbId,
               title: season.title,
               number: season.number,
             }),

@@ -224,7 +224,7 @@ export class TmdbApiService {
   }
 
   async getSeasonFromTmdb(seriesId: number, seasonNumber: number) {
-    const url = `https://api.themoviedb.org/3/tv/${seriesId}/seasons/${seasonNumber}`;
+    const url = `https://api.themoviedb.org/3/tv/${seriesId}/season/${seasonNumber}`;
     const options = {
       method: 'GET',
       headers: {

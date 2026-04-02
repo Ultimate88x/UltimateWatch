@@ -1,5 +1,4 @@
 export class SeasonListDto {
-  tmdbId: number;
   title: string;
   number: number;
 

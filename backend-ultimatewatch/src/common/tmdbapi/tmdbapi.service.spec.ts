@@ -6,6 +6,7 @@ import { of, throwError } from 'rxjs';
 import { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { ExternalApiError } from 'src/common/exceptions/external-api-error';
 import { ConfigurationError } from '../exceptions/configuration-error';
+import { MediaFilterDto } from '../dto/media-filter-dto';
 
 describe('TmdbApiService', () => {
   let service: TmdbApiService;
@@ -113,6 +114,65 @@ describe('TmdbApiService', () => {
         ExternalApiError,
       );
     });
+
+    it('should use default sort (popularity.desc) if sort parameter is invalid for movies', async () => {
+      const spy = jest
+        .spyOn(httpService, 'get')
+        .mockReturnValue(of(mockAxiosResponse));
+
+      await service.getMovieListFromTmdb(1, 'first_air_date.desc');
+
+      expect(spy).toHaveBeenCalledWith(
+        expect.stringContaining('/discover/movie'),
+        expect.objectContaining({
+          params: expect.objectContaining({
+            sort_by: 'popularity.desc',
+          }) as Record<string, any>,
+        }) as object,
+      );
+    });
+
+    it('should use provided sort if it is valid for movies', async () => {
+      const spy = jest
+        .spyOn(httpService, 'get')
+        .mockReturnValue(of(mockAxiosResponse));
+      const validMovieSort = 'primary_release_date.desc';
+
+      await service.getMovieListFromTmdb(1, validMovieSort);
+
+      expect(spy).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          params: expect.objectContaining({
+            sort_by: validMovieSort,
+          }) as Record<string, any>,
+        }) as object,
+      );
+    });
+
+    it('should map and include media filters in the request', async () => {
+      const spy = jest
+        .spyOn(httpService, 'get')
+        .mockReturnValue(of(mockAxiosResponse));
+
+      const mockFilters = { withGenres: '28' };
+
+      await service.getMovieListFromTmdb(
+        1,
+        'popularity.desc',
+        mockFilters as unknown as MediaFilterDto,
+      );
+
+      expect(spy).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          params: expect.objectContaining({
+            with_genres: '28',
+            page: 1,
+          }) as Record<string, any>,
+        }),
+      );
+    });
   });
 
   describe('getSeriesListFromTmdb', () => {
@@ -163,9 +223,43 @@ describe('TmdbApiService', () => {
 
       const result = await service.getSeriesListFromTmdb(1);
 
-      // Verificamos que la lógica interna de filterDuplicateMedia funciona
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe(5);
+    });
+
+    it('should use default sort if sort parameter is invalid for series', async () => {
+      const spy = jest
+        .spyOn(httpService, 'get')
+        .mockReturnValue(of(mockAxiosResponse));
+
+      await service.getSeriesListFromTmdb(1, 'revenue.desc');
+
+      expect(spy).toHaveBeenCalledWith(
+        expect.stringContaining('/discover/tv'),
+        expect.objectContaining({
+          params: expect.objectContaining({
+            sort_by: 'popularity.desc',
+          }) as Record<string, any>,
+        }) as object,
+      );
+    });
+
+    it('should use provided sort if it is valid for series', async () => {
+      const spy = jest
+        .spyOn(httpService, 'get')
+        .mockReturnValue(of(mockAxiosResponse));
+      const validSeriesSort = 'first_air_date.asc';
+
+      await service.getSeriesListFromTmdb(1, validSeriesSort);
+
+      expect(spy).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          params: expect.objectContaining({
+            sort_by: validSeriesSort,
+          }) as Record<string, any>,
+        }) as object,
+      );
     });
   });
 

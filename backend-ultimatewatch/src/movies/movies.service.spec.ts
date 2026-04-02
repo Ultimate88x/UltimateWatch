@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-base-to-string */
 import { Test, TestingModule } from '@nestjs/testing';
 import { MoviesService } from './movies.service';
 import { TmdbApiService } from 'src/common/tmdbapi/tmdbapi.service';
@@ -8,6 +9,7 @@ import { GenresService } from 'src/genres/genres.service';
 import { ProductionCompaniesService } from 'src/production-companies/production-companies.service';
 import { ObjectLiteral, Repository } from 'typeorm';
 import { Cache } from 'cache-manager';
+import { MediaFilterDto } from 'src/common/dto/media-filter-dto';
 
 type MockRepository<T extends ObjectLiteral> = Partial<
   Record<keyof Repository<T>, jest.Mock>
@@ -82,19 +84,16 @@ describe('MoviesService', () => {
     it('should return the list from cache if it exists', async () => {
       const cachedData = [{ id: 10, title: 'Cached Movie' }];
 
-      // Usamos la instancia inyectada para definir el comportamiento
       jest.spyOn(cacheManager, 'get').mockResolvedValue(cachedData);
 
       const result = await service.getMovieListForWholePage(1);
 
-      // Verificamos sobre la instancia cacheManager
       expect(cacheManager.get).toHaveBeenCalled();
       expect(mockTmdbApiService.getMovieListFromTmdb).not.toHaveBeenCalled();
       expect(result).toEqual(cachedData);
     });
 
     it('should call TMDB 3 times and filter duplicates if cache is empty', async () => {
-      // Configuramos el cacheManager para que devuelva null (miss)
       jest.spyOn(cacheManager, 'get').mockResolvedValue(null);
 
       mockTmdbApiService.getMovieListFromTmdb
@@ -108,7 +107,6 @@ describe('MoviesService', () => {
       expect(result).toHaveLength(2);
       expect(result).toEqual([mockMovies[0], mockMovies[1]]);
 
-      // Verificamos que se guarda en caché usando la instancia inyectada
       expect(cacheManager.set).toHaveBeenCalledWith(
         expect.any(String),
         result,
@@ -139,6 +137,58 @@ describe('MoviesService', () => {
         'TMDB Error',
       );
     });
+
+    it('should include filters in the cache key', async () => {
+      const filters = { withGenres: '28' };
+      const expectedCacheKey = `movies_page_1_popularity.desc_${filters.toString()}`;
+
+      jest.spyOn(cacheManager, 'get').mockResolvedValue(null);
+      mockTmdbApiService.getMovieListFromTmdb.mockResolvedValue(mockMovies);
+
+      await service.getMovieListForWholePage(
+        1,
+        'popularity.desc',
+        filters as unknown as MediaFilterDto,
+      );
+
+      expect(cacheManager.get).toHaveBeenCalledWith(expectedCacheKey);
+      expect(mockTmdbApiService.getMovieListFromTmdb).toHaveBeenCalledWith(
+        expect.any(Number),
+        'popularity.desc',
+        filters,
+      );
+    });
+
+    it('should handle undefined filters in cache key correctly', async () => {
+      const expectedCacheKey = `movies_page_1_undefined_undefined`;
+
+      jest.spyOn(cacheManager, 'get').mockResolvedValue(null);
+      mockTmdbApiService.getMovieListFromTmdb.mockResolvedValue([]);
+
+      await service.getMovieListForWholePage(1, undefined, undefined);
+
+      expect(cacheManager.get).toHaveBeenCalledWith(expectedCacheKey);
+    });
+
+    it('should propagate filters through fetchThreePages to TMDB API', async () => {
+      const filters = { releaseYear: 2024 };
+      const sort = 'revenue.desc';
+
+      jest.spyOn(cacheManager, 'get').mockResolvedValue(null);
+      const apiSpy = jest
+        .spyOn(tmdbApiService, 'getMovieListFromTmdb')
+        .mockResolvedValue([]);
+
+      await service.getMovieListForWholePage(
+        1,
+        sort,
+        filters as unknown as MediaFilterDto,
+      );
+
+      expect(apiSpy).toHaveBeenNthCalledWith(1, 1, sort, filters);
+      expect(apiSpy).toHaveBeenNthCalledWith(2, 2, sort, filters);
+      expect(apiSpy).toHaveBeenNthCalledWith(3, 3, sort, filters);
+    });
   });
 
   describe('searchMoviesForWholePage', () => {
@@ -168,7 +218,6 @@ describe('MoviesService', () => {
       const cacheKey = `search_movies_${query}_page_1`;
       jest.spyOn(cacheManager, 'get').mockResolvedValue(undefined);
 
-      // Mock de las 3 páginas que llama fetchThreePages
       mockTmdbApiService.searchMoviesFromTmdb
         .mockResolvedValueOnce([mockMovies[0]])
         .mockResolvedValueOnce([mockMovies[1]])

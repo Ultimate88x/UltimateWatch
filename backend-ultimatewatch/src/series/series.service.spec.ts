@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-base-to-string */
 import { Test, TestingModule } from '@nestjs/testing';
 import { SeriesService } from './series.service';
 import { TmdbApiService } from 'src/common/tmdbapi/tmdbapi.service';
@@ -9,6 +10,7 @@ import { ProductionCompaniesService } from 'src/production-companies/production-
 import { SeasonService } from 'src/seasons/seasons.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
+import { MediaFilterDto } from 'src/common/dto/media-filter-dto';
 
 type MockRepository<T extends ObjectLiteral> = Partial<
   Record<keyof Repository<T>, jest.Mock>
@@ -140,6 +142,79 @@ describe('SeriesService', () => {
       await expect(service.getSeriesListForWholePage(1)).rejects.toThrow(
         'TMDB Error',
       );
+    });
+
+    it('should include filters and sort in the cache key', async () => {
+      const filters = { withGenres: '18,80' };
+      const sort = 'first_air_date.desc';
+      const page = 1;
+
+      const expectedCacheKey = `series_page_${page}_${sort}_${filters.toString()}`;
+
+      jest.spyOn(cacheManager, 'get').mockResolvedValue(null);
+      mockTmdbApiService.getSeriesListFromTmdb.mockResolvedValue(mockSeries);
+
+      await service.getSeriesListForWholePage(
+        page,
+        sort,
+        filters as unknown as MediaFilterDto,
+      );
+
+      expect(cacheManager.get).toHaveBeenCalledWith(expectedCacheKey);
+
+      expect(mockTmdbApiService.getSeriesListFromTmdb).toHaveBeenCalledWith(
+        expect.any(Number),
+        sort,
+        filters,
+      );
+    });
+
+    it('should correctly handle the cache key when sort and filters are undefined', async () => {
+      const expectedCacheKey = `series_page_1_undefined_undefined`;
+
+      jest.spyOn(cacheManager, 'get').mockResolvedValue(null);
+      mockTmdbApiService.getSeriesListFromTmdb.mockResolvedValue([]);
+
+      await service.getSeriesListForWholePage(1, undefined, undefined);
+
+      expect(cacheManager.get).toHaveBeenCalledWith(expectedCacheKey);
+    });
+
+    it('should pass filters to all 3 pages fetched via fetchThreePages', async () => {
+      const filters = { releaseYear: 2024 };
+      const sort = 'popularity.desc';
+
+      jest.spyOn(cacheManager, 'get').mockResolvedValue(null);
+      const apiSpy = jest
+        .spyOn(tmdbApiService, 'getSeriesListFromTmdb')
+        .mockResolvedValue([]);
+
+      await service.getSeriesListForWholePage(
+        1,
+        sort,
+        filters as unknown as MediaFilterDto,
+      );
+
+      expect(apiSpy).toHaveBeenCalledTimes(3);
+      expect(apiSpy).toHaveBeenNthCalledWith(1, 1, sort, filters);
+      expect(apiSpy).toHaveBeenNthCalledWith(2, 2, sort, filters);
+      expect(apiSpy).toHaveBeenNthCalledWith(3, 3, sort, filters);
+    });
+
+    it('should return the cached list and NOT call TMDB if cache hit occurs with filters', async () => {
+      const filters = { with_origin_country: 'ES' };
+      const cachedData = [{ id: 50, name: 'La Casa de Papel' }];
+
+      jest.spyOn(cacheManager, 'get').mockResolvedValue(cachedData);
+
+      const result = await service.getSeriesListForWholePage(
+        1,
+        'popularity.desc',
+        filters as unknown as MediaFilterDto,
+      );
+
+      expect(result).toEqual(cachedData);
+      expect(mockTmdbApiService.getSeriesListFromTmdb).not.toHaveBeenCalled();
     });
   });
 

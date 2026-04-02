@@ -23,6 +23,7 @@ describe('SeriesService', () => {
 
   const mockTmdbApiService = {
     getSeriesListFromTmdb: jest.fn(),
+    searchSeriesFromTmdb: jest.fn(),
   };
   const mockGenresService = {};
   const mockProductionCompaniesService = {};
@@ -121,7 +122,6 @@ describe('SeriesService', () => {
       jest.spyOn(cacheManager, 'get').mockResolvedValue(null);
       mockTmdbApiService.getSeriesListFromTmdb.mockResolvedValue([]);
 
-      // Formula: (2 - 1) * 3 + 1 = 4
       await service.getSeriesListForWholePage(2);
 
       const spy = jest.spyOn(tmdbApiService, 'getSeriesListFromTmdb');
@@ -139,6 +139,76 @@ describe('SeriesService', () => {
 
       await expect(service.getSeriesListForWholePage(1)).rejects.toThrow(
         'TMDB Error',
+      );
+    });
+  });
+
+  describe('searchSeriesForWholePage', () => {
+    const query = 'Breaking Bad';
+    const mockSeries = [
+      { id: 101, name: 'Breaking Bad' },
+      { id: 102, name: 'Better Call Saul' },
+      { id: 101, name: 'Breaking Bad Duplicate' },
+    ];
+
+    it('should return series list from cache if it exists', async () => {
+      const cachedData = [{ id: 999, name: 'Cached TV Show' }];
+      const cacheKey = `search_series_${query}_page_1`;
+
+      const getSpy = jest
+        .spyOn(cacheManager, 'get')
+        .mockResolvedValue(cachedData);
+
+      const result = await service.searchSeriesForWholePage(query, 1);
+
+      expect(getSpy).toHaveBeenCalledWith(cacheKey);
+      expect(mockTmdbApiService.searchSeriesFromTmdb).not.toHaveBeenCalled();
+      expect(result).toEqual(cachedData);
+    });
+
+    it('should fetch from TMDB, filter duplicates and save to cache if empty', async () => {
+      const cacheKey = `search_series_${query}_page_1`;
+      jest.spyOn(cacheManager, 'get').mockResolvedValue(undefined);
+
+      mockTmdbApiService.searchSeriesFromTmdb
+        .mockResolvedValueOnce([mockSeries[0]])
+        .mockResolvedValueOnce([mockSeries[1]])
+        .mockResolvedValueOnce([mockSeries[2]]);
+
+      const setSpy = jest.spyOn(cacheManager, 'set');
+
+      const result = await service.searchSeriesForWholePage(query, 1);
+
+      expect(mockTmdbApiService.searchSeriesFromTmdb).toHaveBeenCalledTimes(3);
+
+      expect(result).toHaveLength(2);
+      expect(result[0].id).toBe(101);
+      expect(result[1].id).toBe(102);
+
+      expect(setSpy).toHaveBeenCalledWith(cacheKey, result, 600000);
+    });
+
+    it('should calculate correct TMDB pages when requesting page 2', async () => {
+      jest.spyOn(cacheManager, 'get').mockResolvedValue(undefined);
+      const searchSpy = jest
+        .spyOn(tmdbApiService, 'searchSeriesFromTmdb')
+        .mockResolvedValue([]);
+
+      await service.searchSeriesForWholePage(query, 2);
+
+      expect(searchSpy).toHaveBeenNthCalledWith(1, query, 4);
+      expect(searchSpy).toHaveBeenNthCalledWith(2, query, 5);
+      expect(searchSpy).toHaveBeenNthCalledWith(3, query, 6);
+    });
+
+    it('should handle errors from TMDB API during series search', async () => {
+      jest.spyOn(cacheManager, 'get').mockResolvedValue(undefined);
+      jest
+        .spyOn(tmdbApiService, 'searchSeriesFromTmdb')
+        .mockRejectedValue(new Error('TMDB Search Series Error'));
+
+      await expect(service.searchSeriesForWholePage(query, 1)).rejects.toThrow(
+        'TMDB Search Series Error',
       );
     });
   });

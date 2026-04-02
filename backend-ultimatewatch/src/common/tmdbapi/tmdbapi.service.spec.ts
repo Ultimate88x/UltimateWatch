@@ -168,4 +168,120 @@ describe('TmdbApiService', () => {
       expect(result[0].id).toBe(5);
     });
   });
+
+  describe('searchMoviesFromTmdb', () => {
+    const mockAxiosResponse: AxiosResponse = {
+      data: { results: [{ id: 100, title: 'Search Movie 1' }] },
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {} as InternalAxiosRequestConfig,
+    };
+
+    it('should call TMDB search movie endpoint with encoded query', async () => {
+      const spy = jest
+        .spyOn(httpService, 'get')
+        .mockReturnValue(of(mockAxiosResponse));
+
+      const query = 'Spider-Man';
+      await service.searchMoviesFromTmdb(query, 1);
+
+      expect(spy).toHaveBeenCalledWith(
+        'https://api.themoviedb.org/3/search/movie',
+        expect.objectContaining({
+          params: expect.objectContaining({
+            query: encodeURIComponent(query),
+            page: 1,
+            include_adult: false,
+          }) as Record<string, any>,
+        }) as object,
+      );
+    });
+
+    it('should return mapped and filtered search results', async () => {
+      jest.spyOn(httpService, 'get').mockReturnValue(of(mockAxiosResponse));
+
+      const result = await service.searchMoviesFromTmdb('any');
+
+      expect(result).toBeDefined();
+      expect(result[0].id).toBe(100);
+    });
+
+    it('should throw ExternalApiError if movie search fails', async () => {
+      jest
+        .spyOn(httpService, 'get')
+        .mockReturnValue(
+          throwError(() => ({ response: { statusText: 'Not Found' } })),
+        );
+
+      await expect(service.searchMoviesFromTmdb('any')).rejects.toThrow(
+        ExternalApiError,
+      );
+    });
+  });
+
+  describe('searchSeriesFromTmdb', () => {
+    const mockAxiosResponse: AxiosResponse = {
+      data: { results: [{ id: 200, name: 'Search Series 1' }] },
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {} as InternalAxiosRequestConfig,
+    };
+
+    it('should call TMDB search tv endpoint with correct options', async () => {
+      const spy = jest
+        .spyOn(httpService, 'get')
+        .mockReturnValue(of(mockAxiosResponse));
+
+      const query = 'The Bear';
+      await service.searchSeriesFromTmdb(query, 2);
+
+      expect(spy).toHaveBeenCalledWith(
+        'https://api.themoviedb.org/3/search/tv',
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: `Bearer ${mockConfig.TMDB_API_KEY}`,
+          }) as Record<string, any>,
+          params: expect.objectContaining({
+            query: encodeURIComponent(query),
+            page: 2,
+          }) as Record<string, any>,
+        }) as object,
+      );
+    });
+
+    it('should filter duplicates in search results', async () => {
+      const responseWithDuplicates = {
+        ...mockAxiosResponse,
+        data: {
+          results: [
+            { id: 99, name: 'Duplicate' },
+            { id: 99, name: 'Duplicate' },
+          ],
+        },
+      };
+
+      jest
+        .spyOn(httpService, 'get')
+        .mockReturnValue(of(responseWithDuplicates));
+
+      const result = await service.searchSeriesFromTmdb('any');
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe(99);
+    });
+
+    it('should throw ExternalApiError if series search fails', async () => {
+      jest
+        .spyOn(httpService, 'get')
+        .mockReturnValue(
+          throwError(() => ({ response: { statusText: 'Bad Gateway' } })),
+        );
+
+      await expect(service.searchSeriesFromTmdb('any')).rejects.toThrow(
+        ExternalApiError,
+      );
+    });
+  });
 });

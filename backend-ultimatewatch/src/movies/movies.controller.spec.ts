@@ -12,6 +12,7 @@ describe('MoviesController', () => {
 
   const mockMovieService = {
     getMovieListForWholePage: jest.fn(),
+    searchMoviesForWholePage: jest.fn(),
   };
   const mockProvidersService = {};
 
@@ -91,6 +92,66 @@ describe('MoviesController', () => {
         controller.getTmdbMovies(filters as unknown as MediaFilterDto),
       ).rejects.toThrow('Service error');
       expect(spy).toHaveBeenCalled();
+    });
+  });
+
+  describe('searchTmdbMovies', () => {
+    const mockSearchResults: TmdbListMediaDto[] = [
+      {
+        id: 101,
+        title: 'Found Movie',
+        posterPath: '/p.jpg',
+        releaseDate: '2024',
+      },
+    ];
+
+    it('should return search results from the service', async () => {
+      const query = 'Inception';
+      const page = '1';
+
+      const spy = jest
+        .spyOn(service, 'searchMoviesForWholePage')
+        .mockResolvedValue(mockSearchResults);
+
+      const result = await controller.searchTmdbMovies(query, page);
+
+      expect(spy).toHaveBeenCalledWith(query, 1);
+      expect(result).toEqual(mockSearchResults);
+    });
+
+    it('should use default page 1 if no page is provided', async () => {
+      const query = 'Interstellar';
+
+      const spy = jest
+        .spyOn(service, 'searchMoviesForWholePage')
+        .mockResolvedValue([]);
+
+      await controller.searchTmdbMovies(query);
+
+      expect(spy).toHaveBeenCalledWith(query, 1);
+    });
+
+    it('should throw BadRequestException if query is missing or empty', async () => {
+      const emptyQuery = '   ';
+
+      await expect(controller.searchTmdbMovies(emptyQuery)).rejects.toThrow(
+        'Query parameter is required',
+      );
+
+      await expect(
+        controller.searchTmdbMovies(undefined as unknown as string),
+      ).rejects.toThrow('Query parameter is required');
+    });
+
+    it('should handle service errors during search', async () => {
+      const query = 'Batman';
+      jest
+        .spyOn(service, 'searchMoviesForWholePage')
+        .mockRejectedValue(new Error('Search failed'));
+
+      await expect(controller.searchTmdbMovies(query, '1')).rejects.toThrow(
+        'Search failed',
+      );
     });
   });
 });

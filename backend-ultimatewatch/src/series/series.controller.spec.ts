@@ -12,6 +12,7 @@ describe('SeriesController', () => {
 
   const mockSeriesService = {
     getSeriesListForWholePage: jest.fn(),
+    searchSeriesForWholePage: jest.fn(),
   };
   const mockProvidersService = {};
 
@@ -95,6 +96,66 @@ describe('SeriesController', () => {
         controller.getTmdbSeries(filters as unknown as MediaFilterDto),
       ).rejects.toThrow('Service error');
       expect(spy).toHaveBeenCalled();
+    });
+  });
+
+  describe('searchTmdbSeries', () => {
+    const mockSearchResults: TmdbListMediaDto[] = [
+      {
+        id: 101,
+        title: 'Breaking Bad',
+        posterPath: '/bb.jpg',
+        releaseDate: '2008-01-20',
+      },
+    ];
+
+    it('should return search results from the service', async () => {
+      const query = 'Breaking';
+      const page = '2';
+
+      const spy = jest
+        .spyOn(service, 'searchSeriesForWholePage')
+        .mockResolvedValue(mockSearchResults);
+
+      const result = await controller.searchTmdbSeries(query, page);
+
+      expect(spy).toHaveBeenCalledWith(query, 2);
+      expect(result).toEqual(mockSearchResults);
+    });
+
+    it('should use default page 1 if no page is provided', async () => {
+      const query = 'The Bear';
+
+      const spy = jest
+        .spyOn(service, 'searchSeriesForWholePage')
+        .mockResolvedValue([]);
+
+      await controller.searchTmdbSeries(query);
+
+      expect(spy).toHaveBeenCalledWith(query, 1);
+    });
+
+    it('should throw BadRequestException if query is empty or only whitespace', async () => {
+      const emptyQuery = '   ';
+
+      await expect(controller.searchTmdbSeries(emptyQuery)).rejects.toThrow(
+        'Query parameter is required',
+      );
+
+      await expect(controller.searchTmdbSeries('')).rejects.toThrow(
+        'Query parameter is required',
+      );
+    });
+
+    it('should handle service errors during series search', async () => {
+      const query = 'Dark';
+      jest
+        .spyOn(service, 'searchSeriesForWholePage')
+        .mockRejectedValue(new Error('TMDB Search Error'));
+
+      await expect(controller.searchTmdbSeries(query, '1')).rejects.toThrow(
+        'TMDB Search Error',
+      );
     });
   });
 });

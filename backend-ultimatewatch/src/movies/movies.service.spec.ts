@@ -22,6 +22,7 @@ describe('MoviesService', () => {
 
   const mockTmdbApiService = {
     getMovieListFromTmdb: jest.fn(),
+    searchMoviesFromTmdb: jest.fn(),
   };
   const mockGenresService = {};
   const mockProductionCompaniesService = {};
@@ -136,6 +137,87 @@ describe('MoviesService', () => {
 
       await expect(service.getMovieListForWholePage(1)).rejects.toThrow(
         'TMDB Error',
+      );
+    });
+  });
+
+  describe('searchMoviesForWholePage', () => {
+    const query = 'Inception';
+    const mockMovies = [
+      { id: 1, title: 'Inception' },
+      { id: 2, title: 'Inception 2' },
+      { id: 1, title: 'Inception Duplicate' },
+    ];
+
+    it('should return results from cache if available', async () => {
+      const cachedData = [{ id: 100, title: 'Cached Search Result' }];
+      const cacheKey = `search_movies_${query}_page_1`;
+
+      const getSpy = jest
+        .spyOn(cacheManager, 'get')
+        .mockResolvedValue(cachedData);
+
+      const result = await service.searchMoviesForWholePage(query, 1);
+
+      expect(getSpy).toHaveBeenCalledWith(cacheKey);
+      expect(mockTmdbApiService.searchMoviesFromTmdb).not.toHaveBeenCalled();
+      expect(result).toEqual(cachedData);
+    });
+
+    it('should fetch from TMDB (3 pages) and save to cache if cache is empty', async () => {
+      const cacheKey = `search_movies_${query}_page_1`;
+      jest.spyOn(cacheManager, 'get').mockResolvedValue(undefined);
+
+      // Mock de las 3 páginas que llama fetchThreePages
+      mockTmdbApiService.searchMoviesFromTmdb
+        .mockResolvedValueOnce([mockMovies[0]])
+        .mockResolvedValueOnce([mockMovies[1]])
+        .mockResolvedValueOnce([mockMovies[2]]);
+
+      const setSpy = jest.spyOn(cacheManager, 'set');
+
+      const result = await service.searchMoviesForWholePage(query, 1);
+
+      expect(mockTmdbApiService.searchMoviesFromTmdb).toHaveBeenCalledTimes(3);
+
+      expect(result).toHaveLength(2);
+      expect(result).toEqual([mockMovies[0], mockMovies[1]]);
+
+      expect(setSpy).toHaveBeenCalledWith(cacheKey, result, 600000);
+    });
+
+    it('should call TMDB with correct calculated pages when page > 1', async () => {
+      jest.spyOn(cacheManager, 'get').mockResolvedValue(undefined);
+      const searchSpy = jest
+        .spyOn(tmdbApiService, 'searchMoviesFromTmdb')
+        .mockResolvedValue([]);
+
+      await service.searchMoviesForWholePage(query, 2);
+
+      expect(searchSpy).toHaveBeenNthCalledWith(1, query, 4);
+      expect(searchSpy).toHaveBeenNthCalledWith(2, query, 5);
+      expect(searchSpy).toHaveBeenNthCalledWith(3, query, 6);
+    });
+
+    it('should default to page 1 if no page is provided', async () => {
+      jest.spyOn(cacheManager, 'get').mockResolvedValue(undefined);
+      const searchSpy = jest
+        .spyOn(tmdbApiService, 'searchMoviesFromTmdb')
+        .mockResolvedValue([]);
+
+      await service.searchMoviesForWholePage(query);
+
+      expect(searchSpy).toHaveBeenNthCalledWith(1, query, 1);
+    });
+
+    it('should propagate errors from TMDB API', async () => {
+      jest.spyOn(cacheManager, 'get').mockResolvedValue(undefined);
+      jest
+        .spyOn(tmdbApiService, 'searchMoviesFromTmdb')
+        .mockRejectedValue(new Error('Search Failed'));
+
+      await expect(service.searchMoviesForWholePage(query, 1)).rejects.toThrow(
+        'Search Failed',
       );
     });
   });

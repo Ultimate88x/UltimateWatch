@@ -5,10 +5,12 @@ import { Button } from "../../components/Button";
 import { Plus, SearchX } from "lucide-react";
 import type { Media } from "../../types/media";
 import { motion } from "framer-motion";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { EmptyState } from "../../components/EmptyState";
 
 export default function SearchResultsList() {
+  const navigate = useNavigate();
+
   const [page, setPage] = useState(1);
   const [mediaList, setMediaList] = useState<Media[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -102,7 +104,7 @@ export default function SearchResultsList() {
   return (
     <div className="relative w-full min-h-screen bg-cover bg-blue-background flex flex-col justify-start items-start overflow-x-hidden">
       <div className="relative w-full h-fit px-20 flex flex-col justify-start items-start gap-8">
-        <ListMedia title={`SEARCH RESULTS FOR: ${media} - ${query}`} mediaItems={mediaList} />
+        <ListMedia title={`SEARCH RESULTS FOR: ${media} - ${query}`} mediaItems={mediaList} onClick={(id) => navigate(`/${media}/${id}`)} />
 
         {mediaList.length > 0 && (<div className="relative w-full -mt-40 pt-40 flex justify-center bg-linear-to-t from-blue-background via-blue-background/90 to-transparent z-10">
           <Button

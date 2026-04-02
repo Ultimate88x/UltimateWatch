@@ -6,6 +6,7 @@ type Person = {
   profilePath?: string;
   character?: string;
   job?: string;
+  episodeCount?: number;
 };
 
 interface MediaPeopleSectionProps {
@@ -30,18 +31,18 @@ export const MediaPeopleSection = ({
 
   return (
     <div className="relative w-260 flex flex-col gap-3 bg-blue-background">
-<div className="flex items-baseline justify-between w-full pr-4 mb-3">
-  <div className="flex items-center gap-3">
-    <div className="w-1 h-6 bg-purple-main rounded-full shadow-[0_0_10px_rgba(168,85,247,0.5)]"></div>
-    <h3 className="text-white font-bold uppercase tracking-[0.2em] text-sm leading-none">{title}</h3>
-    
-    {subtitle && (
-      <span className="ml-3 px-2.5 py-1 bg-purple-main/10 border border-purple-main/30 rounded-md text-[9px] text-purple-200 font-bold uppercase tracking-widest leading-none">
-        {subtitle}
-      </span>
-    )}
-  </div>
-</div>
+      <div className="flex items-baseline justify-between w-full pr-4 mb-3">
+        <div className="flex items-center gap-3">
+          <div className="w-1 h-6 bg-purple-main rounded-full shadow-[0_0_10px_rgba(168,85,247,0.5)]"></div>
+          <h3 className="text-white font-bold uppercase tracking-[0.2em] text-sm leading-none">{title}</h3>
+          
+          {subtitle && (
+            <span className="ml-3 px-2.5 py-1 bg-purple-main/10 border border-purple-main/30 rounded-md text-[9px] text-purple-200 font-bold uppercase tracking-widest leading-none">
+              {subtitle}
+            </span>
+          )}
+        </div>
+      </div>
 
       <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2">
         {data?.map((member, index) => (
@@ -62,9 +63,16 @@ export const MediaPeopleSection = ({
               <p className="text-white font-bold text-xs truncate uppercase tracking-tighter">
                 {member.name}
               </p>
-              <p className="text-purple-300 text-[10px] truncate mt-1 opacity-80 italic">
-                {title === "Cast" ? member.character : member.job}
-              </p>
+              <div className="flex flex-col gap-0.5 mt-1">
+                <p className="text-purple-300 text-[10px] truncate opacity-80 italic">
+                  {title === "Cast" ? member.character : member.job}
+                </p>
+                {typeof member.episodeCount === 'number' && member.episodeCount > 0 && (
+                  <p className="text-[9px] text-white/40 font-mono uppercase tracking-tighter">
+                    {member.episodeCount} {member.episodeCount === 1 ? 'episode' : 'episodes'}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         ))}

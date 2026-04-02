@@ -6,8 +6,11 @@ import { Plus, SearchX } from "lucide-react";
 import type { Media } from "../../../types/media";
 import { motion } from "framer-motion";
 import { EmptyState } from "../../../components/EmptyState";
+import { useNavigate } from "react-router-dom";
 
 export default function SeriesList() {
+  const navigate = useNavigate();
+
   const [page, setPage] = useState(1);
   const [mediaList, setMediaList] = useState<Media[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -89,7 +92,7 @@ export default function SeriesList() {
   return (
     <div className="relative w-full min-h-screen bg-cover bg-blue-background flex flex-col justify-start items-start overflow-x-hidden">
       <div className="relative w-full h-fit px-20 flex flex-col justify-start items-start gap-8">
-        <ListMedia title={"DISCOVER SERIES"} mediaItems={mediaList} />
+        <ListMedia title={"DISCOVER SERIES"} mediaItems={mediaList} onClick={(id) => navigate(`/series/${id}`)} />
 
         {mediaList.length > 0 && (<div className="relative w-full -mt-40 pt-40 flex justify-center bg-linear-to-t from-blue-background via-blue-background/90 to-transparent z-10">
           <Button

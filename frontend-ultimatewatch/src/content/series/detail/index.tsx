@@ -1,19 +1,23 @@
 import { motion } from "framer-motion";
-import { CalendarDays, Clock3, DollarSign, Film, TrendingUp, TvMinimal } from "lucide-react";
+import { Activity, CalendarDays, Film, TvMinimal } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { useParams } from "react-router-dom";
 import { MediaPeopleSection } from "../../../components/person/MediaPeopleSection";
 import { EmptyState } from "../../../components/EmptyState";
 import { formatDate } from "../../../components/utilities/FormatDate";
-import { formatCurrency } from "../../../components/utilities/FormatCurrency";
 
 type ProductionCompany = {
   name: string;
   logoPath?: string;
 };
 
-type MovieDetail = {
+type SeasonList = {
+  tmdbId: number;
+  name: string;
+};
+
+type SeriesDetail = {
   tmdbId: number;
   title: string;
   overview: string;
@@ -21,10 +25,10 @@ type MovieDetail = {
   status: string;
   genres: string[];
   productionCompanies: ProductionCompany[];
-  budget: number;
-  runtime: number;
-  revenue: number;
-  releaseDate: string;
+  releaseDate: string | null;
+  lastAirDate: string | null;
+  seasonsNumber: number;
+  seasonsInfo: SeasonList[];
 };
 
 type Provider = {
@@ -36,18 +40,20 @@ type CastMember = {
   name: string;
   character: string;
   profilePath: string;
+  episodeCount: number;
 };
 
 type CrewMember = {
   name: string;
   job: string;
   profilePath: string;
+  episodeCount: number;
 };
 
-export default function MovieDetail() {
+export default function SeriesDetail() {
   const { tmdbId } = useParams();
 
-  const [movie, setMovie] = useState<MovieDetail | null>(null);
+  const [series, setMovie] = useState<SeriesDetail | null>(null);
 
   const [providers, setProviders] = useState<Provider[]>([]);
 
@@ -62,10 +68,10 @@ export default function MovieDetail() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const fetchMovieDetail = async () => {
+    const fetchSeriesDetail = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(`http://localhost:3000/movies/${tmdbId}`, {
+        const response = await fetch(`http://localhost:3000/series/${tmdbId}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'
@@ -75,11 +81,11 @@ export default function MovieDetail() {
         const data = await response.json();
 
         if (!response.ok) {
-          toast.error(data.message || 'Failed to fetch movie details');
+          toast.error(data.message || 'Failed to fetch series details');
           return;
         }
 
-        setMovie(data.movie);
+        setMovie(data.series);
         setProviders(data.providers || []);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'An unexpected error occurred';
@@ -89,13 +95,13 @@ export default function MovieDetail() {
       }
     };
 
-    fetchMovieDetail();
+    fetchSeriesDetail();
   }, [tmdbId]);
 
   useEffect(() => {
     const fetchCastPage = async () => {
       try {
-        const response = await fetch(`http://localhost:3000/person/movies/cast/${movie?.tmdbId}?page=${castPage}`, {
+        const response = await fetch(`http://localhost:3000/person/series/cast/${series?.tmdbId}?page=${castPage}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'
@@ -117,13 +123,13 @@ export default function MovieDetail() {
       }
     };
 
-    if (movie?.tmdbId)  fetchCastPage();
-  }, [castPage, movie?.tmdbId]);
+    if (series?.tmdbId)  fetchCastPage();
+  }, [castPage, series?.tmdbId]);
 
     useEffect(() => {
     const fetchCrewPage = async () => {
       try {
-        const response = await fetch(`http://localhost:3000/person/movies/crew/${movie?.tmdbId}?page=${crewPage}`, {
+        const response = await fetch(`http://localhost:3000/person/series/crew/${series?.tmdbId}?page=${crewPage}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'
@@ -145,8 +151,8 @@ export default function MovieDetail() {
       }
     };
 
-    if (movie?.tmdbId)  fetchCrewPage();
-  }, [crewPage, movie?.tmdbId]);
+    if (series?.tmdbId)  fetchCrewPage();
+  }, [crewPage, series?.tmdbId]);
 
 
   if (isLoading) {
@@ -174,7 +180,7 @@ export default function MovieDetail() {
     );
   }
 
-  if (!movie) {
+  if (!series) {
     return <EmptyState icon={Film} />;
   }
 
@@ -183,18 +189,19 @@ export default function MovieDetail() {
     <div className="relative w-full h-auto pl-8 flex justify-start items-stretch gap-8 overflow-hidden">
       <img
         className="relative w-84 object-cover rounded-2xl shadow-lg shrink-0 self-stretch"
-        src={movie?.imagePath || "https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=800&auto=format&fit=crop"}
-        alt={movie?.title || "Movie Poster"}
+        src={series?.imagePath || "https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=800&auto=format&fit=crop"}
+        alt={series?.title || "Movie Poster"}
       />
       <div className="relative max-h-144 pl-7 pr-5 pt-5 pb-2 bg-linear-to-br from-purple-main/90 via-purple-800/60 to-blue-950/25 rounded-l-2xl text-white flex flex-1 flex-col justify-start items-start gap-3 overflow-y-auto border-l border-white/10 media-scrollbar">
         <div className="flex items-center gap-4">
-          <h2 className="text-4xl font-black tracking-tight">{movie?.title}</h2>
+          <h2 className="text-4xl font-black tracking-tight">{series?.title}</h2>
           <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-md text-xs font-bold uppercase tracking-widest h-fit mt-2">
-            {movie?.status}
+            {series?.status}
           </span>
         </div>
+
         <div className="flex flex-wrap gap-2">
-          {movie?.genres?.map((genre) => (
+          {series?.genres?.map((genre) => (
             <span key={genre} className="px-3 py-1 bg-white/20 rounded-full text-[0.7rem] font-bold uppercase tracking-wider border border-white/10">
               {genre}
             </span>
@@ -207,38 +214,38 @@ export default function MovieDetail() {
               <CalendarDays className="w-7 h-7" strokeWidth={1.5} />
             </div>
             <div>
-              <span className="text-purple-200 text-xs font-bold uppercase tracking-wide">Release date</span>
-              <p className="font-medium">{formatDate(movie?.releaseDate)}</p>
+              <span className="text-purple-200 text-xs font-bold uppercase tracking-wide">First Air Date</span>
+              <p className="font-medium">{formatDate(series?.releaseDate)}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
             <div className="p-3 bg-white/10 rounded-xl text-purple-200">
-              <Clock3 className="w-7 h-7" strokeWidth={1.5} />
+              <CalendarDays className="w-7 h-7" strokeWidth={1.5} />
             </div>
             <div>
-              <span className="text-purple-200 text-xs font-bold uppercase tracking-wide">Runtime</span>
-              <p className="font-medium">{movie?.runtime ? movie?.runtime + ' minutes' : 'N/A'}</p>
+              <span className="text-purple-200 text-xs font-bold uppercase tracking-wide">Last Air Date</span>
+              <p className="font-medium">{formatDate(series?.lastAirDate)}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-white/10 rounded-xl">
-              <DollarSign className="w-7 h-7" strokeWidth={1.5} />
+            <div className="p-3 bg-white/10 rounded-xl text-purple-200">
+              <TvMinimal className="w-7 h-7" strokeWidth={1.5} />
             </div>
             <div>
-              <span className="text-purple-200 text-xs font-bold uppercase tracking-wide">Budget</span>
-              <p className="font-medium">{(!movie.budget || movie?.budget === 0) ? 'N/A' : formatCurrency(movie.budget)}</p>
+              <span className="text-purple-200 text-xs font-bold uppercase tracking-wide">Total Seasons</span>
+              <p className="font-medium">{series?.seasonsNumber || 'N/A'}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-white/10 rounded-xl">
-              <TrendingUp className="w-7 h-7" strokeWidth={1.5} />
+            <div className="p-3 bg-white/10 rounded-xl text-purple-200">
+              <Activity className="w-7 h-7" strokeWidth={1.5} />
             </div>
             <div>
-              <span className="text-purple-200 text-xs font-bold uppercase tracking-wide">Revenue</span>
-              <p className="font-medium">{(!movie.revenue || movie?.revenue === 0) ? 'N/A' : formatCurrency(movie.revenue)}</p>
+              <span className="text-purple-200 text-xs font-bold uppercase tracking-wide">Status</span>
+              <p className="font-medium">{series?.status || 'N/A'}</p>
             </div>
           </div>
         </div>
@@ -246,14 +253,14 @@ export default function MovieDetail() {
         <div className="max-w-4xl">
           <h3 className="text-purple-200 text-xs font-bold uppercase tracking-wide mb-3">Synopsis</h3>
           <p className="text-lg leading-relaxed text-gray-100 italic font-light">
-            "{movie?.overview}"
+            "{series?.overview}"
           </p>
         </div>
 
         <div className="mt-auto py-3 text-sm text-purple-200 italic border-t border-white/5 w-full flex justify-between items-center gap-4">
           <div className="flex items-center gap-2">
             <Film className="w-4 h-4 text-purple-300" />
-            <span>Produced by: { movie?.productionCompanies.length > 0 ? movie?.productionCompanies?.map((c: ProductionCompany) => c.name).join(' • ') : 'N/A'}</span>
+            <span>Produced by: {series?.productionCompanies && series.productionCompanies.length > 0 ? series.productionCompanies.map((c) => c.name).join(' • ') : 'N/A'}</span>
           </div>
         </div>
       </div>
@@ -350,8 +357,8 @@ export default function MovieDetail() {
         </div>
 
         <div className="flex flex-wrap gap-3">
-          {movie?.productionCompanies && movie.productionCompanies.length > 0 ? (
-            movie.productionCompanies.map((company, index) => (
+          {series?.productionCompanies && series.productionCompanies.length > 0 ? (
+            series.productionCompanies.map((company, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 10 }}

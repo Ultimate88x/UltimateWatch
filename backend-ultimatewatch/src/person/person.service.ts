@@ -238,6 +238,7 @@ export class PersonService {
       name: mediaPerson.person.name,
       profilePath: mediaPerson.person.profilePath,
       character: mediaPerson.character,
+      episodeCount: mediaPerson.episodeCount,
     });
   }
 
@@ -246,6 +247,7 @@ export class PersonService {
       name: mediaPerson.person.name,
       profilePath: mediaPerson.person.profilePath,
       job: mediaPerson.job,
+      episodeCount: mediaPerson.episodeCount,
     });
   }
 }

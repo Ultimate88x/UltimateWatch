@@ -1,4 +1,3 @@
-import { useNavigate } from "react-router-dom";
 import type { Media } from "../../types/media";
 import { motion } from "framer-motion";
 
@@ -6,11 +5,10 @@ interface ListMediaProps {
   title: string;
   mediaItems: Media[];
   columns?: number;
+  onClick: (id: number) => void;
 }
 
-const ListMedia = ({ title, mediaItems, columns = 9 }: ListMediaProps) => {
-  const navigate = useNavigate();
-
+const ListMedia = ({ title, mediaItems, columns = 9, onClick }: ListMediaProps) => {
   const imageFallback = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600"><rect width="400" height="600" fill="%231a1a1a"/><path d="M140 240l120 60-120 60V240z" fill="%23A855F7" opacity="0.6"/><rect x="80" y="180" width="240" height="240" rx="20" stroke="%23A855F7" stroke-width="2" fill="none" opacity="0.3"/><text x="50%" y="460" font-family="Arial" font-size="24" fill="%23A855F7" text-anchor="middle" font-weight="bold" letter-spacing="2" opacity="0.8">IMAGE UNAVAILABLE</text></svg>`;
 
   return (
@@ -35,7 +33,7 @@ const ListMedia = ({ title, mediaItems, columns = 9 }: ListMediaProps) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: (index % 20) * 0.04 }}
             className="flex flex-col cursor-pointer group w-full transition-all duration-300 hover:-translate-y-2" 
-            onClick={() => navigate(`/movies/${media.id}`)}
+            onClick={() => {onClick(media.id)}}
           >
             <div className="relative w-full aspect-2/3 overflow-hidden rounded-t-lg border-x border-t border-purple-main/30 bg-[#1a1a1a] flex items-center justify-center">
               <img

@@ -14,6 +14,7 @@ import SeriesList from "./content/series/list";
 import MovieList from "./content/movies/list";
 import SearchResultsList from "./content/searchResults";
 import MovieDetail from "./content/movies/detail";
+import SeriesDetail from "./content/series/detail";
 
 function App() {
   return (
@@ -55,6 +56,7 @@ function App() {
           <Route path="/movies" element={<MovieList />} />
           <Route path="/search-results" element={<SearchResultsList />} />
           <Route path="/movies/:tmdbId" element={<MovieDetail />} />
+          <Route path="/series/:tmdbId" element={<SeriesDetail />} />
         </Routes>
       </main>
 

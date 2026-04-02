@@ -5,7 +5,7 @@ interface ListMediaProps {
   title: string;
   mediaItems: Media[];
   columns?: number;
-  onClick: (id: number) => void;
+  onClick: (id: number, event?: React.MouseEvent) => void;
 }
 
 const ListMedia = ({ title, mediaItems, columns = 9, onClick }: ListMediaProps) => {
@@ -33,7 +33,7 @@ const ListMedia = ({ title, mediaItems, columns = 9, onClick }: ListMediaProps) 
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: (index % 20) * 0.04 }}
             className="flex flex-col cursor-pointer group w-full transition-all duration-300 hover:-translate-y-2" 
-            onClick={() => {onClick(media.id)}}
+            onClick={(e) => {onClick(media.id, e)}}
           >
             <div className="relative w-full aspect-2/3 overflow-hidden rounded-t-lg border-x border-t border-purple-main/30 bg-[#1a1a1a] flex items-center justify-center">
               <img

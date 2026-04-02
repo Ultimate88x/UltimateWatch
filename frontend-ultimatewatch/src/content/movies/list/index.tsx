@@ -2,18 +2,21 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import ListMedia from "../../../components/content/ListMedia";
 import toast from "react-hot-toast";
 import { Button } from "../../../components/Button";
-import { Plus, Search, SearchX } from "lucide-react";
+import { ChevronDown, Plus, Search, SearchX } from "lucide-react";
 import type { Media } from "../../../types/media";
 import { motion } from "framer-motion";
 import { EmptyState } from "../../../components/EmptyState";
-import { useNavigate } from "react-router-dom";
 import type { Genre } from "../../../types/genre";
+import { MoviesSortEnum, type MoviesSortOption } from "../../../enums/MoviesSortEnum";
+import { useAdvancedNavigation } from "../../../components/utilities/SmartNavigate";
 
 export default function MovieList() {
-  const navigate = useNavigate();
+  const { smartNavigate } = useAdvancedNavigation();
 
   const [page, setPage] = useState(1);
   const [mediaList, setMediaList] = useState<Media[]>([]);
+
+  const [sortBy, setSortBy] = useState<MoviesSortOption>(MoviesSortEnum.POPULARITY_DESC);
 
   const [genres, setGenres] = useState<Genre[]>([]);
   const [selectedGenres, setSelectedGenres] = useState<number[]>([]);
@@ -22,7 +25,7 @@ export default function MovieList() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
-  const filtersRef = useRef({ genres: [] as number[], dateFrom, dateTo, exclude: false });
+  const filtersRef = useRef({ genres: [] as number[], exclude: false, dateFrom, dateTo, sortBy });
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -32,7 +35,7 @@ export default function MovieList() {
     setIsLoading(true);
 
     try {
-      const { genres, dateFrom, dateTo, exclude } = filtersRef.current;
+      const { genres, exclude, dateFrom, dateTo, sortBy } = filtersRef.current;
       const params = new URLSearchParams({
         page: currentPage.toString(),
       });
@@ -47,6 +50,7 @@ export default function MovieList() {
       if (dateTo) {
         params.append('releaseDateLowerEqualThan', dateTo);
       }
+      params.append('sort', sortBy);
 
       const [response] = await Promise.all([
         fetch(`http://localhost:3000/movies/tmdb-list?${params.toString()}`, {
@@ -117,9 +121,10 @@ export default function MovieList() {
       genres: selectedGenres, 
       exclude: isExcludeMode,
       dateFrom,
-      dateTo
+      dateTo,
+      sortBy,
     };
-  }, [selectedGenres, isExcludeMode, dateFrom, dateTo]);
+  }, [selectedGenres, isExcludeMode, dateFrom, dateTo, sortBy]);
 
   const handleApplyFilters = () => {
     setPage(1);
@@ -189,7 +194,30 @@ export default function MovieList() {
             </div>
             <div className="h-0.5 w-full bg-linear-to-r from-purple-main via-purple-main/40 to-transparent opacity-100" />
           </div>
-          <div className="-mt-4 flex flex-col gap-4">
+          <div className="-mt-4 flex flex-col gap-2">
+            <label className="text-[10px] uppercase text-white/30 font-black ml-1 tracking-widest">
+              Sort By
+            </label>
+            <div className="relative group">
+              <select 
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as MoviesSortOption)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-white/80 appearance-none outline-hidden focus:border-purple-main/50 transition-all cursor-pointer"
+              >
+                <option value={MoviesSortEnum.POPULARITY_DESC} className="bg-blue-background text-white">Most Popular</option>
+                <option value={MoviesSortEnum.POPULARITY_ASC} className="bg-blue-background text-white">Least Popular</option>
+                <option value={MoviesSortEnum.REVENUE_DESC} className="bg-blue-background text-white">Highest Revenue</option>
+                <option value={MoviesSortEnum.REVENUE_ASC} className="bg-blue-background text-white">Lowest Revenue</option>
+                <option value={MoviesSortEnum.PRIMARY_RELEASE_DATE_DESC} className="bg-blue-background text-white">Newest First</option>
+                <option value={MoviesSortEnum.PRIMARY_RELEASE_DATE_ASC} className="bg-blue-background text-white">Oldest First</option>
+              </select>
+              
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white/20 group-hover:text-purple-main transition-all duration-300 group-hover:scale-110">
+                <ChevronDown size={16} strokeWidth={3} />
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <h3 className="text-white font-bold text-xs uppercase tracking-[0.3em] opacity-70">
@@ -295,7 +323,8 @@ export default function MovieList() {
         </aside>
 
         <div className="relative w-full h-fit pr-12 flex flex-col justify-start items-start gap-8">
-          <ListMedia title={"DISCOVER MOVIES"} mediaItems={mediaList} onClick={(id) => navigate(`/movies/${id}`)} columns={7}/>
+          <ListMedia title={"DISCOVER MOVIES"} mediaItems={mediaList}
+            onClick={(id, e) => smartNavigate(`/movies/${id}`, e)} columns={7}/>
 
           {mediaList.length > 0 && (<div className="relative w-full -mt-40 pt-40 flex justify-center bg-linear-to-t from-blue-background via-blue-background/90 to-transparent z-10">
             <Button

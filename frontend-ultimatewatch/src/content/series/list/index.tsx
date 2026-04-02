@@ -172,17 +172,6 @@ export default function SeriesList() {
     );
   }
 
-  
-  if (!isLoading && mediaList.length === 0) {
-    return (
-      <EmptyState 
-        title="No Titles Found"
-        description="We couldn't find any series discoveries for you right now."
-        icon={SearchX}
-      />
-    );
-  }
-
   return (
     <div className="relative w-full min-h-screen bg-cover bg-blue-background flex flex-col justify-start items-start overflow-x-hidden">
       <div className="flex flex-row w-full pl-10 gap-10">
@@ -203,25 +192,40 @@ export default function SeriesList() {
           onReset={clearFilters}
           isLoading={isLoading}
         />
-        <div className="relative w-full h-fit pr-12 flex flex-col justify-start items-start gap-8">
-          <ListMedia title={"DISCOVER SERIES"} mediaItems={mediaList} onClick={(id, e) => smartNavigate(`/series/${id}`, e)} columns={7}/>
 
-          {mediaList.length > 0 && (<div className="relative w-full -mt-40 pt-40 flex justify-center bg-linear-to-t from-blue-background via-blue-background/90 to-transparent z-10">
-            <Button
-              variant="ghost"
-              size="lg"
-              icon={Plus}
-              isLoading={isLoading}
-              showShine={true}
-              className="w-80 border border-purple-main/20 hover:border-purple-main/50 rounded-full hover:bg-purple-main/10 text-white/80 hover:text-white transition-all duration-300 shadow-[0_0_10px_rgba(168,85,247,0)] hover:shadow-[0_0_20px_rgba(168,85,247,0.3)] [&_svg]:hover:rotate-180"
-              onClick={() => {
-                setPage((prev) => prev + 1);
-                setIsLoading(true);
-              }}
-            >
-              Explore More Titles
-            </Button>
-          </div>)}
+        <div className="relative w-full h-fit pr-12 flex flex-col justify-start items-start gap-8">
+          {!isLoading && mediaList.length === 0 ? (
+            <div className="w-full h-screen overflow-hidden">
+              <EmptyState 
+                  title="No Titles Found"
+                  description="We couldn't find any series that matches your filters."
+                  icon={SearchX}
+                  fullPage={false} 
+                  showBackButton={false} 
+              />
+            </div>
+          ) : (
+            <>
+              <ListMedia title={"DISCOVER SERIES"} mediaItems={mediaList} onClick={(id, e) => smartNavigate(`/series/${id}`, e)} columns={7}/>
+
+              {mediaList.length > 0 && (<div className="relative w-full -mt-40 pt-40 flex justify-center bg-linear-to-t from-blue-background via-blue-background/90 to-transparent z-10">
+                <Button
+                  variant="ghost"
+                  size="lg"
+                  icon={Plus}
+                  isLoading={isLoading}
+                  showShine={true}
+                  className="w-80 border border-purple-main/20 hover:border-purple-main/50 rounded-full hover:bg-purple-main/10 text-white/80 hover:text-white transition-all duration-300 shadow-[0_0_10px_rgba(168,85,247,0)] hover:shadow-[0_0_20px_rgba(168,85,247,0.3)] [&_svg]:hover:rotate-180"
+                  onClick={() => {
+                    setPage((prev) => prev + 1);
+                    setIsLoading(true);
+                  }}
+                >
+                  Explore More Titles
+                </Button>
+              </div>)}
+            </>
+          )}
         </div>
       </div>
     </div>

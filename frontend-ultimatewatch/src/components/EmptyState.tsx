@@ -30,7 +30,7 @@ export const EmptyState = ({
 
   const containerClasses = fullPage
     ? "fixed inset-0 bg-blue-background"
-    : "relative w-full min-h-[400px] bg-white/[0.02] border border-white/5 border-dashed rounded-3xl mt-4";
+    : "relative w-full min-h-[400px] h-full bg-white/[0.02] border border-white/5 border-dashed rounded-3xl mt-4";
 
   return (
     <div className={`${containerClasses} flex flex-col items-center justify-center p-6 text-center overflow-hidden`}>

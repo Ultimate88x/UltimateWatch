@@ -146,7 +146,7 @@ export const FilterSidebar = ({
         <Button 
           variant="outline" 
           size="sm" 
-              className="w-full text-white/30 hover:text-red-400 transition-colors uppercase text-[10px] tracking-widest font-black"
+          className="w-full text-white/30 hover:text-red-400 transition-colors uppercase text-[10px] tracking-widest font-black"
           onClick={onReset}
         >
           Reset Filters

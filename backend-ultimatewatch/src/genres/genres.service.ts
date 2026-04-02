@@ -7,6 +7,7 @@ import { TmdbGenreDto } from 'src/common/tmdbapi/dto/tmdb-genre-dto';
 import { TmdbApiMapper } from 'src/common/tmdbapi/mapper/tmdbapi-mapper';
 import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
 import { MediaType } from 'src/common/enums/media.type.enum';
+import { GenreDetailDto } from './dto/genre-list-dto';
 
 @Injectable()
 export class GenresService {
@@ -54,5 +55,20 @@ export class GenresService {
     }
 
     return genre;
+  }
+
+  async findForMovies(): Promise<GenreDetailDto[]> {
+    const genres: Genre[] = await this.genreRepository.find({
+      where: { mediaType: MediaType.MOVIE },
+    });
+
+    return genres.map((genre: Genre) => this.createGenreDetailDto(genre));
+  }
+
+  private createGenreDetailDto(genre: Genre): GenreDetailDto {
+    return new GenreDetailDto({
+      tmdbId: genre?.tmdbId,
+      name: genre?.name,
+    });
   }
 }

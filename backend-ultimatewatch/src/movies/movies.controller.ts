@@ -11,6 +11,7 @@ import { MovieDetailDto } from './dto/movie-detail-dto';
 import { MediaType } from 'src/common/enums/media.type.enum';
 import { ProvidersService } from 'src/providers/providers.service';
 import { ProviderListItemDto } from 'src/providers/dto/provider-list-item-dto';
+import { MediaFilterDto } from 'src/common/dto/media-filter-dto';
 
 @Controller('movies')
 export class MoviesController {
@@ -22,9 +23,11 @@ export class MoviesController {
   @Get('tmdb-list')
   async getTmdbMovies(
     @Query('page') page: string = '1',
+    @Query('sort') sort?: string,
+    @Query() filters?: MediaFilterDto,
   ): Promise<TmdbListMediaDto[]> {
     const data: TmdbListMediaDto[] =
-      await this.moviesService.getMovieListForWholePage(+page);
+      await this.moviesService.getMovieListForWholePage(+page, sort, filters);
     return data;
   }
 

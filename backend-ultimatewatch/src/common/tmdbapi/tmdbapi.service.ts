@@ -23,6 +23,9 @@ import { TmdbPeopleResponseDto } from './dto/tmdb-people-response-dto';
 import { TmdbSeriesDto } from './dto/media/tmdb-series-dto';
 import { TmdbSeasonDto } from './dto/media/tmdb-season-dto';
 import { MediaType } from '../enums/media.type.enum';
+import { getSafeSortBy } from '../helpers/valid-sorts.helper';
+import { MediaFilterDto } from '../dto/media-filter-dto';
+import { TmdbParamsDto } from './dto/tmdb-params-dto';
 
 @Injectable()
 export class TmdbApiService {
@@ -74,19 +77,32 @@ export class TmdbApiService {
     return this.filterDuplicateMedia(seriesList);
   }
 
-  async getMovieListFromTmdb(page: number = 1) {
+  async getMovieListFromTmdb(
+    page: number = 1,
+    sort?: string,
+    mediaFilter?: MediaFilterDto,
+  ) {
     const url = 'https://api.themoviedb.org/3/discover/movie';
+    const validSort = getSafeSortBy(MediaType.MOVIE, sort);
+
+    const params: TmdbParamsDto = {
+      include_adult: false,
+      page: page,
+      sort_by: validSort,
+      ...(mediaFilter
+        ? TmdbApiMapper.mapFiltersToTmdb(mediaFilter, MediaType.MOVIE)
+        : {}),
+    };
+
     const options = {
       method: 'GET',
       headers: {
         accept: 'application/json',
         Authorization: `Bearer ${this.apiKey}`,
       },
-      params: {
-        include_adult: false,
-        page: page,
-      },
+      params: params,
     };
+
     const response: AxiosResponse<
       TmdbListResponseDto<TmdbListMoviesResultDto>
     > = await firstValueFrom(

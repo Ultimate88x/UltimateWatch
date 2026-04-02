@@ -33,6 +33,8 @@ import { TmdbSeasonDto } from '../dto/media/tmdb-season-dto';
 import { TmdbEpisodeDto } from '../dto/media/tmdb-episode-dto';
 import { Episode } from 'src/episodes/entities/episode.entity';
 import { Season } from 'src/seasons/entities/seasons.entity';
+import { MediaFilterDto } from 'src/common/dto/media-filter-dto';
+import { TmdbParamsDto } from '../dto/tmdb-params-dto';
 
 export class TmdbApiMapper {
   static tmdbListSeriesResultDtoToTmdbListMediaDto(
@@ -381,4 +383,34 @@ export class TmdbApiMapper {
       crew: Array.from(crewMap.values()),
     };
   }
+
+  static mapFiltersToTmdb = (filters: MediaFilterDto, mediaType: MediaType) => {
+    const tmdbParams: Partial<TmdbParamsDto> = {};
+
+    if (filters.withGenres) tmdbParams.with_genres = filters.withGenres;
+    if (filters.withoutGenres)
+      tmdbParams.without_genres = filters.withoutGenres;
+
+    const dateGteKey =
+      mediaType === MediaType.MOVIE
+        ? 'primary_release_date.gte'
+        : 'first_air_date.gte';
+    const dateLteKey =
+      mediaType === MediaType.MOVIE
+        ? 'primary_release_date.lte'
+        : 'first_air_date.lte';
+
+    if (filters.releaseDateGreaterEqualThan) {
+      tmdbParams[dateGteKey] = filters.releaseDateGreaterEqualThan
+        .toISOString()
+        .split('T')[0];
+    }
+    if (filters.releaseDateLowerEqualThan) {
+      tmdbParams[dateLteKey] = filters.releaseDateLowerEqualThan
+        .toISOString()
+        .split('T')[0];
+    }
+
+    return tmdbParams;
+  };
 }

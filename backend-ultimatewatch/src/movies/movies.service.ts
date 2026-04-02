@@ -14,6 +14,7 @@ import { ProductionCompaniesService } from 'src/production-companies/production-
 import { isDataStale } from 'src/common/helpers/data-stale.helper';
 import { MovieDetailDto } from './dto/movie-detail-dto';
 import { ProductionCompanyDto } from 'src/production-companies/dto/production-company-dto';
+import { MediaFilterDto } from 'src/common/dto/media-filter-dto';
 
 @Injectable()
 export class MoviesService {
@@ -46,15 +47,19 @@ export class MoviesService {
     );
   }
 
-  async getMovieListForWholePage(page: number = 1) {
-    const cacheKey = `movies_page_${page}`;
+  async getMovieListForWholePage(
+    page: number = 1,
+    sort?: string,
+    filters?: MediaFilterDto,
+  ) {
+    const cacheKey = `movies_page_${page}_${sort}_${filters?.toString()}`;
     const cachedList: TmdbListMediaDto[] | undefined =
       await this.cacheManager.get<TmdbListMediaDto[]>(cacheKey);
 
     if (cachedList) return cachedList;
 
     const movieList = await this.fetchFourPages(page, (p) =>
-      this.tmdbApiService.getMovieListFromTmdb(p),
+      this.tmdbApiService.getMovieListFromTmdb(p, sort, filters),
     );
     await this.cacheManager.set(cacheKey, movieList, 600000);
     return movieList;

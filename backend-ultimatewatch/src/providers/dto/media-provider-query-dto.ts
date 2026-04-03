@@ -1,13 +1,13 @@
 import { Type } from 'class-transformer';
-import { IsOptional, IsNumber } from 'class-validator';
+import { IsNumber, IsNotEmpty } from 'class-validator';
 
 export class MediaProviderQueryDto {
-  @IsOptional()
+  @IsNotEmpty()
   @Type(() => Number)
   @IsNumber()
   mediaTmdbId: number;
 
-  @IsOptional()
+  @IsNotEmpty()
   @Type(() => Number)
   @IsNumber()
   providerTmdbId: number;

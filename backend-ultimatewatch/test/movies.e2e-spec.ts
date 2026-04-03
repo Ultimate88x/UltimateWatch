@@ -4,6 +4,7 @@ import request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { MoviesService } from 'src/movies/movies.service';
 import { App } from 'supertest/types';
+import { ProvidersService } from 'src/providers/providers.service';
 
 describe('MoviesController (e2e) - TMDB', () => {
   let app: INestApplication;
@@ -18,9 +19,27 @@ describe('MoviesController (e2e) - TMDB', () => {
     },
   ];
 
+  const mockMovieDetail = {
+    tmdbId: 1,
+    title: 'Inception',
+    overview: 'A thief who steals corporate secrets...',
+    runtime: 148,
+  };
+
+  const mockProvidersData = [
+    { providerId: 8, providerName: 'Netflix', logoPath: '/n.jpg' },
+  ];
+
   const mockMoviesService = {
     getMovieListForWholePage: jest.fn().mockResolvedValue(mockMoviesData),
     searchMoviesForWholePage: jest.fn().mockResolvedValue(mockMoviesData),
+    findMovieFromTmdbId: jest.fn().mockResolvedValue(mockMovieDetail),
+  };
+
+  const mockProvidersService = {
+    findProvidersOrGetFromTmdbAndFindOrCreate: jest
+      .fn()
+      .mockResolvedValue(mockProvidersData),
   };
 
   beforeAll(async () => {
@@ -29,6 +48,8 @@ describe('MoviesController (e2e) - TMDB', () => {
     })
       .overrideProvider(MoviesService)
       .useValue(mockMoviesService)
+      .overrideProvider(ProvidersService)
+      .useValue(mockProvidersService)
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -121,6 +142,42 @@ describe('MoviesController (e2e) - TMDB', () => {
         .get('/movies/tmdb-search')
         .query({ query: '   ' })
         .expect(HttpStatus.BAD_REQUEST);
+    });
+  });
+
+  describe('/movies/:id (GET)', () => {
+    it('should return 200, the movie detail and its providers', () => {
+      const tmdbId = '1';
+
+      return request(app.getHttpServer() as App)
+        .get(`/movies/${tmdbId}`)
+        .expect(HttpStatus.OK)
+        .expect((res: request.Response) => {
+          const body = res.body as {
+            movie: typeof mockMovieDetail;
+            providers: typeof mockProvidersData;
+          };
+
+          expect(body.movie).toBeDefined();
+          expect(body.movie.tmdbId).toBe(1);
+          expect(body.providers).toHaveLength(1);
+        });
+    });
+
+    it('should return 200 and null providers if none are found', () => {
+      mockProvidersService.findProvidersOrGetFromTmdbAndFindOrCreate.mockResolvedValueOnce(
+        null,
+      );
+
+      return request(app.getHttpServer() as App)
+        .get('/movies/2')
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          const body = res.body as { movie: any; providers: any };
+
+          expect(body.movie).toBeDefined();
+          expect(body.providers).toBeNull();
+        });
     });
   });
 });

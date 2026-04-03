@@ -5,6 +5,8 @@ import request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { SeriesService } from 'src/series/series.service';
 import { App } from 'supertest/types';
+import { MediaType } from 'src/common/enums/media.type.enum';
+import { ProvidersService } from 'src/providers/providers.service';
 
 describe('SeriesController (e2e) - TMDB', () => {
   let app: INestApplication;
@@ -14,9 +16,27 @@ describe('SeriesController (e2e) - TMDB', () => {
     { id: 102, title: 'The Bear', posterPath: '/bear.jpg', mediaType: 'tv' },
   ];
 
+  const mockSeriesDetail = {
+    tmdbId: 101,
+    title: 'Breaking Bad',
+    overview: 'A high school chemistry teacher...',
+    seasons: [],
+  };
+
+  const mockProvidersData = [
+    { providerId: 8, providerName: 'Netflix', logoPath: '/n.jpg' },
+  ];
+
   const mockSeriesService = {
     getSeriesListForWholePage: jest.fn().mockResolvedValue(mockSeriesData),
     searchSeriesForWholePage: jest.fn().mockResolvedValue(mockSeriesData),
+    findSeriesFromTmdbId: jest.fn().mockResolvedValue(mockSeriesDetail),
+  };
+
+  const mockProvidersService = {
+    findProvidersOrGetFromTmdbAndFindOrCreate: jest
+      .fn()
+      .mockResolvedValue(mockProvidersData),
   };
 
   beforeAll(async () => {
@@ -25,6 +45,8 @@ describe('SeriesController (e2e) - TMDB', () => {
     })
       .overrideProvider(SeriesService)
       .useValue(mockSeriesService)
+      .overrideProvider(ProvidersService)
+      .useValue(mockProvidersService)
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -138,6 +160,45 @@ describe('SeriesController (e2e) - TMDB', () => {
         .get('/series/tmdb-search')
         .query({ query: '' })
         .expect(HttpStatus.BAD_REQUEST);
+    });
+  });
+
+  describe('/series/:id (GET)', () => {
+    it('should return 200, the series detail and its providers', () => {
+      const tmdbId = '101';
+
+      return request(app.getHttpServer() as App)
+        .get(`/series/${tmdbId}`)
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          // Validamos la estructura de la respuesta combinada
+          expect(res.body.series).toBeDefined();
+          expect(res.body.series.tmdbId).toBe(101);
+          expect(res.body.providers).toHaveLength(1);
+          expect(res.body.providers[0].providerName).toBe('Netflix');
+
+          // Validamos que se llamó a los servicios con los tipos correctos (+id)
+          expect(mockSeriesService.findSeriesFromTmdbId).toHaveBeenCalledWith(
+            101,
+          );
+          expect(
+            mockProvidersService.findProvidersOrGetFromTmdbAndFindOrCreate,
+          ).toHaveBeenCalledWith(101, MediaType.SERIES);
+        });
+    });
+
+    it('should return 200 even if providers are null', () => {
+      mockProvidersService.findProvidersOrGetFromTmdbAndFindOrCreate.mockResolvedValueOnce(
+        null,
+      );
+
+      return request(app.getHttpServer() as App)
+        .get('/series/102')
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body.series).toBeDefined();
+          expect(res.body.providers).toBeNull();
+        });
     });
   });
 });

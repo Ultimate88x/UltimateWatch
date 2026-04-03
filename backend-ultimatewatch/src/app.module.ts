@@ -20,6 +20,7 @@ import { ComplianceModule } from './compliance/compliance.module';
 import { PersonModule } from './person/person.module';
 import { SeasonModule } from './seasons/seasons.module';
 import { EpisodeModule } from './episodes/episodes.module';
+import { RequestsModule } from './requests/requests.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { EpisodeModule } from './episodes/episodes.module';
     PersonModule,
     SeasonModule,
     EpisodeModule,
+    RequestsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

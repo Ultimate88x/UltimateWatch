@@ -1,5 +1,12 @@
 import { Type } from 'class-transformer';
-import { IsOptional, IsString, IsDate, IsNumber } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsDate,
+  IsNumber,
+  Validate,
+} from 'class-validator';
+import { IsAfterDateConstraint } from '../watchmode/IsAfterDateConstraint';
 
 export class MediaFilterDto {
   @IsOptional()
@@ -27,6 +34,11 @@ export class MediaFilterDto {
   @IsOptional()
   @Type(() => Date)
   @IsDate()
+  @Validate(IsAfterDateConstraint, [
+    'releaseDateGreaterEqualThan',
+    'Released After',
+    'Released Before',
+  ])
   releaseDateLowerEqualThan?: Date;
 
   toString(): string {

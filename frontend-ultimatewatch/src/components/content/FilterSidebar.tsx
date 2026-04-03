@@ -2,6 +2,7 @@ import { ChevronDown, Search } from "lucide-react";
 import { Button } from "../Button";
 import type { Genre } from "../../types/genre";
 import { SortEnum, type SortOption } from "../../enums/SortEnum";
+import toast from "react-hot-toast";
 
 interface FilterSidebarProps {
   isMovie: boolean,
@@ -39,6 +40,15 @@ export const FilterSidebar = ({
   isLoading
 }: FilterSidebarProps) => {
   const hasActiveFilters = selectedGenres.length > 0 || dateFrom || dateTo || isExcludeMode;
+
+  const handleApply = () => {
+    if (dateFrom && dateTo && dateFrom > dateTo) {
+      toast.error("Invalid range: 'Released After' must be before 'Released Before'.");
+      return;
+    }
+
+    onApply();
+  };
 
   return (
     <aside className="w-64 shrink-0 flex flex-col gap-6 sticky top-10 h-fit">
@@ -86,21 +96,30 @@ export const FilterSidebar = ({
           </div>
           <div className="h-px w-full bg-linear-to-r from-purple-main/70 to-transparent" />
         </div>
-        <div className="flex flex-wrap gap-2">
-          {genres.map((genre) => (
-            <button
-              key={genre.tmdbId}
-              onClick={() => onToggleGenre(genre.tmdbId)}
-              className={`px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all duration-300 border ${
-                selectedGenres.includes(genre.tmdbId) 
-                ? "bg-purple-main border-purple-main text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]" 
-                : "bg-white/5 border-white/10 text-white/40 hover:border-white/30 hover:text-white"
-              }`}
-            >
-              {genre.name}
-            </button>
-          ))}
-        </div>
+
+        {genres && genres.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {genres.map((genre) => (
+              <button
+                key={genre.tmdbId}
+                onClick={() => onToggleGenre(genre.tmdbId)}
+                className={`px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all duration-300 border ${
+                  selectedGenres.includes(genre.tmdbId) 
+                  ? "bg-purple-main border-purple-main text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]" 
+                  : "bg-white/5 border-white/10 text-white/40 hover:border-white/30 hover:text-white"
+                }`}
+              >
+                {genre.name}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-4 px-3 bg-white/5 border border-dashed border-white/10 rounded-xl">
+            <span className="text-[10px] text-white/20 font-black uppercase tracking-widest text-center">
+              No genres found
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-4 mt-2">
@@ -114,6 +133,7 @@ export const FilterSidebar = ({
             <input 
               type="date" 
               value={dateFrom}
+              max={dateTo || undefined}
               onChange={(e) => onDateFromChange(e.target.value)}
               className="w-full bg-transparent text-white text-sm outline-hidden scheme-dark"
             />
@@ -123,6 +143,7 @@ export const FilterSidebar = ({
             <input 
               type="date" 
               value={dateTo}
+              min={dateFrom || undefined}
               onChange={(e) => onDateToChange(e.target.value)}
               className="w-full bg-transparent text-white text-sm outline-hidden scheme-dark"
             />
@@ -136,7 +157,7 @@ export const FilterSidebar = ({
         icon={Search} 
         showShine 
         isLoading={isLoading}
-        onClick={onApply}
+        onClick={handleApply}
         className="mt-2 bg-linear-to-r from-purple-main to-purple-600"
       >
         Filter Content

@@ -19,19 +19,33 @@ import SeriesDetail from "./content/series/detail";
 function App() {
   return (
     <div className="flex flex-col bg-blue-background min-h-screen">
-      <Toaster 
+<Toaster 
         position="top-center"
         toastOptions={{
           style: {
             background: '#1a1a1a',
             color: '#fff',
-            border: '1px solid rgba(255,255,255,0.1)'
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '12px',
+            fontSize: '14px',
+            padding: '12px 20px',
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.4)',
           },
           success: {
             iconTheme: {
-              primary: '#6D28D9',
+              primary: '#A855F7',
               secondary: '#fff',
             },
+          },
+          error: {
+            duration: 5000,
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+            style: {
+              border: '1px solid rgba(239, 68, 68, 0.2)',
+            }
           },
         }} 
       />

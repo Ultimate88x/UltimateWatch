@@ -6,7 +6,7 @@ import {
   IsNumber,
   Validate,
 } from 'class-validator';
-import { IsAfterDateConstraint } from '../watchmode/IsAfterDateConstraint';
+import { IsAfterDateConstraint } from '../validations/IsAfterDateConstraint';
 
 export class MediaFilterDto {
   @IsOptional()

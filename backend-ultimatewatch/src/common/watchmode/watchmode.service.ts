@@ -33,6 +33,7 @@ export class WatchmodeService {
         apiKey: this.apiKey,
         regions: 'ES',
       },
+      responseType: 'json' as const,
     };
 
     const response: AxiosResponse<WatchmodeProviderDto[]> =

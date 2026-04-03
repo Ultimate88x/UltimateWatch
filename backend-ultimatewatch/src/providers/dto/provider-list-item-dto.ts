@@ -1,4 +1,5 @@
 export class ProviderListItemDto {
+  tmdbId: number;
   name: string;
   logoPath: string;
 

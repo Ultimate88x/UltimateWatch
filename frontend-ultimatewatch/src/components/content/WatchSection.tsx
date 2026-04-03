@@ -1,17 +1,52 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { TvMinimal } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 interface WatchProvider {
+  tmdbId: number,
   logoPath: string;
   name: string;
 }
 
 interface WatchSectionProps {
   providers: WatchProvider[];
+  mediaTmdbId: number;
 }
 
-const WatchSection: React.FC<WatchSectionProps> = ({ providers }) => {
+const WatchSection: React.FC<WatchSectionProps> = ({ providers, mediaTmdbId }) => {
+  const fetchMediaProviderLink = async (providerTmdbId: number) => {
+    try {
+      const response = await fetch(`http://localhost:3000/providers/link?mediaTmdbId=${mediaTmdbId}&providerTmdbId=${providerTmdbId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+      });
+
+      const url = await response.text();
+
+      if (!response.ok) {
+        let errorMessage = 'Failed to fetch media link';
+        try {
+          const errorJson = JSON.parse(url);
+          errorMessage = errorJson.message || errorMessage;
+        } catch {
+          errorMessage = url || errorMessage;
+        }
+        
+        toast.error(errorMessage);
+        return;
+      }
+
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'An unexpected error occurred';
+      console.log(message);
+      toast.error(message);
+    }
+  };
+
   return (
     <div className="relative w-84 shrink-0 flex flex-col gap-5">
       <div className="flex items-center justify-between">
@@ -48,7 +83,9 @@ const WatchSection: React.FC<WatchSectionProps> = ({ providers }) => {
             <div key={`${provider.name}-${index}`} className="group relative flex flex-col items-center">
               <div className="absolute -top-2 w-full h-px bg-white/10 group-hover:bg-purple-main/60 transition-colors duration-300 shadow-[0_0_5px_rgba(168,85,247,0.4)]" />
 
-              <div className="w-10 h-10 rounded-lg overflow-hidden border border-white/10 shadow-md transition-all duration-300 group-hover:scale-110 group-hover:border-purple-main/40 bg-black/20">
+              <button className="w-10 h-10 rounded-lg overflow-hidden border border-white/10 shadow-md transition-all duration-300 group-hover:scale-110 group-hover:border-purple-main/40 bg-black/20"
+                onClick={() => fetchMediaProviderLink(provider.tmdbId)}
+              >
                 <img
                   src={provider.logoPath}
                   alt={provider.name}
@@ -58,7 +95,7 @@ const WatchSection: React.FC<WatchSectionProps> = ({ providers }) => {
                     e.currentTarget.src = "https://www.themoviedb.org/assets/2/v4/logos/v2/blue_square_2-d5376105963b74d8924619a44eead573a0f2b3122745a77.svg"; 
                 }}
                 />
-              </div>
+              </button>
 
               <span className="absolute -bottom-6 scale-0 group-hover:scale-100 transition-all duration-200 text-[8px] text-purple-100 bg-purple-main/90 px-1.5 py-0.5 rounded shadow-lg z-50 pointer-events-none whitespace-nowrap font-bold uppercase tracking-widest border border-white/10">
                 {provider.name}

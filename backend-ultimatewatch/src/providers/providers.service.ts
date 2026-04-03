@@ -194,15 +194,16 @@ export class ProvidersService {
     return mediaProvider;
   }
 
-  async findProviderUrlsForMedia(
+  async findProviderUrlForMediaAndProvider(
     mediaTmdbId: number,
-  ): Promise<MediaProvider[]> {
+    providerTmdbId: number,
+  ): Promise<string | null | undefined> {
     const mediaProviders = await this.mediaProviderRepository.find({
       where: { mediaContent: { tmdbId: mediaTmdbId } },
       relations: ['mediaContent', 'provider'],
     });
 
-    if (mediaProviders.length === 0) return [];
+    if (mediaProviders.length === 0) return null;
 
     const isStale = mediaProviders.some((mp: MediaProvider) =>
       isDataStale(mp.lastLinkUpdate),
@@ -230,15 +231,23 @@ export class ProvidersService {
       });
 
       await this.mediaProviderRepository.save(updatedProviders);
-
-      return updatedProviders;
     }
 
-    return mediaProviders;
+    const mediaProvider = await this.mediaProviderRepository
+      .createQueryBuilder('mp')
+      .select('mp.link', 'link')
+      .innerJoin('mp.mediaContent', 'mc')
+      .innerJoin('mp.provider', 'p')
+      .where('mc.tmdbId = :mediaTmdbId', { mediaTmdbId })
+      .andWhere('p.tmdbId = :providerTmdbId', { providerTmdbId })
+      .getRawOne<{ link: string }>();
+
+    return mediaProvider?.link;
   }
 
   createProviderListItem(provider: Provider): ProviderListItemDto {
     return new ProviderListItemDto({
+      tmdbId: provider.tmdbId,
       name: provider.name,
       logoPath: provider.logoPath,
     });

@@ -30,6 +30,7 @@ type MovieDetail = {
 };
 
 type Provider = {
+  tmdbId: number,
   name: string;
   logoPath: string;
 };
@@ -262,7 +263,7 @@ export default function MovieDetail() {
     </div>
 
     <div className="relative w-full h-auto mt-7 pl-8 flex justify-start items-stretch gap-8 overflow-hidden">
-      <WatchSection providers={providers} />
+      <WatchSection providers={providers} mediaTmdbId={movie.tmdbId} />
 
       <div className="relative flex flex-col gap-8">
         <MediaPeopleSection 

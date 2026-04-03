@@ -36,6 +36,7 @@ type SeriesDetail = {
 };
 
 type Provider = {
+  tmdbId: number,
   name: string;
   logoPath: string;
 };
@@ -273,7 +274,7 @@ export default function SeriesDetail() {
     </div>
 
     <div className="relative w-full h-auto mt-7 pl-8 flex justify-start items-stretch gap-8 overflow-hidden">
-      <WatchSection providers={providers} />
+      <WatchSection providers={providers} mediaTmdbId={series.tmdbId} />
 
       <div className="relative pr-8 flex flex-1 min-w-0 flex-col gap-6">
         <MediaNavigation 

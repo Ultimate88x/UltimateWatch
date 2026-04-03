@@ -1,15 +1,19 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { ProvidersService } from './providers.service';
+import { MediaProviderQueryDto } from './dto/media-provider-query-dto';
 
 @Controller('providers')
 export class ProvidersController {
   constructor(private readonly providersService: ProvidersService) {}
 
-  @Get('links/:mediaTmdbId')
-  async getProviderLinksByMediaTmdbId(
-    @Param('mediaTmdbId') mediaTmdbId: string,
+  @Get('link')
+  async getProviderLinkByMediaTmdbIdAndProviderTmdbId(
+    @Query() mediaProviderQuery: MediaProviderQueryDto,
   ) {
-    const data = this.providersService.findProviderUrlsForMedia(+mediaTmdbId);
+    const data = await this.providersService.findProviderUrlForMediaAndProvider(
+      mediaProviderQuery.mediaTmdbId,
+      mediaProviderQuery.providerTmdbId,
+    );
 
     return data;
   }

@@ -15,6 +15,7 @@ export default function MovieList() {
   const { smartNavigate } = useAdvancedNavigation();
 
   const [page, setPage] = useState(1);
+  const [lastPage, setLastPage] = useState(false);
   const [mediaList, setMediaList] = useState<Media[]>([]);
 
   const [sortBy, setSortBy] = useState<SortOption>(SortEnum.POPULARITY_DESC);
@@ -70,12 +71,15 @@ export default function MovieList() {
         return;
       }
 
+      console.log(data)
+
       setMediaList((prev) => {
-        if (isNewSearch) return data;
+        if (isNewSearch) return data.mediaList;
         const existingIds = new Set(prev.map(s => s.id));
-        const uniqueNewData = data.filter((item: Media) => !existingIds.has(item.id));
+        const uniqueNewData = data.mediaList.filter((item: Media) => !existingIds.has(item.id));
         return [...prev, ...uniqueNewData];
       });
+      setLastPage(data.lastPage);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'An unexpected error occurred';
       toast.error(message);
@@ -208,7 +212,7 @@ export default function MovieList() {
             <>
               <ListMedia title={"DISCOVER MOVIES"} mediaItems={mediaList} onClick={(id, e) => smartNavigate(`/movies/${id}`, e)} columns={7}/>
 
-              {mediaList.length > 0 && (<div className="relative w-full -mt-40 pt-40 flex justify-center bg-linear-to-t from-blue-background via-blue-background/90 to-transparent z-10">
+              {mediaList.length > 0 && !lastPage && (<div className="relative w-full -mt-40 pt-40 flex justify-center bg-linear-to-t from-blue-background via-blue-background/90 to-transparent z-10">
                 <Button
                   variant="ghost"
                   size="lg"
@@ -220,6 +224,7 @@ export default function MovieList() {
                     setPage((prev) => prev + 1);
                     setIsLoading(true);
                   }}
+                  disabled={lastPage}
                 >
                   Explore More Titles
                 </Button>

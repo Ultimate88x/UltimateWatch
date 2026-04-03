@@ -15,6 +15,8 @@ import { isDataStale } from 'src/common/helpers/data-stale.helper';
 import { MovieDetailDto } from './dto/movie-detail-dto';
 import { ProductionCompanyDto } from 'src/production-companies/dto/production-company-dto';
 import { MediaFilterDto } from 'src/common/dto/media-filter-dto';
+import { MediaListDto } from 'src/common/dto/media-list-dto';
+import { TmdbListMoviesResultDto } from 'src/common/tmdbapi/dto/media/tmdb-list-response-dto';
 
 @Injectable()
 export class MoviesService {
@@ -28,35 +30,67 @@ export class MoviesService {
     private readonly cacheManager: Cache,
   ) {}
 
+  private readonly TMDB_MAX_PAGE = 500;
+
   private async fetchThreePages(
     page: number,
-    fetchFn: (page: number) => Promise<TmdbListMediaDto[]>,
-  ): Promise<TmdbListMediaDto[]> {
-    const finalList: TmdbListMediaDto[] = [];
-    const startPage = (page - 1) * 3 + 1;
+    fetchFn: (
+      page: number,
+    ) => Promise<{ mediaList: TmdbListMoviesResultDto[]; totalPages: number }>,
+  ): Promise<MediaListDto> {
+    const finalList: TmdbListMoviesResultDto[] = [];
+    let startPage = (page - 1) * 3 + 1;
+
+    if (startPage + 2 > this.TMDB_MAX_PAGE) {
+      startPage = this.TMDB_MAX_PAGE - 2;
+    }
+
+    startPage = Math.max(1, startPage);
+
+    let lastPage: boolean = false;
 
     for (let i = 0; i < 3; i++) {
       const currentPage = startPage + i;
-      const list = await fetchFn(currentPage);
-      finalList.push(...list);
+
+      if (currentPage >= this.TMDB_MAX_PAGE) {
+        lastPage = true;
+        break;
+      }
+
+      const { mediaList, totalPages } = await fetchFn(currentPage);
+
+      if (mediaList && mediaList.length > 0) {
+        finalList.push(...mediaList);
+      }
+
+      if (currentPage >= totalPages) {
+        lastPage = true;
+        break;
+      }
     }
 
-    return finalList.filter(
-      (movie, index, self) =>
-        index === self.findIndex((m) => m.id === movie.id),
-    );
+    const movieList: TmdbListMediaDto[] =
+      TmdbApiMapper.tmdbListMoviesResultDtoToTmdbListMediaDto(finalList);
+
+    const filteredMedia: TmdbListMediaDto[] =
+      TmdbApiMapper.filterDuplicateMedia(movieList);
+
+    return new MediaListDto({
+      mediaList: filteredMedia,
+      lastPage: lastPage,
+    });
   }
 
   async getMovieListForWholePage(
     page: number = 1,
     sort?: string,
     filters?: MediaFilterDto,
-  ) {
+  ): Promise<MediaListDto> {
     const cacheKey = `movies_page_${page}_${sort}_${filters?.toString()}`;
-    const cachedList: TmdbListMediaDto[] | undefined =
-      await this.cacheManager.get<TmdbListMediaDto[]>(cacheKey);
+    const cachedMediaList: MediaListDto | undefined =
+      await this.cacheManager.get<MediaListDto>(cacheKey);
 
-    if (cachedList) return cachedList;
+    if (cachedMediaList) return cachedMediaList;
 
     const movieList = await this.fetchThreePages(page, (p) =>
       this.tmdbApiService.getMovieListFromTmdb(p, sort, filters),
@@ -67,10 +101,10 @@ export class MoviesService {
 
   async searchMoviesForWholePage(query: string, page: number = 1) {
     const cacheKey = `search_movies_${query}_page_${page}`;
-    const cachedList: TmdbListMediaDto[] | undefined =
-      await this.cacheManager.get<TmdbListMediaDto[]>(cacheKey);
+    const cachedMediaList: MediaListDto | undefined =
+      await this.cacheManager.get<MediaListDto>(cacheKey);
 
-    if (cachedList) return cachedList;
+    if (cachedMediaList) return cachedMediaList;
 
     const movieList = await this.fetchThreePages(page, (p) =>
       this.tmdbApiService.searchMoviesFromTmdb(query, p),

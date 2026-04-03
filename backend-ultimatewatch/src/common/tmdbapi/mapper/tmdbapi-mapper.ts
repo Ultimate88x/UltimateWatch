@@ -51,9 +51,9 @@ export class TmdbApiMapper {
   }
 
   static tmdbListMoviesResultDtoToTmdbListMediaDto(
-    response: TmdbListResponseDto<TmdbListMoviesResultDto>,
+    response: TmdbListMoviesResultDto[],
   ): TmdbListMediaDto[] {
-    return response.results.map(
+    return response.map(
       (tmdbMovie: TmdbListMoviesResultDto): TmdbListMediaDto => ({
         id: tmdbMovie.id,
         title: tmdbMovie.title,
@@ -413,4 +413,15 @@ export class TmdbApiMapper {
 
     return tmdbParams;
   };
+
+  static filterDuplicateMedia(
+    mediaList: TmdbListMediaDto[],
+  ): TmdbListMediaDto[] {
+    const seen = new Set();
+    return mediaList.filter((item) => {
+      const duplicate = seen.has(item.id);
+      seen.add(item.id);
+      return !duplicate;
+    });
+  }
 }

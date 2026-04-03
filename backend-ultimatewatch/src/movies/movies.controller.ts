@@ -6,12 +6,12 @@ import {
   Query,
 } from '@nestjs/common';
 import { MoviesService } from './movies.service';
-import { TmdbListMediaDto } from 'src/common/tmdbapi/dto/media/tmdb-media-list-dto';
 import { MovieDetailDto } from './dto/movie-detail-dto';
 import { MediaType } from 'src/common/enums/media.type.enum';
 import { ProvidersService } from 'src/providers/providers.service';
 import { ProviderListItemDto } from 'src/providers/dto/provider-list-item-dto';
 import { MediaFilterDto } from 'src/common/dto/media-filter-dto';
+import { MediaListDto } from 'src/common/dto/media-list-dto';
 
 @Controller('movies')
 export class MoviesController {
@@ -21,12 +21,10 @@ export class MoviesController {
   ) {}
 
   @Get('tmdb-list')
-  async getTmdbMovies(
-    @Query() filters: MediaFilterDto,
-  ): Promise<TmdbListMediaDto[]> {
+  async getTmdbMovies(@Query() filters: MediaFilterDto): Promise<MediaListDto> {
     const page = filters.page || 1;
     const sort = filters.sort;
-    const data: TmdbListMediaDto[] =
+    const data: MediaListDto =
       await this.moviesService.getMovieListForWholePage(+page, sort, filters);
     return data;
   }
@@ -35,12 +33,12 @@ export class MoviesController {
   async searchTmdbMovies(
     @Query('query') query: string,
     @Query('page') page: string = '1',
-  ): Promise<TmdbListMediaDto[]> {
+  ): Promise<MediaListDto> {
     if (!query || query.trim().length === 0) {
       throw new BadRequestException('Query parameter is required');
     }
 
-    const data: TmdbListMediaDto[] =
+    const data: MediaListDto =
       await this.moviesService.searchMoviesForWholePage(query, +page);
     return data;
   }

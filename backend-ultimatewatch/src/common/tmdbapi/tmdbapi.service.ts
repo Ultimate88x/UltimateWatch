@@ -87,7 +87,7 @@ export class TmdbApiService {
     const seriesList: TmdbListMediaDto[] =
       TmdbApiMapper.tmdbListSeriesResultDtoToTmdbListMediaDto(response.data);
 
-    return this.filterDuplicateMedia(seriesList);
+    return TmdbApiMapper.filterDuplicateMedia(seriesList);
   }
 
   async getMovieListFromTmdb(
@@ -130,10 +130,10 @@ export class TmdbApiService {
         ),
     );
 
-    const movieList: TmdbListMediaDto[] =
-      TmdbApiMapper.tmdbListMoviesResultDtoToTmdbListMediaDto(response.data);
+    const movies: TmdbListMoviesResultDto[] = response.data.results;
+    const totalPages: number = response.data.total_pages;
 
-    return this.filterDuplicateMedia(movieList);
+    return { mediaList: movies, totalPages };
   }
 
   async searchSeriesFromTmdb(query: string, page: number = 1) {
@@ -167,7 +167,7 @@ export class TmdbApiService {
     const seriesList: TmdbListMediaDto[] =
       TmdbApiMapper.tmdbListSeriesResultDtoToTmdbListMediaDto(response.data);
 
-    return this.filterDuplicateMedia(seriesList);
+    return TmdbApiMapper.filterDuplicateMedia(seriesList);
   }
 
   async searchMoviesFromTmdb(query: string, page: number = 1) {
@@ -198,10 +198,10 @@ export class TmdbApiService {
         ),
     );
 
-    const movieList: TmdbListMediaDto[] =
-      TmdbApiMapper.tmdbListMoviesResultDtoToTmdbListMediaDto(response.data);
+    const movies: TmdbListMoviesResultDto[] = response.data.results;
+    const totalPages: number = response.data.total_pages;
 
-    return this.filterDuplicateMedia(movieList);
+    return { mediaList: movies, totalPages };
   }
 
   async getMovieFromTmdb(id: number) {
@@ -375,16 +375,5 @@ export class TmdbApiService {
     const productionCompany: TmdbProductionCompanyDto = response.data;
 
     return productionCompany;
-  }
-
-  private filterDuplicateMedia(
-    mediaList: TmdbListMediaDto[],
-  ): TmdbListMediaDto[] {
-    const seen = new Set();
-    return mediaList.filter((item) => {
-      const duplicate = seen.has(item.id);
-      seen.add(item.id);
-      return !duplicate;
-    });
   }
 }

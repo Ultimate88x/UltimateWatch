@@ -9,6 +9,7 @@ import { ResourceNotOwnedException } from 'src/common/exceptions/resource-not-ow
 import { CloudinaryService } from 'src/common/cloudinary/cloudinary.service';
 import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
 import { DuplicatedResourceException } from 'src/common/exceptions/duplicated-resource-exception';
+import { UserDetailDto } from './dto/user-detail.dto';
 
 @Injectable()
 export class UsersService {
@@ -35,11 +36,7 @@ export class UsersService {
     return newUser;
   }
 
-  findAll() {
-    return `This action returns all users`;
-  }
-
-  async findOne(id: number) {
+  async findById(id: number): Promise<User> {
     const user = await this.userRepository.findOne({
       where: { id },
     });
@@ -49,6 +46,12 @@ export class UsersService {
     }
 
     return user;
+  }
+
+  async getUserById(id: number): Promise<UserDetailDto> {
+    const user = await this.findById(id);
+
+    return this.createUserDetailDto(user);
   }
 
   async update(
@@ -128,11 +131,11 @@ export class UsersService {
     return { message: 'Account deleted successfully' };
   }
 
-  async findByUsername(username: string): Promise<User | null> {
+  async findByUsername(username: string): Promise<User> {
     const user = await this.userRepository
       .createQueryBuilder('user')
-      .addSelect('user.password')
       .where('user.username = :username', { username })
+      .addSelect('user.password')
       .getOne();
 
     if (!user) {
@@ -140,6 +143,12 @@ export class UsersService {
     }
 
     return user;
+  }
+
+  async getUserByUsername(username: string): Promise<UserDetailDto> {
+    const user = await this.findByUsername(username);
+
+    return this.createUserDetailDto(user);
   }
 
   async findByEmail(email: string) {
@@ -223,5 +232,14 @@ export class UsersService {
         throw new DuplicatedResourceException('user', 'email');
       }
     }
+  }
+
+  private createUserDetailDto(user: User): UserDetailDto {
+    return new UserDetailDto({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      imagePath: user.imagePath,
+    });
   }
 }

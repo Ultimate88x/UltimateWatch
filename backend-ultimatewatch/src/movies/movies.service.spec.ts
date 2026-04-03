@@ -10,6 +10,7 @@ import { ProductionCompaniesService } from 'src/production-companies/production-
 import { ObjectLiteral, Repository } from 'typeorm';
 import { Cache } from 'cache-manager';
 import { MediaFilterDto } from 'src/common/dto/media-filter-dto';
+import { MediaListDto } from 'src/common/dto/media-list-dto';
 
 type MockRepository<T extends ObjectLiteral> = Partial<
   Record<keyof Repository<T>, jest.Mock>
@@ -17,7 +18,6 @@ type MockRepository<T extends ObjectLiteral> = Partial<
 
 describe('MoviesService', () => {
   let service: MoviesService;
-  let tmdbApiService: TmdbApiService;
   let cacheManager: Cache;
 
   const createMockRepository = (): MockRepository<Movie> => ({});
@@ -62,7 +62,6 @@ describe('MoviesService', () => {
     }).compile();
 
     service = module.get<MoviesService>(MoviesService);
-    tmdbApiService = module.get<TmdbApiService>(TmdbApiService);
     cacheManager = module.get(CACHE_MANAGER);
   });
 
@@ -75,14 +74,16 @@ describe('MoviesService', () => {
   });
 
   describe('getMovieListForWholePage', () => {
-    const mockMovies = [
-      { id: 1, title: 'Movie 1' },
-      { id: 2, title: 'Movie 2' },
-      { id: 1, title: 'Movie 1 Duplicate' },
-    ];
+    const mockTmdbResponse = (results: any[]) => ({
+      mediaList: results,
+      totalPages: 100,
+    });
 
     it('should return the list from cache if it exists', async () => {
-      const cachedData = [{ id: 10, title: 'Cached Movie' }];
+      const cachedData = new MediaListDto({
+        mediaList: [{ id: 10, title: 'Cached Movie' }] as any[],
+        lastPage: false,
+      });
 
       jest.spyOn(cacheManager, 'get').mockResolvedValue(cachedData);
 
@@ -97,15 +98,18 @@ describe('MoviesService', () => {
       jest.spyOn(cacheManager, 'get').mockResolvedValue(null);
 
       mockTmdbApiService.getMovieListFromTmdb
-        .mockResolvedValueOnce([mockMovies[0]])
-        .mockResolvedValueOnce([mockMovies[1]])
-        .mockResolvedValueOnce([mockMovies[2]]);
+        .mockResolvedValueOnce(mockTmdbResponse([{ id: 1, title: 'Movie 1' }]))
+        .mockResolvedValueOnce(mockTmdbResponse([{ id: 2, title: 'Movie 2' }]))
+        .mockResolvedValueOnce(
+          mockTmdbResponse([{ id: 1, title: 'Movie 1 Duplicate' }]),
+        );
 
       const result = await service.getMovieListForWholePage(1);
 
       expect(mockTmdbApiService.getMovieListFromTmdb).toHaveBeenCalledTimes(3);
-      expect(result).toHaveLength(2);
-      expect(result).toEqual([mockMovies[0], mockMovies[1]]);
+      expect(result.mediaList).toHaveLength(2);
+      expect(result.mediaList[0].id).toBe(1);
+      expect(result.mediaList[1].id).toBe(2);
 
       expect(cacheManager.set).toHaveBeenCalledWith(
         expect.any(String),
@@ -116,15 +120,30 @@ describe('MoviesService', () => {
 
     it('should correctly calculate TMDB pages based on the page parameter', async () => {
       jest.spyOn(cacheManager, 'get').mockResolvedValue(null);
-      mockTmdbApiService.getMovieListFromTmdb.mockResolvedValue([]);
+      mockTmdbApiService.getMovieListFromTmdb.mockResolvedValue(
+        mockTmdbResponse([]),
+      );
 
       await service.getMovieListForWholePage(2);
 
-      const spy = jest.spyOn(tmdbApiService, 'getMovieListFromTmdb');
-
-      expect(spy).toHaveBeenNthCalledWith(1, 4, undefined, undefined);
-      expect(spy).toHaveBeenNthCalledWith(2, 5, undefined, undefined);
-      expect(spy).toHaveBeenNthCalledWith(3, 6, undefined, undefined);
+      expect(mockTmdbApiService.getMovieListFromTmdb).toHaveBeenNthCalledWith(
+        1,
+        4,
+        undefined,
+        undefined,
+      );
+      expect(mockTmdbApiService.getMovieListFromTmdb).toHaveBeenNthCalledWith(
+        2,
+        5,
+        undefined,
+        undefined,
+      );
+      expect(mockTmdbApiService.getMovieListFromTmdb).toHaveBeenNthCalledWith(
+        3,
+        6,
+        undefined,
+        undefined,
+      );
     });
 
     it('should handle errors if TMDB fails', async () => {
@@ -143,7 +162,9 @@ describe('MoviesService', () => {
       const expectedCacheKey = `movies_page_1_popularity.desc_${filters.toString()}`;
 
       jest.spyOn(cacheManager, 'get').mockResolvedValue(null);
-      mockTmdbApiService.getMovieListFromTmdb.mockResolvedValue(mockMovies);
+      mockTmdbApiService.getMovieListFromTmdb.mockResolvedValue(
+        mockTmdbResponse([]),
+      );
 
       await service.getMovieListForWholePage(
         1,
@@ -163,7 +184,9 @@ describe('MoviesService', () => {
       const expectedCacheKey = `movies_page_1_undefined_undefined`;
 
       jest.spyOn(cacheManager, 'get').mockResolvedValue(null);
-      mockTmdbApiService.getMovieListFromTmdb.mockResolvedValue([]);
+      mockTmdbApiService.getMovieListFromTmdb.mockResolvedValue(
+        mockTmdbResponse([]),
+      );
 
       await service.getMovieListForWholePage(1, undefined, undefined);
 
@@ -175,9 +198,9 @@ describe('MoviesService', () => {
       const sort = 'revenue.desc';
 
       jest.spyOn(cacheManager, 'get').mockResolvedValue(null);
-      const apiSpy = jest
-        .spyOn(tmdbApiService, 'getMovieListFromTmdb')
-        .mockResolvedValue([]);
+      mockTmdbApiService.getMovieListFromTmdb.mockResolvedValue(
+        mockTmdbResponse([]),
+      );
 
       await service.getMovieListForWholePage(
         1,
@@ -185,31 +208,46 @@ describe('MoviesService', () => {
         filters as unknown as MediaFilterDto,
       );
 
-      expect(apiSpy).toHaveBeenNthCalledWith(1, 1, sort, filters);
-      expect(apiSpy).toHaveBeenNthCalledWith(2, 2, sort, filters);
-      expect(apiSpy).toHaveBeenNthCalledWith(3, 3, sort, filters);
+      expect(mockTmdbApiService.getMovieListFromTmdb).toHaveBeenNthCalledWith(
+        1,
+        1,
+        sort,
+        filters,
+      );
+      expect(mockTmdbApiService.getMovieListFromTmdb).toHaveBeenNthCalledWith(
+        2,
+        2,
+        sort,
+        filters,
+      );
+      expect(mockTmdbApiService.getMovieListFromTmdb).toHaveBeenNthCalledWith(
+        3,
+        3,
+        sort,
+        filters,
+      );
     });
   });
 
   describe('searchMoviesForWholePage', () => {
     const query = 'Inception';
-    const mockMovies = [
-      { id: 1, title: 'Inception' },
-      { id: 2, title: 'Inception 2' },
-      { id: 1, title: 'Inception Duplicate' },
-    ];
+    const mockTmdbResponse = (results: any[]) => ({
+      mediaList: results,
+      totalPages: 10,
+    });
 
     it('should return results from cache if available', async () => {
-      const cachedData = [{ id: 100, title: 'Cached Search Result' }];
+      const cachedData = new MediaListDto({
+        mediaList: [] as any[],
+        lastPage: false,
+      });
       const cacheKey = `search_movies_${query}_page_1`;
 
-      const getSpy = jest
-        .spyOn(cacheManager, 'get')
-        .mockResolvedValue(cachedData);
+      jest.spyOn(cacheManager, 'get').mockResolvedValue(cachedData);
 
       const result = await service.searchMoviesForWholePage(query, 1);
 
-      expect(getSpy).toHaveBeenCalledWith(cacheKey);
+      expect(cacheManager.get).toHaveBeenCalledWith(cacheKey);
       expect(mockTmdbApiService.searchMoviesFromTmdb).not.toHaveBeenCalled();
       expect(result).toEqual(cachedData);
     });
@@ -219,51 +257,68 @@ describe('MoviesService', () => {
       jest.spyOn(cacheManager, 'get').mockResolvedValue(undefined);
 
       mockTmdbApiService.searchMoviesFromTmdb
-        .mockResolvedValueOnce([mockMovies[0]])
-        .mockResolvedValueOnce([mockMovies[1]])
-        .mockResolvedValueOnce([mockMovies[2]]);
-
-      const setSpy = jest.spyOn(cacheManager, 'set');
+        .mockResolvedValueOnce(
+          mockTmdbResponse([{ id: 1, title: 'Inception' }]),
+        )
+        .mockResolvedValueOnce(
+          mockTmdbResponse([{ id: 2, title: 'Inception 2' }]),
+        )
+        .mockResolvedValueOnce(
+          mockTmdbResponse([{ id: 1, title: 'Duplicate' }]),
+        );
 
       const result = await service.searchMoviesForWholePage(query, 1);
 
       expect(mockTmdbApiService.searchMoviesFromTmdb).toHaveBeenCalledTimes(3);
-
-      expect(result).toHaveLength(2);
-      expect(result).toEqual([mockMovies[0], mockMovies[1]]);
-
-      expect(setSpy).toHaveBeenCalledWith(cacheKey, result, 600000);
+      expect(result.mediaList).toHaveLength(2);
+      expect(cacheManager.set).toHaveBeenCalledWith(cacheKey, result, 600000);
     });
 
     it('should call TMDB with correct calculated pages when page > 1', async () => {
       jest.spyOn(cacheManager, 'get').mockResolvedValue(undefined);
-      const searchSpy = jest
-        .spyOn(tmdbApiService, 'searchMoviesFromTmdb')
-        .mockResolvedValue([]);
+      mockTmdbApiService.searchMoviesFromTmdb.mockResolvedValue(
+        mockTmdbResponse([]),
+      );
 
       await service.searchMoviesForWholePage(query, 2);
 
-      expect(searchSpy).toHaveBeenNthCalledWith(1, query, 4);
-      expect(searchSpy).toHaveBeenNthCalledWith(2, query, 5);
-      expect(searchSpy).toHaveBeenNthCalledWith(3, query, 6);
+      expect(mockTmdbApiService.searchMoviesFromTmdb).toHaveBeenNthCalledWith(
+        1,
+        query,
+        4,
+      );
+      expect(mockTmdbApiService.searchMoviesFromTmdb).toHaveBeenNthCalledWith(
+        2,
+        query,
+        5,
+      );
+      expect(mockTmdbApiService.searchMoviesFromTmdb).toHaveBeenNthCalledWith(
+        3,
+        query,
+        6,
+      );
     });
 
     it('should default to page 1 if no page is provided', async () => {
       jest.spyOn(cacheManager, 'get').mockResolvedValue(undefined);
-      const searchSpy = jest
-        .spyOn(tmdbApiService, 'searchMoviesFromTmdb')
-        .mockResolvedValue([]);
+      mockTmdbApiService.searchMoviesFromTmdb.mockResolvedValue(
+        mockTmdbResponse([]),
+      );
 
       await service.searchMoviesForWholePage(query);
 
-      expect(searchSpy).toHaveBeenNthCalledWith(1, query, 1);
+      expect(mockTmdbApiService.searchMoviesFromTmdb).toHaveBeenNthCalledWith(
+        1,
+        query,
+        1,
+      );
     });
 
     it('should propagate errors from TMDB API', async () => {
       jest.spyOn(cacheManager, 'get').mockResolvedValue(undefined);
-      jest
-        .spyOn(tmdbApiService, 'searchMoviesFromTmdb')
-        .mockRejectedValue(new Error('Search Failed'));
+      mockTmdbApiService.searchMoviesFromTmdb.mockRejectedValue(
+        new Error('Search Failed'),
+      );
 
       await expect(service.searchMoviesForWholePage(query, 1)).rejects.toThrow(
         'Search Failed',

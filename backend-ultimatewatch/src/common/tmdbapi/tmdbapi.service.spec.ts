@@ -54,17 +54,13 @@ describe('TmdbApiService', () => {
   describe('constructor', () => {
     it('should initialize correctly and fetch the API key', () => {
       const configSpy = jest.spyOn(configService, 'get');
-
       const newService = new TmdbApiService(configService, httpService);
-
       expect(newService).toBeDefined();
-
       expect(configSpy).toHaveBeenCalledWith('TMDB_API_KEY');
     });
 
     it('should throw ConfigurationError if TMDB_API_KEY is missing', () => {
       jest.spyOn(configService, 'get').mockReturnValue(undefined);
-
       expect(() => new TmdbApiService(configService, httpService)).toThrow(
         ConfigurationError,
       );
@@ -73,15 +69,17 @@ describe('TmdbApiService', () => {
 
   describe('getMovieListFromTmdb', () => {
     const mockAxiosResponse: AxiosResponse = {
-      data: { results: [{ id: 1, title: 'Movie 1' }] },
+      data: {
+        results: [{ id: 1, title: 'Movie 1' }],
+        total_pages: 10,
+      },
       status: 200,
       statusText: 'OK',
       headers: {},
       config: {} as InternalAxiosRequestConfig,
     };
 
-    it('should fetch movies and return filtered results', async () => {
-      // Usamos spyOn para evitar el error de unbound-method del linter
+    it('should fetch movies and return mediaList and totalPages', async () => {
       const spy = jest
         .spyOn(httpService, 'get')
         .mockReturnValue(of(mockAxiosResponse));
@@ -89,16 +87,17 @@ describe('TmdbApiService', () => {
       const result = await service.getMovieListFromTmdb(1, 'popularity.desc');
 
       expect(spy).toHaveBeenCalledWith(
-        expect.any(String),
+        expect.stringContaining('/discover/movie'),
         expect.objectContaining({
           params: expect.objectContaining({
             page: 1,
-            sort_by: expect.any(String) as string,
+            sort_by: 'popularity.desc',
           }) as Record<string, any>,
-        }) as object,
+        }),
       );
-      expect(result).toBeDefined();
-      expect(result[0].id).toBe(1);
+      expect(result.mediaList).toBeDefined();
+      expect(result.totalPages).toBe(10);
+      expect(result.mediaList[0].id).toBe(1);
     });
 
     it('should throw ExternalApiError when TMDB request fails', async () => {
@@ -128,7 +127,7 @@ describe('TmdbApiService', () => {
           params: expect.objectContaining({
             sort_by: 'popularity.desc',
           }) as Record<string, any>,
-        }) as object,
+        }),
       );
     });
 
@@ -146,7 +145,7 @@ describe('TmdbApiService', () => {
           params: expect.objectContaining({
             sort_by: validMovieSort,
           }) as Record<string, any>,
-        }) as object,
+        }),
       );
     });
 
@@ -177,7 +176,10 @@ describe('TmdbApiService', () => {
 
   describe('getSeriesListFromTmdb', () => {
     const mockAxiosResponse: AxiosResponse = {
-      data: { results: [{ id: 10, name: 'Series 1' }] },
+      data: {
+        results: [{ id: 10, name: 'Series 1' }],
+        total_pages: 5,
+      },
       status: 200,
       statusText: 'OK',
       headers: {},
@@ -189,7 +191,7 @@ describe('TmdbApiService', () => {
         .spyOn(httpService, 'get')
         .mockReturnValue(of(mockAxiosResponse));
 
-      await service.getSeriesListFromTmdb(2);
+      const result = await service.getSeriesListFromTmdb(2);
 
       expect(spy).toHaveBeenCalledWith(
         expect.any(String),
@@ -200,31 +202,27 @@ describe('TmdbApiService', () => {
           }) as Record<string, any>,
           params: expect.objectContaining({
             page: 2,
-            sort_by: expect.any(String) as string,
           }) as Record<string, any>,
-        }) as object,
+        }),
       );
+      expect(result.totalPages).toBe(5);
     });
 
-    it('should filter duplicates from TMDB response', async () => {
-      const responseWithDuplicates = {
+    it('should return series results from TMDB response', async () => {
+      const response = {
         ...mockAxiosResponse,
         data: {
-          results: [
-            { id: 5, name: 'Duplicated' },
-            { id: 5, name: 'Duplicated' },
-          ],
+          results: [{ id: 5, name: 'Series 5' }],
+          total_pages: 1,
         },
       };
 
-      jest
-        .spyOn(httpService, 'get')
-        .mockReturnValue(of(responseWithDuplicates));
+      jest.spyOn(httpService, 'get').mockReturnValue(of(response));
 
       const result = await service.getSeriesListFromTmdb(1);
 
-      expect(result).toHaveLength(1);
-      expect(result[0].id).toBe(5);
+      expect(result.mediaList).toHaveLength(1);
+      expect(result.mediaList[0].id).toBe(5);
     });
 
     it('should use default sort if sort parameter is invalid for series', async () => {
@@ -240,7 +238,7 @@ describe('TmdbApiService', () => {
           params: expect.objectContaining({
             sort_by: 'popularity.desc',
           }) as Record<string, any>,
-        }) as object,
+        }),
       );
     });
 
@@ -258,14 +256,17 @@ describe('TmdbApiService', () => {
           params: expect.objectContaining({
             sort_by: validSeriesSort,
           }) as Record<string, any>,
-        }) as object,
+        }),
       );
     });
   });
 
   describe('searchMoviesFromTmdb', () => {
     const mockAxiosResponse: AxiosResponse = {
-      data: { results: [{ id: 100, title: 'Search Movie 1' }] },
+      data: {
+        results: [{ id: 100, title: 'Search Movie 1' }],
+        total_pages: 1,
+      },
       status: 200,
       statusText: 'OK',
       headers: {},
@@ -288,17 +289,18 @@ describe('TmdbApiService', () => {
             page: 1,
             include_adult: false,
           }) as Record<string, any>,
-        }) as object,
+        }),
       );
     });
 
-    it('should return mapped and filtered search results', async () => {
+    it('should return mapped search results and totalPages', async () => {
       jest.spyOn(httpService, 'get').mockReturnValue(of(mockAxiosResponse));
 
       const result = await service.searchMoviesFromTmdb('any');
 
-      expect(result).toBeDefined();
-      expect(result[0].id).toBe(100);
+      expect(result.mediaList).toBeDefined();
+      expect(result.totalPages).toBe(1);
+      expect(result.mediaList[0].id).toBe(100);
     });
 
     it('should throw ExternalApiError if movie search fails', async () => {
@@ -316,7 +318,10 @@ describe('TmdbApiService', () => {
 
   describe('searchSeriesFromTmdb', () => {
     const mockAxiosResponse: AxiosResponse = {
-      data: { results: [{ id: 200, name: 'Search Series 1' }] },
+      data: {
+        results: [{ id: 200, name: 'Search Series 1' }],
+        total_pages: 2,
+      },
       status: 200,
       statusText: 'OK',
       headers: {},
@@ -341,29 +346,18 @@ describe('TmdbApiService', () => {
             query: encodeURIComponent(query),
             page: 2,
           }) as Record<string, any>,
-        }) as object,
+        }),
       );
     });
 
-    it('should filter duplicates in search results', async () => {
-      const responseWithDuplicates = {
-        ...mockAxiosResponse,
-        data: {
-          results: [
-            { id: 99, name: 'Duplicate' },
-            { id: 99, name: 'Duplicate' },
-          ],
-        },
-      };
-
-      jest
-        .spyOn(httpService, 'get')
-        .mockReturnValue(of(responseWithDuplicates));
+    it('should return search results and totalPages', async () => {
+      jest.spyOn(httpService, 'get').mockReturnValue(of(mockAxiosResponse));
 
       const result = await service.searchSeriesFromTmdb('any');
 
-      expect(result).toHaveLength(1);
-      expect(result[0].id).toBe(99);
+      expect(result.mediaList).toBeDefined();
+      expect(result.totalPages).toBe(2);
+      expect(result.mediaList[0].id).toBe(200);
     });
 
     it('should throw ExternalApiError if series search fails', async () => {

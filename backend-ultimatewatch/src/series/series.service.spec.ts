@@ -12,6 +12,8 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { MediaFilterDto } from 'src/common/dto/media-filter-dto';
 import { MediaListDto } from 'src/common/dto/media-list-dto';
+import { TmdbSeriesDto } from 'src/common/tmdbapi/dto/media/tmdb-series-dto';
+import { SeriesDetailDto } from './dto/series-detail-dto';
 
 type MockRepository<T extends ObjectLiteral> = Partial<
   Record<keyof Repository<T>, jest.Mock>
@@ -20,16 +22,28 @@ type MockRepository<T extends ObjectLiteral> = Partial<
 describe('SeriesService', () => {
   let service: SeriesService;
   let cacheManager: Cache;
+  let seriesRepositoryMock: MockRepository<Series>;
 
-  const createMockRepository = (): MockRepository<Series> => ({});
+  const createMockRepository = (): MockRepository<Series> => ({
+    save: jest.fn(),
+    findOne: jest.fn(),
+    merge: jest.fn(),
+  });
 
   const mockTmdbApiService = {
     getSeriesListFromTmdb: jest.fn(),
     searchSeriesFromTmdb: jest.fn(),
+    getSeriesFromTmdb: jest.fn(),
   };
-  const mockGenresService = {};
-  const mockProductionCompaniesService = {};
-  const mockSeasonsService = {};
+  const mockGenresService = {
+    findByTmdbId: jest.fn(),
+  };
+  const mockProductionCompaniesService = {
+    upsert: jest.fn(),
+  };
+  const mockSeasonsService = {
+    upsert: jest.fn(),
+  };
   const mockCacheManager = {
     get: jest.fn(),
     set: jest.fn(),
@@ -37,12 +51,14 @@ describe('SeriesService', () => {
   };
 
   beforeEach(async () => {
+    seriesRepositoryMock = createMockRepository();
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SeriesService,
         {
           provide: getRepositoryToken(Series),
-          useValue: createMockRepository(),
+          useValue: seriesRepositoryMock,
         },
         {
           provide: TmdbApiService,
@@ -320,6 +336,149 @@ describe('SeriesService', () => {
       await expect(service.searchSeriesForWholePage(query, 1)).rejects.toThrow(
         'TMDB Search Series Error',
       );
+    });
+  });
+
+  describe('create', () => {
+    it('should map DTO and save to DB twice', async () => {
+      const tmdbDto = {
+        id: 123,
+        name: 'New Series',
+        genres: [{ id: 1 }],
+        production_companies: [],
+        seasons: [{ season_number: 1 }],
+      } as unknown as TmdbSeriesDto;
+
+      const mockSavedSeries = {
+        id: 1,
+        seasons: [{ number: 1 }],
+        mediaContent: { genres: [], productionCompanies: [] },
+      } as unknown as Series;
+
+      mockGenresService.findByTmdbId.mockResolvedValue({
+        id: 1,
+        name: 'Action',
+      });
+      mockProductionCompaniesService.upsert.mockImplementation((pc) =>
+        Promise.resolve(pc),
+      );
+      mockSeasonsService.upsert.mockImplementation((s) => Promise.resolve(s));
+
+      seriesRepositoryMock.save?.mockResolvedValueOnce(mockSavedSeries);
+      seriesRepositoryMock.save?.mockResolvedValueOnce(mockSavedSeries);
+
+      const result = await service.create(tmdbDto);
+
+      expect(mockGenresService.findByTmdbId).toHaveBeenCalled();
+      expect(seriesRepositoryMock.save).toHaveBeenCalledTimes(2);
+      expect(result).toEqual(mockSavedSeries);
+    });
+  });
+
+  describe('update', () => {
+    it('should merge new data into existing series', async () => {
+      const existingSeries = {
+        id: 1,
+        mediaContent: { id: 10, genres: [], productionCompanies: [] },
+        seasons: [],
+      } as unknown as Series;
+
+      const tmdbDto = {
+        name: 'Updated',
+        genres: [],
+        production_companies: [],
+        seasons: [],
+      } as unknown as TmdbSeriesDto;
+
+      mockGenresService.findByTmdbId.mockResolvedValue({});
+      mockProductionCompaniesService.upsert.mockResolvedValue({});
+      mockSeasonsService.upsert.mockResolvedValue({});
+      seriesRepositoryMock.save?.mockResolvedValue(existingSeries);
+
+      await service.update(existingSeries, tmdbDto);
+
+      expect(seriesRepositoryMock.merge).toHaveBeenCalled();
+      expect(seriesRepositoryMock.save).toHaveBeenCalledWith(existingSeries);
+    });
+  });
+
+  describe('findSeriesFromTmdbId', () => {
+    const tmdbId = 123;
+
+    it('should return from DB if data is fresh', async () => {
+      const freshSeries = {
+        mediaContent: {
+          tmdbId,
+          updatedAt: new Date(),
+          genres: [],
+          productionCompanies: [],
+        },
+        seasons: [],
+        getSeasonsNumber: () => 0,
+      } as unknown as Series;
+
+      seriesRepositoryMock.findOne?.mockResolvedValue(freshSeries);
+
+      const result = await service.findSeriesFromTmdbId(tmdbId);
+
+      expect(result.tmdbId).toBe(tmdbId);
+      expect(mockTmdbApiService.getSeriesListFromTmdb).not.toHaveBeenCalled();
+    });
+
+    it('should update if data is stale', async () => {
+      const staleDate = new Date();
+      staleDate.setDate(staleDate.getDate() - 10);
+
+      const staleSeries = {
+        mediaContent: { tmdbId, updatedAt: staleDate },
+      } as unknown as Series;
+
+      const updatedSeries = {
+        mediaContent: { tmdbId, genres: [], productionCompanies: [] },
+        seasons: [],
+        getSeasonsNumber: () => 0,
+      } as unknown as Series;
+
+      seriesRepositoryMock.findOne?.mockResolvedValue(staleSeries);
+      mockTmdbApiService.getSeriesFromTmdb.mockResolvedValue({
+        id: tmdbId,
+      } as any);
+
+      const updateSpy = jest
+        .spyOn(service, 'update')
+        .mockResolvedValue(updatedSeries);
+
+      await service.findSeriesFromTmdbId(tmdbId);
+
+      expect(updateSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe('createSeriesDetailDto (private)', () => {
+    it('should correctly format dates into ISO strings', () => {
+      const series = {
+        mediaContent: {
+          tmdbId: 1,
+          title: 'Test',
+          genres: [{ name: 'Action' }],
+          productionCompanies: [{ name: 'HBO', logoPath: '/hbo.png' }],
+          releaseDate: new Date('2020-01-01'),
+        },
+        lastAirDate: new Date('2022-01-01'),
+        seasons: [{ title: 'S1', number: 1 }],
+        getSeasonsNumber: () => 1,
+      } as unknown as Series;
+
+      type PrivateMethodCaller = {
+        createSeriesDetailDto: (s: Series) => SeriesDetailDto;
+      };
+
+      const serviceAsPrivate = service as unknown as PrivateMethodCaller;
+
+      const result = serviceAsPrivate.createSeriesDetailDto(series);
+
+      expect(result.releaseDate).toBe(new Date('2020-01-01').toISOString());
+      expect(result.lastAirDate).toBe(new Date('2022-01-01').toISOString());
     });
   });
 });

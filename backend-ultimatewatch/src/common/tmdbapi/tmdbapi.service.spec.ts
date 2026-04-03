@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
 import { TmdbApiService } from './tmdbapi.service';
 import { HttpService } from '@nestjs/axios';
@@ -7,6 +8,7 @@ import { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { ExternalApiError } from 'src/common/exceptions/external-api-error';
 import { ConfigurationError } from '../exceptions/configuration-error';
 import { MediaFilterDto } from '../dto/media-filter-dto';
+import { MediaType } from '../enums/media.type.enum';
 
 describe('TmdbApiService', () => {
   let service: TmdbApiService;
@@ -368,6 +370,142 @@ describe('TmdbApiService', () => {
         );
 
       await expect(service.searchSeriesFromTmdb('any')).rejects.toThrow(
+        ExternalApiError,
+      );
+    });
+  });
+
+  describe('Individual Resource Fetching', () => {
+    const mockAxiosResponse = <T>(data: T): AxiosResponse<T> => ({
+      data,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {} as InternalAxiosRequestConfig,
+    });
+
+    it('getMovieFromTmdb should fetch a single movie', async () => {
+      const movieData = { id: 550, title: 'Fight Club' };
+      jest
+        .spyOn(httpService, 'get')
+        .mockReturnValue(of(mockAxiosResponse(movieData)));
+
+      const result = await service.getMovieFromTmdb(550);
+      expect(result).toEqual(movieData);
+      expect(httpService.get).toHaveBeenCalledWith(
+        expect.stringContaining('/movie/550'),
+        expect.anything(),
+      );
+    });
+
+    it('getSeriesFromTmdb should fetch a single series', async () => {
+      const seriesData = { id: 1399, name: 'Game of Thrones' };
+      jest
+        .spyOn(httpService, 'get')
+        .mockReturnValue(of(mockAxiosResponse(seriesData)));
+
+      const result = await service.getSeriesFromTmdb(1399);
+      expect(result).toEqual(seriesData);
+      expect(httpService.get).toHaveBeenCalledWith(
+        expect.stringContaining('/tv/1399'),
+        expect.anything(),
+      );
+    });
+
+    it('getSeasonFromTmdb should fetch season details', async () => {
+      const seasonData = { id: 1, name: 'Season 1', episodes: [] };
+      jest
+        .spyOn(httpService, 'get')
+        .mockReturnValue(of(mockAxiosResponse(seasonData)));
+
+      const result = await service.getSeasonFromTmdb(1399, 1);
+      expect(result).toEqual(seasonData);
+      expect(httpService.get).toHaveBeenCalledWith(
+        expect.stringContaining('/tv/1399/season/1'),
+        expect.anything(),
+      );
+    });
+  });
+
+  describe('Additional TMDB Resources', () => {
+    const mockAxiosResponse = <T>(data: T): AxiosResponse<T> => ({
+      data,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {} as InternalAxiosRequestConfig,
+    });
+
+    it('getProvidersForMedia should return ES providers', async () => {
+      const providerData = { results: { ES: { link: 'url', flatrate: [] } } };
+      jest
+        .spyOn(httpService, 'get')
+        .mockReturnValue(of(mockAxiosResponse(providerData)));
+
+      const result = await service.getProvidersForMedia(1, MediaType.MOVIE);
+      expect(result).toEqual(providerData.results.ES);
+    });
+
+    it('getMediaGenres should return genre list', async () => {
+      const genreData = { genres: [{ id: 1, name: 'Action' }] };
+      jest
+        .spyOn(httpService, 'get')
+        .mockReturnValue(of(mockAxiosResponse(genreData)));
+
+      const result = await service.getMediaGenres(MediaType.MOVIE);
+      expect(result).toEqual(genreData.genres);
+      expect(httpService.get).toHaveBeenCalledWith(
+        expect.stringContaining('/genre/movie/list'),
+        expect.anything(),
+      );
+    });
+
+    it('getMediaPeople should fetch credits based on media type', async () => {
+      const peopleData = { cast: [], crew: [] };
+      jest
+        .spyOn(httpService, 'get')
+        .mockReturnValue(of(mockAxiosResponse(peopleData)));
+
+      await service.getMediaPeople(1, MediaType.MOVIE);
+      expect(httpService.get).toHaveBeenCalledWith(
+        expect.stringContaining('/movie/1/credits'),
+        expect.anything(),
+      );
+
+      await service.getMediaPeople(1, MediaType.SERIES);
+      expect(httpService.get).toHaveBeenCalledWith(
+        expect.stringContaining('/tv/1/aggregate_credits'),
+        expect.anything(),
+      );
+    });
+
+    it('getProductionCompanyFromTmdb should fetch company details', async () => {
+      const companyData = { id: 1, name: 'Lucasfilm' };
+      jest
+        .spyOn(httpService, 'get')
+        .mockReturnValue(of(mockAxiosResponse(companyData)));
+
+      const result = await service.getProductionCompanyFromTmdb(1);
+      expect(result).toEqual(companyData);
+      expect(httpService.get).toHaveBeenCalledWith(
+        expect.stringContaining('/company/1'),
+        expect.anything(),
+      );
+    });
+  });
+
+  describe('Error Handling Generic', () => {
+    it('should throw ExternalApiError for any failed request', async () => {
+      jest
+        .spyOn(httpService, 'get')
+        .mockReturnValue(
+          throwError(() => ({ response: { statusText: 'Server Error' } })),
+        );
+
+      await expect(service.getMovieFromTmdb(1)).rejects.toThrow(
+        ExternalApiError,
+      );
+      await expect(service.getMediaGenres(MediaType.MOVIE)).rejects.toThrow(
         ExternalApiError,
       );
     });

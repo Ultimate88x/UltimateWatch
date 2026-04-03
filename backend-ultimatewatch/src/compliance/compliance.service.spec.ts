@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
 import { ComplianceService } from './compliance.service';
 import { MediaProvider } from 'src/providers/entities/media.provider.entity';
@@ -15,16 +16,34 @@ type MockRepository<T extends ObjectLiteral> = Partial<
 
 describe('ComplianceService', () => {
   let service: ComplianceService;
+  let mediaProviderRepo: MockRepository<MediaProvider>;
+  let providerRepo: MockRepository<Provider>;
+  let mediaContentRepo: MockRepository<MediaContent>;
+  let personRepo: MockRepository<Person>;
+  let genresService: jest.Mocked<GenresService>;
+  let productionCompaniesService: jest.Mocked<ProductionCompaniesService>;
 
   const createMediaProviderMockRepository =
-    (): MockRepository<MediaProvider> => ({});
-  const createProviderMockRepository = (): MockRepository<Provider> => ({});
+    (): MockRepository<MediaProvider> => ({
+      update: jest.fn().mockResolvedValue({ affected: 10 }),
+    });
+  const createProviderMockRepository = (): MockRepository<Provider> => ({
+    delete: jest.fn().mockResolvedValue({ affected: 5 }),
+  });
   const createMediaContentMockRepository =
-    (): MockRepository<MediaContent> => ({});
-  const createPersonMockRepository = (): MockRepository<Person> => ({});
+    (): MockRepository<MediaContent> => ({
+      delete: jest.fn().mockResolvedValue({ affected: 5 }),
+    });
+  const createPersonMockRepository = (): MockRepository<Person> => ({
+    delete: jest.fn().mockResolvedValue({ affected: 20 }),
+  });
 
-  const mockGenresService = {};
-  const mockProductionCompaniesService = {};
+  const mockGenresService = {
+    storeTmdbGenres: jest.fn().mockResolvedValue(10),
+  };
+  const mockProductionCompaniesService = {
+    refreshTmdbProductionCompanies: jest.fn().mockResolvedValue(5),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -58,9 +77,64 @@ describe('ComplianceService', () => {
     }).compile();
 
     service = module.get<ComplianceService>(ComplianceService);
+    mediaProviderRepo = module.get(getRepositoryToken(MediaProvider));
+    providerRepo = module.get(getRepositoryToken(Provider));
+    mediaContentRepo = module.get(getRepositoryToken(MediaContent));
+    personRepo = module.get(getRepositoryToken(Person));
+    genresService = module.get(GenresService);
+    productionCompaniesService = module.get(ProductionCompaniesService);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  describe('purgeObsoleteData', () => {
+    it('should orchestrate the full purge and refresh process', async () => {
+      const purgeWatchmodeSpy = jest.spyOn(
+        service as any,
+        'purgeWatchmodeLinks',
+      );
+      const purgeTmdbSpy = jest.spyOn(service as any, 'purgeTmdbData');
+      const purgePeopleSpy = jest.spyOn(service as any, 'purgePeopleData');
+      const refreshTmdbSpy = jest.spyOn(service as any, 'refreshTmdbData');
+
+      await service.purgeObsoleteData();
+
+      expect(purgeWatchmodeSpy).toHaveBeenCalled();
+      expect(purgeTmdbSpy).toHaveBeenCalled();
+      expect(purgePeopleSpy).toHaveBeenCalled();
+      expect(refreshTmdbSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe('Internal Purge Methods', () => {
+    it('purgeWatchmodeLinks should call update on mediaProviderRepository', async () => {
+      await service['purgeWatchmodeLinks']();
+      expect(mediaProviderRepo.update).toHaveBeenCalled();
+    });
+
+    it('purgeTmdbData should call delete on mediaContent and provider repositories', async () => {
+      await service['purgeTmdbData']();
+      expect(mediaContentRepo.delete).toHaveBeenCalled();
+      expect(providerRepo.delete).toHaveBeenCalled();
+    });
+
+    it('purgePeopleData should call delete on personRepository', async () => {
+      await service['purgePeopleData']();
+      expect(personRepo.delete).toHaveBeenCalled();
+    });
+
+    it('refreshTmdbData should call genres and productionCompanies services', async () => {
+      await service['refreshTmdbData']();
+      expect(genresService.storeTmdbGenres).toHaveBeenCalled();
+      expect(
+        productionCompaniesService.refreshTmdbProductionCompanies,
+      ).toHaveBeenCalled();
+    });
   });
 });

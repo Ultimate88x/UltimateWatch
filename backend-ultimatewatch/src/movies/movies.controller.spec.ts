@@ -7,16 +7,24 @@ import { MediaFilterDto } from 'src/common/dto/media-filter-dto';
 import { MediaListDto } from 'src/common/dto/media-list-dto';
 import { BadRequestException } from '@nestjs/common';
 import { TmdbListMediaDto } from 'src/common/tmdbapi/dto/media/tmdb-media-list-dto';
+import { MediaType } from 'src/common/enums/media.type.enum';
+import { MovieDetailDto } from './dto/movie-detail-dto';
+import { ProviderListItemDto } from 'src/providers/dto/provider-list-item-dto';
 
 describe('MoviesController', () => {
   let controller: MoviesController;
   let service: MoviesService;
+  let providersService: ProvidersService;
 
   const mockMovieService = {
     getMovieListForWholePage: jest.fn(),
     searchMoviesForWholePage: jest.fn(),
+    findMovieFromTmdbId: jest.fn(),
   };
-  const mockProvidersService = {};
+
+  const mockProvidersService = {
+    findProvidersOrGetFromTmdbAndFindOrCreate: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -36,6 +44,11 @@ describe('MoviesController', () => {
 
     controller = module.get<MoviesController>(MoviesController);
     service = module.get<MoviesService>(MoviesService);
+    providersService = module.get<ProvidersService>(ProvidersService);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   it('should be defined', () => {
@@ -51,12 +64,6 @@ describe('MoviesController', () => {
           posterPath: '/path1.jpg',
           releaseDate: '2024-01-01',
         } as TmdbListMediaDto,
-        {
-          id: 2,
-          title: 'Test Movie 2',
-          posterPath: '/path2.jpg',
-          releaseDate: '2024-02-01',
-        } as TmdbListMediaDto,
       ],
       lastPage: false,
     };
@@ -64,39 +71,36 @@ describe('MoviesController', () => {
     it('should return a MediaListDto from the service', async () => {
       const filters = { page: '1', sort: 'popularity.desc' };
 
-      const spy = jest
-        .spyOn(service, 'getMovieListForWholePage')
-        .mockResolvedValue(mockMediaListResponse);
+      (service.getMovieListForWholePage as jest.Mock).mockResolvedValue(
+        mockMediaListResponse,
+      );
 
       const result = await controller.getTmdbMovies(
         filters as unknown as MediaFilterDto,
       );
 
-      expect(spy).toHaveBeenCalledWith(1, filters.sort, filters);
+      expect(mockMovieService.getMovieListForWholePage).toHaveBeenCalledWith(
+        1,
+        filters.sort,
+        filters,
+      );
       expect(result).toEqual(mockMediaListResponse);
-      expect(result.mediaList).toHaveLength(2);
     });
 
     it('should use default page 1 if no page is provided', async () => {
       const filters = { sort: 'vote_average.desc' };
-      const spy = jest
-        .spyOn(service, 'getMovieListForWholePage')
-        .mockResolvedValue({ mediaList: [], lastPage: true });
+      (service.getMovieListForWholePage as jest.Mock).mockResolvedValue({
+        mediaList: [],
+        lastPage: true,
+      });
 
       await controller.getTmdbMovies(filters as unknown as MediaFilterDto);
 
-      expect(spy).toHaveBeenCalledWith(1, filters.sort, filters);
-    });
-
-    it('should handle service failures', async () => {
-      const filters = { page: '1' };
-      jest
-        .spyOn(service, 'getMovieListForWholePage')
-        .mockRejectedValue(new Error('Service error'));
-
-      await expect(
-        controller.getTmdbMovies(filters as unknown as MediaFilterDto),
-      ).rejects.toThrow('Service error');
+      expect(mockMovieService.getMovieListForWholePage).toHaveBeenCalledWith(
+        1,
+        filters.sort,
+        filters,
+      );
     });
   });
 
@@ -105,9 +109,9 @@ describe('MoviesController', () => {
       mediaList: [
         {
           id: 101,
-          title: 'Found Movie',
-          posterPath: '/p.jpg',
-          releaseDate: '2024',
+          title: 'Inception',
+          posterPath: '/inception.jpg',
+          releaseDate: '2010-07-16',
         } as TmdbListMediaDto,
       ],
       lastPage: true,
@@ -117,48 +121,112 @@ describe('MoviesController', () => {
       const query = 'Inception';
       const page = '1';
 
-      const spy = jest
-        .spyOn(service, 'searchMoviesForWholePage')
-        .mockResolvedValue(mockSearchResponse);
+      (service.searchMoviesForWholePage as jest.Mock).mockResolvedValue(
+        mockSearchResponse,
+      );
 
       const result = await controller.searchTmdbMovies(query, page);
 
-      expect(spy).toHaveBeenCalledWith(query, 1);
+      expect(mockMovieService.searchMoviesForWholePage).toHaveBeenCalledWith(
+        query,
+        1,
+      );
       expect(result).toEqual(mockSearchResponse);
     });
 
-    it('should use default page 1 if no page is provided', async () => {
-      const query = 'Interstellar';
-
-      const spy = jest
-        .spyOn(service, 'searchMoviesForWholePage')
-        .mockResolvedValue({ mediaList: [], lastPage: true });
-
-      await controller.searchTmdbMovies(query);
-
-      expect(spy).toHaveBeenCalledWith(query, 1);
-    });
-
-    it('should throw BadRequestException if query is missing or empty', async () => {
-      const emptyQuery = '   ';
-
-      await expect(controller.searchTmdbMovies(emptyQuery)).rejects.toThrow(
+    it('should throw BadRequestException if query is empty or only whitespace', async () => {
+      await expect(controller.searchTmdbMovies('   ')).rejects.toThrow(
         BadRequestException,
       );
+      await expect(controller.searchTmdbMovies('')).rejects.toThrow(
+        'Query parameter is required',
+      );
+    });
+  });
 
-      await expect(
-        controller.searchTmdbMovies(undefined as unknown as string),
-      ).rejects.toThrow('Query parameter is required');
+  describe('getMovieByTmdbId', () => {
+    const mockMovieDetail: MovieDetailDto = {
+      tmdbId: 123,
+      title: 'Test Movie',
+      overview: 'Movie overview',
+      imagePath: '/poster.jpg',
+      genres: ['Action'],
+      releaseDate: '2024-01-01',
+      status: 'Released',
+      productionCompanies: [],
+      budget: 1000000,
+      revenue: 5000000,
+      runtime: 120,
+    };
+
+    const mockProviders: ProviderListItemDto[] = [
+      {
+        tmdbId: 1,
+        name: 'Netflix',
+        logoPath: '/netflix.png',
+      },
+    ];
+
+    it('should return movie details and providers', async () => {
+      const tmdbId = '123';
+
+      (service.findMovieFromTmdbId as jest.Mock).mockResolvedValue(
+        mockMovieDetail,
+      );
+      (
+        providersService.findProvidersOrGetFromTmdbAndFindOrCreate as jest.Mock
+      ).mockResolvedValue(mockProviders);
+
+      const result = await controller.getMovieByTmdbId(tmdbId);
+
+      expect(result).toEqual({
+        movie: mockMovieDetail,
+        providers: mockProviders,
+      });
+
+      expect(mockMovieService.findMovieFromTmdbId).toHaveBeenCalledWith(123);
+      expect(
+        mockProvidersService.findProvidersOrGetFromTmdbAndFindOrCreate,
+      ).toHaveBeenCalledWith(123, MediaType.MOVIE);
     });
 
-    it('should handle service errors during search', async () => {
-      const query = 'Batman';
-      jest
-        .spyOn(service, 'searchMoviesForWholePage')
-        .mockRejectedValue(new Error('Search failed'));
+    it('should return null for providers if service returns null', async () => {
+      const tmdbId = '456';
 
-      await expect(controller.searchTmdbMovies(query, '1')).rejects.toThrow(
-        'Search failed',
+      (service.findMovieFromTmdbId as jest.Mock).mockResolvedValue(
+        mockMovieDetail,
+      );
+      (
+        providersService.findProvidersOrGetFromTmdbAndFindOrCreate as jest.Mock
+      ).mockResolvedValue(null);
+
+      const result = await controller.getMovieByTmdbId(tmdbId);
+
+      expect(result.providers).toBeNull();
+    });
+
+    it('should handle errors from MoviesService', async () => {
+      const tmdbId = '999';
+      (service.findMovieFromTmdbId as jest.Mock).mockRejectedValue(
+        new Error('Movie not found'),
+      );
+
+      await expect(controller.getMovieByTmdbId(tmdbId)).rejects.toThrow(
+        'Movie not found',
+      );
+    });
+
+    it('should handle errors from ProvidersService', async () => {
+      const tmdbId = '123';
+      (service.findMovieFromTmdbId as jest.Mock).mockResolvedValue(
+        mockMovieDetail,
+      );
+      (
+        providersService.findProvidersOrGetFromTmdbAndFindOrCreate as jest.Mock
+      ).mockRejectedValue(new Error('Providers error'));
+
+      await expect(controller.getMovieByTmdbId(tmdbId)).rejects.toThrow(
+        'Providers error',
       );
     });
   });

@@ -22,6 +22,9 @@ describe('UsersController (e2e)', () => {
     app = moduleFixture.createNestApplication();
     await app.init();
 
+    const userRepository = app.get(getRepositoryToken(User));
+    await userRepository.delete({ email: 'target@e2e.com' });
+
     const signupRes = await request(app.getHttpServer())
       .post('/auth/signup')
       .send({
@@ -63,6 +66,34 @@ describe('UsersController (e2e)', () => {
     });
   });
 
+  describe('/users/profile/:username (GET)', () => {
+    it('should return user detail by username', async () => {
+      const currentUsername = 'user_e2e_target';
+
+      const res = await request(app.getHttpServer())
+        .get(`/users/profile/${currentUsername}`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(HttpStatus.OK);
+
+      expect(res.body.username).toBe(currentUsername);
+      expect(res.body).toHaveProperty('email');
+      expect(res.body).not.toHaveProperty('password');
+    });
+
+    it('should return 404 if the username does not exist', () => {
+      return request(app.getHttpServer())
+        .get('/users/profile/non_existent_user_999')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(HttpStatus.NOT_FOUND);
+    });
+
+    it('should return 401 if unauthorized', () => {
+      return request(app.getHttpServer())
+        .get('/users/profile/user_e2e_target')
+        .expect(HttpStatus.UNAUTHORIZED);
+    });
+  });
+
   describe('/users/:id (PATCH)', () => {
     const updatedData = { username: 'new_e2e_name' };
 
@@ -83,7 +114,7 @@ describe('UsersController (e2e)', () => {
 
     it('should return 403 if trying to update another user', () => {
       return request(app.getHttpServer())
-        .patch('/users/999')
+        .patch('/users/9999')
         .set('Authorization', `Bearer ${accessToken}`)
         .send(updatedData)
         .expect(HttpStatus.FORBIDDEN);
@@ -156,6 +187,9 @@ describe('UsersController (e2e)', () => {
     });
 
     it('should return 409 Conflict if trying to update to an existing username', async () => {
+      const userRepository = app.get(getRepositoryToken(User));
+      await userRepository.delete({ email: 'collision@e2e.com' });
+
       await request(app.getHttpServer()).post('/auth/signup').send({
         username: 'collision_user',
         email: 'collision@e2e.com',
@@ -180,7 +214,7 @@ describe('UsersController (e2e)', () => {
 
     it('should return 403 Forbidden if trying to delete another user', async () => {
       const response = await request(app.getHttpServer())
-        .delete('/users/999')
+        .delete('/users/9999')
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(HttpStatus.FORBIDDEN);
 
@@ -209,7 +243,8 @@ describe('UsersController (e2e)', () => {
 
   afterAll(async () => {
     const userRepository = app.get(getRepositoryToken(User));
-    await userRepository.delete({ username: 'user_with_photo' });
+    await userRepository.delete({ email: 'target@e2e.com' });
+    await userRepository.delete({ email: 'collision@e2e.com' });
     await app.close();
   });
 });

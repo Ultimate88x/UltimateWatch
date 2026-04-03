@@ -71,26 +71,38 @@ describe('UsersService', () => {
 
   describe('findByUsername', () => {
     it('should return a user if found', async () => {
-      const mockUser = {
-        id: 1,
-        username: 'testuser',
-        password: 'hashed_password',
-      } as User;
-
-      mockQueryBuilder.getOne.mockResolvedValue(mockUser);
+      const mockUser = { id: 1, username: 'testuser' } as User;
+      repository.findOne?.mockResolvedValue(mockUser);
 
       const result = await service.findByUsername('testuser');
 
       expect(result).toEqual(mockUser);
-      expect(repository.createQueryBuilder).toHaveBeenCalledWith('user');
+      expect(repository.findOne).toHaveBeenCalledWith({
+        where: { username: 'testuser' },
+      });
     });
 
     it('should throw ResourceNotFoundException if user not found', async () => {
-      mockQueryBuilder.getOne.mockResolvedValue(null);
-
+      repository.findOne?.mockResolvedValue(null);
       await expect(service.findByUsername('nonexistent')).rejects.toThrow(
         ResourceNotFoundException,
       );
+    });
+  });
+
+  describe('getUserByUsername', () => {
+    it('should return a UserDetailDto if found', async () => {
+      const mockUser = {
+        id: 1,
+        username: 'testuser',
+        email: 'test@test.com',
+      } as User;
+      repository.findOne?.mockResolvedValue(mockUser);
+
+      const result = await service.getUserByUsername('testuser');
+
+      expect(result.username).toBe('testuser');
+      expect(result).not.toHaveProperty('password');
     });
   });
 
@@ -116,27 +128,17 @@ describe('UsersService', () => {
     });
   });
 
-  describe('findOne', () => {
-    it('should return a user if found', async () => {
-      const mockUser = {
-        id: 1,
-        username: 'testuser',
-        email: 'test@test.com',
-      } as User;
-
+  describe('findById', () => {
+    it('should return a user entity', async () => {
+      const mockUser = { id: 1, username: 'test' } as User;
       repository.findOne?.mockResolvedValue(mockUser);
-      const result = await service.findOne(1);
-
-      expect(repository.findOne).toHaveBeenCalledWith({
-        where: { id: 1 },
-      });
+      const result = await service.findById(1);
       expect(result).toEqual(mockUser);
     });
 
-    it('should throw ResourceNotFoundException if user is not found', async () => {
+    it('should throw ResourceNotFoundException if not found', async () => {
       repository.findOne?.mockResolvedValue(null);
-
-      await expect(service.findOne(999)).rejects.toThrow(
+      await expect(service.findById(99)).rejects.toThrow(
         ResourceNotFoundException,
       );
     });

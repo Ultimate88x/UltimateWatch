@@ -19,10 +19,16 @@ import { GetUser } from 'src/common/decorators/get-user.decorator';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @Get('profile/:username')
+  @UseGuards(AuthGuard)
+  findByUsername(@Param('username') username: string) {
+    return this.usersService.getUserByUsername(username);
+  }
+
   @Get(':id')
   @UseGuards(AuthGuard)
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
+  findById(@Param('id') id: string) {
+    return this.usersService.getUserById(+id);
   }
 
   @Patch(':id')

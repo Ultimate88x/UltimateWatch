@@ -10,7 +10,8 @@ describe('UsersController', () => {
   let service: UsersService;
 
   const mockUsersService = {
-    findOne: jest.fn(),
+    getUserById: jest.fn(),
+    getUserByUsername: jest.fn(),
     remove: jest.fn(),
     update: jest.fn(),
   };
@@ -43,37 +44,47 @@ describe('UsersController', () => {
     expect(controller).toBeDefined();
   });
 
-  describe('findOne', () => {
+  describe('findById', () => {
     const idParam = '1';
     const numericId = 1;
 
-    it('should call usersService.findOne with numeric id and return the user', async () => {
+    it('should call usersService.getUserById with numeric id', async () => {
       const expectedUser = {
         id: numericId,
         username: 'testuser',
         email: 'test@test.com',
       };
 
-      mockUsersService.findOne.mockResolvedValue(expectedUser);
+      mockUsersService.getUserById.mockResolvedValue(expectedUser);
 
-      const result = await controller.findOne(idParam);
+      const result = await controller.findById(idParam);
 
-      expect(service.findOne).toHaveBeenCalledWith(numericId);
+      expect(service.getUserById).toHaveBeenCalledWith(numericId);
       expect(result).toEqual(expectedUser);
     });
 
-    it('should propagate ResourceNotFoundException if user is not found in service', async () => {
-      const idNotFound = '999';
-
-      mockUsersService.findOne.mockRejectedValue(
+    it('should propagate errors if user is not found', async () => {
+      mockUsersService.getUserById.mockRejectedValue(
         new Error('ResourceNotFoundException'),
       );
 
-      await expect(controller.findOne(idNotFound)).rejects.toThrow(
+      await expect(controller.findById('999')).rejects.toThrow(
         'ResourceNotFoundException',
       );
+    });
+  });
 
-      expect(service.findOne).toHaveBeenCalledWith(999);
+  describe('findByUsername', () => {
+    it('should call usersService.getUserByUsername with string username', async () => {
+      const username = 'testuser';
+      const expectedUser = { id: 1, username };
+
+      mockUsersService.getUserByUsername.mockResolvedValue(expectedUser);
+
+      const result = await controller.findByUsername(username);
+
+      expect(service.getUserByUsername).toHaveBeenCalledWith(username);
+      expect(result).toEqual(expectedUser);
     });
   });
 

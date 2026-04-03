@@ -71,8 +71,6 @@ export default function MovieList() {
         return;
       }
 
-      console.log(data)
-
       setMediaList((prev) => {
         if (isNewSearch) return data.mediaList;
         const existingIds = new Set(prev.map(s => s.id));

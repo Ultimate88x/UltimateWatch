@@ -18,6 +18,8 @@ import { SeasonService } from 'src/seasons/seasons.service';
 import { SeasonListDto } from 'src/seasons/dto/season-list-dto';
 import { Season } from 'src/seasons/entities/seasons.entity';
 import { MediaFilterDto } from 'src/common/dto/media-filter-dto';
+import { TmdbListSeriesResultDto } from 'src/common/tmdbapi/dto/media/tmdb-list-response-dto';
+import { MediaListDto } from 'src/common/dto/media-list-dto';
 
 @Injectable()
 export class SeriesService {
@@ -32,55 +34,85 @@ export class SeriesService {
     private readonly cacheManager: Cache,
   ) {}
 
+  private readonly TMDB_MAX_PAGE = 500;
+
   private async fetchThreePages(
     page: number,
-    fetchFn: (page: number) => Promise<TmdbListMediaDto[]>,
-  ): Promise<TmdbListMediaDto[]> {
-    const finalList: TmdbListMediaDto[] = [];
-    const startPage = (page - 1) * 3 + 1;
+    fetchFn: (
+      page: number,
+    ) => Promise<{ mediaList: TmdbListSeriesResultDto[]; totalPages: number }>,
+  ): Promise<MediaListDto> {
+    const finalList: TmdbListSeriesResultDto[] = [];
+    let startPage = (page - 1) * 3 + 1;
+
+    if (startPage + 2 > this.TMDB_MAX_PAGE) {
+      startPage = this.TMDB_MAX_PAGE - 2;
+    }
+
+    startPage = Math.max(1, startPage);
+
+    let lastPage: boolean = false;
 
     for (let i = 0; i < 3; i++) {
       const currentPage = startPage + i;
-      const list = await fetchFn(currentPage);
-      finalList.push(...list);
+
+      if (currentPage >= this.TMDB_MAX_PAGE) {
+        lastPage = true;
+        break;
+      }
+
+      const { mediaList, totalPages } = await fetchFn(currentPage);
+
+      if (mediaList && mediaList.length > 0) {
+        finalList.push(...mediaList);
+      }
+
+      if (currentPage >= totalPages) {
+        lastPage = true;
+        break;
+      }
     }
 
-    return finalList.filter(
-      (series, index, self) =>
-        index === self.findIndex((s) => s.id === series.id),
-    );
+    const seriesList: TmdbListMediaDto[] =
+      TmdbApiMapper.tmdbListSeriesResultDtoToTmdbListMediaDto(finalList);
+
+    const filteredMedia: TmdbListMediaDto[] =
+      TmdbApiMapper.filterDuplicateMedia(seriesList);
+
+    return new MediaListDto({
+      mediaList: filteredMedia,
+      lastPage: lastPage,
+    });
   }
 
   async getSeriesListForWholePage(
     page: number = 1,
     sort?: string,
     filters?: MediaFilterDto,
-  ) {
+  ): Promise<MediaListDto> {
     const cacheKey = `series_page_${page}_${sort}_${filters?.toString()}`;
-    const cachedList: TmdbListMediaDto[] | undefined =
-      await this.cacheManager.get<TmdbListMediaDto[]>(cacheKey);
+    const cachedMediaList: MediaListDto | undefined =
+      await this.cacheManager.get<MediaListDto>(cacheKey);
 
-    if (cachedList) return cachedList;
+    if (cachedMediaList) return cachedMediaList;
 
     const seriesList = await this.fetchThreePages(page, (p) =>
       this.tmdbApiService.getSeriesListFromTmdb(p, sort, filters),
     );
-
     await this.cacheManager.set(cacheKey, seriesList, 600000);
     return seriesList;
   }
 
   async searchSeriesForWholePage(query: string, page: number = 1) {
     const cacheKey = `search_series_${query}_page_${page}`;
-    const cachedList: TmdbListMediaDto[] | undefined =
-      await this.cacheManager.get<TmdbListMediaDto[]>(cacheKey);
+    const cachedMediaList: MediaListDto | undefined =
+      await this.cacheManager.get<MediaListDto>(cacheKey);
 
-    if (cachedList) return cachedList;
+    if (cachedMediaList) return cachedMediaList;
 
     const seriesList = await this.fetchThreePages(page, (p) =>
       this.tmdbApiService.searchSeriesFromTmdb(query, p),
     );
-
     await this.cacheManager.set(cacheKey, seriesList, 600000);
     return seriesList;
   }

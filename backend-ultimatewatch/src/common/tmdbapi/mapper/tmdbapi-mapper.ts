@@ -1,7 +1,6 @@
 import { TmdbListMediaDto } from '../dto/media/tmdb-media-list-dto';
 import {
   TmdbListMoviesResultDto,
-  TmdbListResponseDto,
   TmdbListSeriesResultDto,
 } from '../dto/media/tmdb-list-response-dto';
 import { TmdbMovieDto } from '../dto/media/tmdb-movie-dto';
@@ -38,9 +37,9 @@ import { TmdbParamsDto } from '../dto/tmdb-params-dto';
 
 export class TmdbApiMapper {
   static tmdbListSeriesResultDtoToTmdbListMediaDto(
-    response: TmdbListResponseDto<TmdbListSeriesResultDto>,
+    response: TmdbListSeriesResultDto[],
   ): TmdbListMediaDto[] {
-    return response.results.map(
+    return response.map(
       (tmdbSeries: TmdbListSeriesResultDto): TmdbListMediaDto => ({
         id: tmdbSeries.id,
         title: tmdbSeries.name,

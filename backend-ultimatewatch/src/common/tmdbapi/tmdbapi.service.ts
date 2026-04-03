@@ -9,7 +9,6 @@ import {
 } from './dto/media/tmdb-list-response-dto';
 import { catchError, firstValueFrom } from 'rxjs';
 import { AxiosError, AxiosResponse } from 'axios';
-import { TmdbListMediaDto } from './dto/media/tmdb-media-list-dto';
 import { TmdbApiMapper } from './mapper/tmdbapi-mapper';
 import { ExternalApiError } from 'src/common/exceptions/external-api-error';
 import { TmdbMovieDto } from './dto/media/tmdb-movie-dto';
@@ -84,10 +83,10 @@ export class TmdbApiService {
         ),
     );
 
-    const seriesList: TmdbListMediaDto[] =
-      TmdbApiMapper.tmdbListSeriesResultDtoToTmdbListMediaDto(response.data);
+    const series: TmdbListSeriesResultDto[] = response.data.results;
+    const totalPages: number = response.data.total_pages;
 
-    return TmdbApiMapper.filterDuplicateMedia(seriesList);
+    return { mediaList: series, totalPages };
   }
 
   async getMovieListFromTmdb(
@@ -164,10 +163,10 @@ export class TmdbApiService {
         ),
     );
 
-    const seriesList: TmdbListMediaDto[] =
-      TmdbApiMapper.tmdbListSeriesResultDtoToTmdbListMediaDto(response.data);
+    const series: TmdbListSeriesResultDto[] = response.data.results;
+    const totalPages: number = response.data.total_pages;
 
-    return TmdbApiMapper.filterDuplicateMedia(seriesList);
+    return { mediaList: series, totalPages };
   }
 
   async searchMoviesFromTmdb(query: string, page: number = 1) {

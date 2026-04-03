@@ -13,6 +13,7 @@ export default function SearchResultsList() {
   const { smartNavigate } = useAdvancedNavigation();
 
   const [page, setPage] = useState(1);
+  const [lastPage, setLastPage] = useState(false);
   const [mediaList, setMediaList] = useState<Media[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -44,12 +45,13 @@ export default function SearchResultsList() {
         }
 
         setMediaList((prev) => {
-          if (page === 1) return data;
+          if (page === 1) return data.mediaList;
 
           const existingIds = new Set(prev.map(s => s.id));
-          const uniqueNewData = data.filter((item: Media) => !existingIds.has(item.id));
+          const uniqueNewData = data.mediaList.filter((item: Media) => !existingIds.has(item.id));
           return [...prev, ...uniqueNewData];
         });
+        setLastPage(data.lastPage);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'An unexpected error occurred';
         toast.error(message);
@@ -107,7 +109,7 @@ export default function SearchResultsList() {
       <div className="relative w-full h-fit px-20 flex flex-col justify-start items-start gap-8">
         <ListMedia title={`SEARCH RESULTS FOR: ${media} - ${query}`} mediaItems={mediaList} onClick={(id, e) => smartNavigate(`/${media}/${id}`, e)} />
 
-        {mediaList.length > 0 && (<div className="relative w-full -mt-40 pt-40 flex justify-center bg-linear-to-t from-blue-background via-blue-background/90 to-transparent z-10">
+        {mediaList.length > 0 && !lastPage && (<div className="relative w-full -mt-40 pt-40 flex justify-center bg-linear-to-t from-blue-background via-blue-background/90 to-transparent z-10">
           <Button
             variant="ghost"
             size="lg"
@@ -116,6 +118,7 @@ export default function SearchResultsList() {
             showShine={true}
             className="w-80 border border-purple-main/20 hover:border-purple-main/50 rounded-full hover:bg-purple-main/10 text-white/80 hover:text-white transition-all duration-300 shadow-[0_0_10px_rgba(168,85,247,0)] hover:shadow-[0_0_20px_rgba(168,85,247,0.3)] [&_svg]:hover:rotate-180"
             onClick={() => setPage((prev) => prev + 1)}
+            disabled={lastPage}
           >
             Load More Results
           </Button>

@@ -72,18 +72,19 @@ describe('UsersService', () => {
   describe('findByUsername', () => {
     it('should return a user if found', async () => {
       const mockUser = { id: 1, username: 'testuser' } as User;
-      repository.findOne?.mockResolvedValue(mockUser);
+
+      mockQueryBuilder.getOne.mockResolvedValue(mockUser);
 
       const result = await service.findByUsername('testuser');
 
       expect(result).toEqual(mockUser);
-      expect(repository.findOne).toHaveBeenCalledWith({
-        where: { username: 'testuser' },
-      });
+      // Verificamos que se llamó al QueryBuilder correctamente
+      expect(repository.createQueryBuilder).toHaveBeenCalledWith('user');
     });
 
     it('should throw ResourceNotFoundException if user not found', async () => {
-      repository.findOne?.mockResolvedValue(null);
+      mockQueryBuilder.getOne.mockResolvedValue(null);
+
       await expect(service.findByUsername('nonexistent')).rejects.toThrow(
         ResourceNotFoundException,
       );
@@ -97,7 +98,8 @@ describe('UsersService', () => {
         username: 'testuser',
         email: 'test@test.com',
       } as User;
-      repository.findOne?.mockResolvedValue(mockUser);
+
+      mockQueryBuilder.getOne.mockResolvedValue(mockUser);
 
       const result = await service.getUserByUsername('testuser');
 

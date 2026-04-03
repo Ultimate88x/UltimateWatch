@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { TvMinimal } from 'lucide-react';
+import { Info, TvMinimal } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface WatchProvider {
@@ -39,6 +39,18 @@ const WatchSection: React.FC<WatchSectionProps> = ({ providers, mediaTmdbId }) =
         return;
       }
 
+      if (!url || url === 'null' || !url.startsWith('http')) {
+        toast('Direct link not available for this provider', {
+          icon: 'ℹ️',
+          style: {
+            borderRadius: '10px',
+            background: '#333',
+            color: '#fff',
+          },
+        });
+        return;
+      }
+
       window.open(url, '_blank', 'noopener,noreferrer');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'An unexpected error occurred';
@@ -56,21 +68,6 @@ const WatchSection: React.FC<WatchSectionProps> = ({ providers, mediaTmdbId }) =
             Where to watch
           </h3>
         </div>
-
-        <a
-          href="https://www.justwatch.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1.5 group transition-all"
-        >
-          <span className="text-[9px] font-bold text-white/30 group-hover:text-white/60 tracking-tighter uppercase">
-            Data from
-          </span>
-          <span className="text-[11px] font-black tracking-tighter text-yellow-500 group-hover:text-yellow-400 flex items-center">
-            JustWatch
-            <span className="ml-0.5 text-[8px] opacity-70">®</span>
-          </span>
-        </a>
       </div>
 
       {providers && providers.length > 0 ? (
@@ -118,6 +115,31 @@ const WatchSection: React.FC<WatchSectionProps> = ({ providers, mediaTmdbId }) =
           </div>
         </div>
       )}
+      <div className="mt-2 flex justify-center items-center gap-1.5 border-t border-white/5 pt-3">
+        <Info className="w-3 h-3 text-white/10" />
+        <span className="text-[9px] font-medium text-white/20 uppercase tracking-tight">
+          Streaming data by
+        </span>
+        <div className="flex items-center gap-2">
+          <a
+            href="https://www.justwatch.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] font-bold text-yellow-500/50 hover:text-yellow-500 transition-colors"
+          >
+            JustWatch
+          </a>
+          <span className="text-white/10 text-[9px]">•</span>
+          <a
+            href="https://www.watchmode.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] font-bold text-purple-400/50 hover:text-purple-400 transition-colors"
+          >
+            Watchmode
+          </a>
+        </div>
+      </div>
     </div>
   );
 };

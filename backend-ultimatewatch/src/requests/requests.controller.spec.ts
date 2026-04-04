@@ -10,6 +10,7 @@ describe('RequestsController', () => {
     createFriendRequest: jest.fn(),
     getPendingReceivedFriendRequestsFromUser: jest.fn(),
     getPendingSentFriendRequestsFromUser: jest.fn(),
+    resolveFriendRequest: jest.fn(),
   };
 
   const mockAuthGuard = {
@@ -185,6 +186,59 @@ describe('RequestsController', () => {
       await expect(
         controller.findPendingSentFriendRequests(userId, 1, 10),
       ).rejects.toThrow('Service error');
+    });
+  });
+
+  describe('resolveFriendRequest', () => {
+    const userId = 1;
+    const requestId = 100;
+    const resolveDto = { accept: true };
+
+    it('should call service.resolveFriendRequest with correct parameters', async () => {
+      mockRequestsService.resolveFriendRequest.mockResolvedValue(true);
+
+      const result = await controller.resolveFriendRequest(
+        userId,
+        requestId,
+        resolveDto,
+      );
+
+      expect(mockRequestsService.resolveFriendRequest).toHaveBeenCalledWith(
+        requestId,
+        resolveDto.accept,
+        userId,
+      );
+
+      expect(result).toBe(true);
+    });
+
+    it('should return false when the request is rejected', async () => {
+      const rejectDto = { accept: false };
+      mockRequestsService.resolveFriendRequest.mockResolvedValue(false);
+
+      const result = await controller.resolveFriendRequest(
+        userId,
+        requestId,
+        rejectDto,
+      );
+
+      expect(mockRequestsService.resolveFriendRequest).toHaveBeenCalledWith(
+        requestId,
+        false,
+        userId,
+      );
+
+      expect(result).toBe(false);
+    });
+
+    it('should propagate service errors (e.g., ForbiddenException)', async () => {
+      mockRequestsService.resolveFriendRequest.mockRejectedValue(
+        new Error('You are not authorized to resolve this request'),
+      );
+
+      await expect(
+        controller.resolveFriendRequest(userId, requestId, resolveDto),
+      ).rejects.toThrow('You are not authorized to resolve this request');
     });
   });
 });

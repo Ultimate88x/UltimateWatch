@@ -220,4 +220,115 @@ describe('RequestsService', () => {
       ).rejects.toThrow(ResourceNotFoundException);
     });
   });
+
+  describe('resolveFriendRequest', () => {
+    const requestId = 100;
+    const currentUserId = 1;
+    const otherUserId = 2;
+
+    it('should throw ForbiddenException if current user is not the receiver', async () => {
+      const mockRequest = {
+        id: requestId,
+        receiver: { id: otherUserId },
+      } as FriendRequest;
+
+      jest.spyOn(service, 'findById').mockResolvedValue(mockRequest);
+
+      await expect(
+        service.resolveFriendRequest(requestId, true, currentUserId),
+      ).rejects.toThrow('You are not authorized to resolve this request');
+    });
+
+    it('should throw BadRequestException if request is already accepted', async () => {
+      const mockRequest = {
+        id: requestId,
+        receiver: { id: currentUserId },
+        accepted: true,
+      } as FriendRequest;
+
+      jest.spyOn(service, 'findById').mockResolvedValue(mockRequest);
+
+      await expect(
+        service.resolveFriendRequest(requestId, true, currentUserId),
+      ).rejects.toThrow('This request has already been resolved');
+    });
+
+    it('should call acceptFriendRequest when accept is true', async () => {
+      const mockRequest = {
+        id: requestId,
+        receiver: { id: currentUserId },
+        accepted: false,
+      } as FriendRequest;
+
+      jest.spyOn(service, 'findById').mockResolvedValue(mockRequest);
+      const acceptSpy = jest
+        .spyOn(service, 'acceptFriendRequest')
+        .mockResolvedValue(undefined);
+
+      const result = await service.resolveFriendRequest(
+        requestId,
+        true,
+        currentUserId,
+      );
+
+      expect(result).toBe(true);
+      expect(acceptSpy).toHaveBeenCalledWith(mockRequest);
+    });
+
+    it('should call deleteFriendRequest when accept is false', async () => {
+      const mockRequest = {
+        id: requestId,
+        receiver: { id: currentUserId },
+        accepted: false,
+      } as FriendRequest;
+
+      jest.spyOn(service, 'findById').mockResolvedValue(mockRequest);
+      const deleteSpy = jest
+        .spyOn(service, 'deleteFriendRequest')
+        .mockResolvedValue(undefined);
+
+      const result = await service.resolveFriendRequest(
+        requestId,
+        false,
+        currentUserId,
+      );
+
+      expect(result).toBe(false);
+      expect(deleteSpy).toHaveBeenCalledWith(requestId);
+    });
+  });
+
+  describe('acceptFriendRequest', () => {
+    it('should set accepted to true and save the request', async () => {
+      const friendRepo = service[
+        'friendRequestsRepository'
+      ] as unknown as MockRepository<FriendRequest>;
+      const mockRequest = {
+        id: 1,
+        accepted: false,
+      } as FriendRequest;
+
+      friendRepo.save?.mockResolvedValue({ ...mockRequest, accepted: true });
+
+      await service.acceptFriendRequest(mockRequest);
+
+      expect(mockRequest.accepted).toBe(true);
+      expect(friendRepo.save).toHaveBeenCalledWith(mockRequest);
+    });
+  });
+
+  describe('deleteFriendRequest', () => {
+    it('should call repository delete', async () => {
+      const friendRepo = service[
+        'friendRequestsRepository'
+      ] as unknown as MockRepository<FriendRequest>;
+      const requestId = 1;
+
+      friendRepo.delete = jest.fn().mockResolvedValue({ affected: 1 });
+
+      await service.deleteFriendRequest(requestId);
+
+      expect(friendRepo.delete).toHaveBeenCalledWith(requestId);
+    });
+  });
 });

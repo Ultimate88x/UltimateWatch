@@ -51,6 +51,8 @@ export class RequestsService {
   }
 
   async getPendingReceivedFriendRequestsFromUser(userId: number) {
+    await this.usersService.findById(userId);
+
     const friendRequests = await this.friendRequestsRepository.find({
       where: {
         receiver: { id: userId },
@@ -74,6 +76,8 @@ export class RequestsService {
   }
 
   async getPendingSentFriendRequestsFromUser(userId: number) {
+    await this.usersService.findById(userId);
+
     const friendRequests = await this.friendRequestsRepository.find({
       where: {
         receiver: { id: userId },

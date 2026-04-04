@@ -8,6 +8,8 @@ describe('RequestsController', () => {
 
   const mockRequestsService = {
     createFriendRequest: jest.fn(),
+    getPendingReceivedFriendRequestsFromUser: jest.fn(),
+    getPendingSentFriendRequestsFromUser: jest.fn(),
   };
 
   const mockAuthGuard = {
@@ -87,6 +89,76 @@ describe('RequestsController', () => {
       await expect(
         controller.createFriendRequest(senderId, receiverId),
       ).rejects.toThrow('Unexpected error');
+    });
+  });
+
+  describe('findPendingReceivedFriendRequests', () => {
+    const userId = 1;
+    const mockData = [
+      {
+        id: 10,
+        username: 'sender1',
+        userImagePath: 'path1',
+        createdAt: '2026-04-04',
+      },
+    ];
+
+    it('should return pending received requests for the user', async () => {
+      mockRequestsService.getPendingReceivedFriendRequestsFromUser.mockResolvedValue(
+        mockData,
+      );
+
+      const result = await controller.findPendingReceivedFriendRequests(userId);
+
+      expect(
+        mockRequestsService.getPendingReceivedFriendRequestsFromUser,
+      ).toHaveBeenCalledWith(userId);
+      expect(result).toEqual(mockData);
+    });
+
+    it('should propagate service errors', async () => {
+      mockRequestsService.getPendingReceivedFriendRequestsFromUser.mockRejectedValue(
+        new Error('Service error'),
+      );
+
+      await expect(
+        controller.findPendingReceivedFriendRequests(userId),
+      ).rejects.toThrow('Service error');
+    });
+  });
+
+  describe('findPendingSentFriendRequests', () => {
+    const userId = 1;
+    const mockData = [
+      {
+        id: 11,
+        username: 'receiver1',
+        userImagePath: 'path2',
+        createdAt: '2026-04-04',
+      },
+    ];
+
+    it('should return pending sent requests for the user', async () => {
+      mockRequestsService.getPendingSentFriendRequestsFromUser.mockResolvedValue(
+        mockData,
+      );
+
+      const result = await controller.findPendingSentFriendRequests(userId);
+
+      expect(
+        mockRequestsService.getPendingSentFriendRequestsFromUser,
+      ).toHaveBeenCalledWith(userId);
+      expect(result).toEqual(mockData);
+    });
+
+    it('should propagate service errors', async () => {
+      mockRequestsService.getPendingSentFriendRequestsFromUser.mockRejectedValue(
+        new Error('Service error'),
+      );
+
+      await expect(
+        controller.findPendingSentFriendRequests(userId),
+      ).rejects.toThrow('Service error');
     });
   });
 });

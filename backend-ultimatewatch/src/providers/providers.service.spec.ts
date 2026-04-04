@@ -158,7 +158,6 @@ describe('ProvidersService', () => {
         'mediaProviderRepository'
       ] as unknown as MockRepository<MediaProvider>;
 
-      // Mock para el QueryBuilder complejo que usa tu servicio
       const mockQueryBuilder: any = {
         select: jest.fn().mockReturnThis(),
         innerJoin: jest.fn().mockReturnThis(),

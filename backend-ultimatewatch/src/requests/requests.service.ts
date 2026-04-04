@@ -229,4 +229,43 @@ export class RequestsService {
 
     return accept;
   }
+
+  async getFriendsFromUser(
+    userId: number,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<RequestResponseDto> {
+    await this.usersService.findById(userId);
+    const skip = (page - 1) * limit;
+
+    const [friendships, total] =
+      await this.friendRequestsRepository.findAndCount({
+        where: [
+          { sender: { id: userId }, accepted: true },
+          { receiver: { id: userId }, accepted: true },
+        ],
+        relations: ['sender', 'receiver'],
+        skip: skip,
+        take: limit,
+      });
+
+    const data = friendships.map((request: FriendRequest) => {
+      const friend =
+        request.sender.id === userId ? request.receiver : request.sender;
+
+      return new RequestDto({
+        id: request.id,
+        username: friend.username,
+        userImagePath: friend.imagePath,
+        createdAt: request.createdAt.toISOString(),
+      });
+    });
+
+    return new RequestResponseDto({
+      data: data,
+      total: total,
+      page: page,
+      lastPage: Math.ceil(total / limit) || 1,
+    });
+  }
 }

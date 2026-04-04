@@ -73,4 +73,14 @@ export class RequestsController {
       message: `Friend request succesfully ${accept ? 'accepted' : 'rejected'}!`,
     };
   }
+
+  @Get('friends')
+  @UseGuards(AuthGuard)
+  async findFriendsFromuser(
+    @GetUser('userId') userId: number,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ): Promise<RequestResponseDto> {
+    return await this.requestsService.getFriendsFromUser(userId, +page, +limit);
+  }
 }

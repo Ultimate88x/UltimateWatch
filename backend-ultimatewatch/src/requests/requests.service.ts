@@ -12,6 +12,7 @@ import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-fo
 import { User } from 'src/users/entities/user.entity';
 import { UsersService } from 'src/users/users.service';
 import { RequestDto } from './dto/request-dto';
+import { RequestResponseDto } from './dto/request-response-dto';
 
 @Injectable()
 export class RequestsService {
@@ -54,24 +55,25 @@ export class RequestsService {
     userId: number,
     page: number = 1,
     limit: number = 10,
-  ) {
+  ): Promise<RequestResponseDto> {
     await this.usersService.findById(userId);
     const skip = (page - 1) * limit;
 
-    const friendRequests = await this.friendRequestsRepository.find({
-      where: {
-        receiver: { id: userId },
-        accepted: false,
-      },
-      relations: ['sender'],
-      order: {
-        createdAt: 'DESC',
-      },
-      skip: skip,
-      take: limit,
-    });
+    const [friendRequests, total] =
+      await this.friendRequestsRepository.findAndCount({
+        where: {
+          receiver: { id: userId },
+          accepted: false,
+        },
+        relations: ['sender'],
+        order: {
+          createdAt: 'DESC',
+        },
+        skip: skip,
+        take: limit,
+      });
 
-    return friendRequests.map(
+    const data = friendRequests.map(
       (request: FriendRequest) =>
         new RequestDto({
           id: request.id,
@@ -80,30 +82,38 @@ export class RequestsService {
           createdAt: request.createdAt.toISOString(),
         }),
     );
+
+    return new RequestResponseDto({
+      data: data,
+      total: total,
+      page: page,
+      lastPage: Math.ceil(total / limit) || 1,
+    });
   }
 
   async getPendingSentFriendRequestsFromUser(
     userId: number,
     page: number = 1,
     limit: number = 10,
-  ) {
+  ): Promise<RequestResponseDto> {
     await this.usersService.findById(userId);
     const skip = (page - 1) * limit;
 
-    const friendRequests = await this.friendRequestsRepository.find({
-      where: {
-        sender: { id: userId },
-        accepted: false,
-      },
-      relations: ['receiver'],
-      order: {
-        createdAt: 'DESC',
-      },
-      skip: skip,
-      take: limit,
-    });
+    const [friendRequests, total] =
+      await this.friendRequestsRepository.findAndCount({
+        where: {
+          receiver: { id: userId },
+          accepted: false,
+        },
+        relations: ['receiver'],
+        order: {
+          createdAt: 'DESC',
+        },
+        skip: skip,
+        take: limit,
+      });
 
-    return friendRequests.map(
+    const data = friendRequests.map(
       (request: FriendRequest) =>
         new RequestDto({
           id: request.id,
@@ -112,6 +122,13 @@ export class RequestsService {
           createdAt: request.createdAt.toISOString(),
         }),
     );
+
+    return new RequestResponseDto({
+      data: data,
+      total: total,
+      page: page,
+      lastPage: Math.ceil(total / limit) || 1,
+    });
   }
 
   async createFriendRequest(

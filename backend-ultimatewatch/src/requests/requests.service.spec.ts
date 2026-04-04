@@ -29,7 +29,7 @@ describe('RequestsService', () => {
       create: jest.fn(),
       save: jest.fn(),
       findOne: jest.fn(),
-      find: jest.fn(),
+      findAndCount: jest.fn(),
     });
 
   beforeEach(async () => {
@@ -135,14 +135,13 @@ describe('RequestsService', () => {
     const mockSender = {
       id: 2,
       username: 'senderUser',
-      imagePath: 'path/to/img',
+      imagePath: 'path',
     } as User;
 
-    it('should return a paginated list of pending received requests as RequestDto', async () => {
+    it('should return a paginated RequestResponseDto', async () => {
       const friendRepo = service[
         'friendRequestsRepository'
       ] as unknown as MockRepository<FriendRequest>;
-
       const mockFriendRequest = {
         id: 10,
         sender: mockSender,
@@ -152,7 +151,7 @@ describe('RequestsService', () => {
       } as FriendRequest;
 
       mockUsersService.findById.mockResolvedValue(mockUser);
-      friendRepo.find?.mockResolvedValue([mockFriendRequest]);
+      friendRepo.findAndCount?.mockResolvedValue([[mockFriendRequest], 11]);
 
       const result = await service.getPendingReceivedFriendRequestsFromUser(
         userId,
@@ -160,67 +159,55 @@ describe('RequestsService', () => {
         limit,
       );
 
-      expect(mockUsersService.findById).toHaveBeenCalledWith(userId);
-      expect(friendRepo.find).toHaveBeenCalledWith(
+      expect(friendRepo.findAndCount).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { receiver: { id: userId }, accepted: false },
-          relations: ['sender'],
-          order: { createdAt: 'DESC' },
           skip: 5,
           take: 5,
         }),
       );
 
-      expect(result[0].username).toBe(mockSender.username);
-      expect(result[0].id).toBe(10);
+      expect(result.data[0].username).toBe(mockSender.username);
+      expect(result.total).toBe(11);
+      expect(result.lastPage).toBe(3);
     });
   });
 
   describe('getPendingSentFriendRequestsFromUser', () => {
     const userId = 1;
-    const page = 1;
-    const limit = 10;
-    const mockUser = { id: userId, username: 'me' } as User;
-    const mockReceiver = {
-      id: 3,
-      username: 'receiverUser',
-      imagePath: 'path/to/img2',
-    } as User;
 
-    it('should return a paginated list of pending sent requests as RequestDto', async () => {
+    it('should return a paginated RequestResponseDto for sent requests', async () => {
       const friendRepo = service[
         'friendRequestsRepository'
       ] as unknown as MockRepository<FriendRequest>;
-
+      const mockReceiver = {
+        id: 3,
+        username: 'receiverUser',
+        imagePath: 'path2',
+      } as User;
       const mockFriendRequest = {
         id: 11,
-        sender: mockUser,
+        sender: { id: userId },
         receiver: mockReceiver,
         accepted: false,
         createdAt: new Date(),
       } as FriendRequest;
 
-      mockUsersService.findById.mockResolvedValue(mockUser);
-      friendRepo.find?.mockResolvedValue([mockFriendRequest]);
+      mockUsersService.findById.mockResolvedValue({ id: userId });
+      friendRepo.findAndCount?.mockResolvedValue([[mockFriendRequest], 1]);
 
       const result = await service.getPendingSentFriendRequestsFromUser(
         userId,
-        page,
-        limit,
+        1,
+        10,
       );
 
-      expect(mockUsersService.findById).toHaveBeenCalledWith(userId);
-      expect(friendRepo.find).toHaveBeenCalledWith(
+      expect(friendRepo.findAndCount).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { sender: { id: userId }, accepted: false },
-          relations: ['receiver'],
-          skip: 0, // (1 - 1) * 10
-          take: 10,
+          where: { receiver: { id: userId }, accepted: false },
         }),
       );
-
-      expect(result[0].username).toBe(mockReceiver.username);
-      expect(result[0].userImagePath).toBe(mockReceiver.imagePath);
+      expect(result.data[0].username).toBe(mockReceiver.username);
+      expect(result.total).toBe(1);
     });
 
     it('should throw ResourceNotFoundException if user does not exist', async () => {

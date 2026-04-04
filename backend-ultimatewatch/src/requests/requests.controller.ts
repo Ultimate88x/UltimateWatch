@@ -2,7 +2,7 @@ import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { RequestsService } from './requests.service';
 import { GetUser } from 'src/common/decorators/get-user.decorator';
 import { AuthGuard } from 'src/common/guards/auth.guard';
-import { RequestDto } from './dto/request-dto';
+import { RequestResponseDto } from './dto/request-response-dto';
 
 @Controller('requests')
 export class RequestsController {
@@ -27,7 +27,7 @@ export class RequestsController {
     @GetUser('userId') userId: number,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
-  ) {
+  ): Promise<RequestResponseDto> {
     return await this.requestsService.getPendingReceivedFriendRequestsFromUser(
       userId,
       +page,
@@ -41,14 +41,11 @@ export class RequestsController {
     @GetUser('userId') userId: number,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
-  ): Promise<RequestDto[]> {
-    const data: RequestDto[] =
-      await this.requestsService.getPendingSentFriendRequestsFromUser(
-        userId,
-        +page,
-        +limit,
-      );
-
-    return data;
+  ): Promise<RequestResponseDto> {
+    return await this.requestsService.getPendingSentFriendRequestsFromUser(
+      userId,
+      +page,
+      +limit,
+    );
   }
 }

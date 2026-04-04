@@ -12,6 +12,7 @@ describe('RequestsController', () => {
     getPendingSentFriendRequestsFromUser: jest.fn(),
     resolveFriendRequest: jest.fn(),
     getFriendsFromUser: jest.fn(),
+    deleteFriend: jest.fn(),
   };
 
   const mockAuthGuard = {
@@ -316,6 +317,52 @@ describe('RequestsController', () => {
       await expect(
         controller.findFriendsFromUser(userId, page, limit),
       ).rejects.toThrow('Database error');
+    });
+  });
+
+  describe('deleteFriend', () => {
+    const userId = 1;
+    const username = 'friendToDelete';
+
+    it('should call service.deleteFriend and return a success message', async () => {
+      mockRequestsService.deleteFriend.mockResolvedValue(undefined);
+
+      const result = await controller.deleteFriend(userId, username);
+
+      expect(mockRequestsService.deleteFriend).toHaveBeenCalledWith(
+        username,
+        userId,
+      );
+
+      expect(result).toEqual({
+        message: 'Friend deleted succesfully!',
+      });
+    });
+
+    it('should propagate service errors (e.g., ResourceNotFoundException)', async () => {
+      const errorMessage = 'Friend Request not found';
+      mockRequestsService.deleteFriend.mockRejectedValue(
+        new Error(errorMessage),
+      );
+
+      await expect(controller.deleteFriend(userId, username)).rejects.toThrow(
+        errorMessage,
+      );
+
+      expect(mockRequestsService.deleteFriend).toHaveBeenCalledWith(
+        username,
+        userId,
+      );
+    });
+
+    it('should propagate unauthorized or forbidden errors', async () => {
+      mockRequestsService.deleteFriend.mockRejectedValue(
+        new Error('You are not authorized to delete this friend relationship'),
+      );
+
+      await expect(controller.deleteFriend(userId, username)).rejects.toThrow(
+        'You are not authorized to delete this friend relationship',
+      );
     });
   });
 });

@@ -18,6 +18,7 @@ describe('RequestsService', () => {
 
   const mockUsersService = {
     findById: jest.fn(),
+    findByUsername: jest.fn(),
   };
 
   const createMockRequestRepository = (): MockRepository<Request> => ({
@@ -30,6 +31,7 @@ describe('RequestsService', () => {
       save: jest.fn(),
       findOne: jest.fn(),
       findAndCount: jest.fn(),
+      delete: jest.fn(),
     });
 
   beforeEach(async () => {
@@ -419,6 +421,67 @@ describe('RequestsService', () => {
       await expect(service.getFriendsFromUser(1, 1, 10)).rejects.toThrow(
         ResourceNotFoundException,
       );
+    });
+  });
+
+  describe('deleteFriend', () => {
+    const username = 'friendUser';
+    const userId = 1;
+    const friendId = 2;
+    const mockFriend = { id: friendId, username: username } as User;
+
+    describe('deleteFriend', () => {
+      const username = 'friendUser';
+      const userId = 1;
+      const friendId = 2;
+      const mockFriend = { id: friendId, username: username } as User;
+
+      it('should delete a friend request if relationship exists', async () => {
+        const mockFriendRequest = { id: 500 } as FriendRequest;
+
+        mockUsersService.findByUsername.mockResolvedValue(mockFriend);
+        mockUsersService.findById.mockResolvedValue({ id: userId });
+
+        const findSpy = jest
+          .spyOn(service, 'findActiveFriendRequestBetweenUsers')
+          .mockResolvedValue(mockFriendRequest);
+
+        const deleteSpy = jest
+          .spyOn(service, 'deleteFriendRequest')
+          .mockResolvedValue(undefined);
+
+        await service.deleteFriend(username, userId);
+
+        expect(mockUsersService.findByUsername).toHaveBeenCalledWith(username);
+
+        expect(findSpy).toHaveBeenCalledWith(friendId, userId);
+
+        expect(deleteSpy).toHaveBeenCalledWith(mockFriendRequest.id);
+      });
+    });
+
+    it('should throw ResourceNotFoundException if no active relationship is found', async () => {
+      mockUsersService.findByUsername.mockResolvedValue(mockFriend);
+      mockUsersService.findById.mockResolvedValue({ id: userId });
+
+      jest
+        .spyOn(service, 'findActiveFriendRequestBetweenUsers')
+        .mockResolvedValue(null);
+
+      await expect(service.deleteFriend(username, userId)).rejects.toThrow(
+        ResourceNotFoundException,
+      );
+    });
+
+    it('should propagate error if findByUsername fails', async () => {
+      mockUsersService.findByUsername.mockRejectedValue(
+        new ResourceNotFoundException('User', 'USERNAME', username),
+      );
+
+      await expect(service.deleteFriend(username, userId)).rejects.toThrow(
+        ResourceNotFoundException,
+      );
+      expect(mockUsersService.findById).not.toHaveBeenCalled();
     });
   });
 });

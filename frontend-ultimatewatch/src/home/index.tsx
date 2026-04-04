@@ -2,12 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "../components/Button";
 import ListMedia from "../components/content/ListMedia";
 import { Banner } from "../components/Banner";
-
-type Media = {
-  id: number;
-  title: string;
-  posterPath: string;
-}
+import type { Media } from "../types/media-item";
 
 export default function Home() {
   const token = localStorage.getItem("token");
@@ -66,9 +61,9 @@ export default function Home() {
       <Banner subtitle="WELCOME BACK! WE'VE BEEN WAITING FOR YOU!" />
       
       <div className="relative w-full h-fit px-20 flex flex-col justify-start items-start gap-8">
-        <ListMedia title="Top-Rated Movies" mediaItems={MOCK_MOVIES} />
+        <ListMedia title="Top-Rated Movies" mediaItems={MOCK_MOVIES} onClick={() => console.log("Clicked!")} />
   
-        <ListMedia title="Top-Rated Series" mediaItems={MOCK_MOVIES} />
+        <ListMedia title="Top-Rated Series" mediaItems={MOCK_MOVIES} onClick={() => console.log("Clicked!")} />
       </div>
       {!token && (<div className="relative mt-10 w-fit h-fit border-t flex flex-col justify-center items-start gap-2">
         <h2 className="relative mt-5 text-4xl text-white font-semibold font-inter">Not Registered Yet? Join Us!</h2>

@@ -3,7 +3,7 @@ import Navbar from "./components/NavBar";
 import Footer from "./components/Footer";
 import Login from "./auth/login";
 import SignUp from "./auth/signup";
-import UserDetails from "./user/userDetails";
+import UserProfile from "./user/profile";
 import ForgotPassword from "./auth/forgotPassword";
 import ResetPassword from "./auth/resetPassword";
 import { Toaster } from "react-hot-toast";
@@ -15,11 +15,12 @@ import MovieList from "./content/movies/list";
 import SearchResultsList from "./content/searchResults";
 import MovieDetail from "./content/movies/detail";
 import SeriesDetail from "./content/series/detail";
+import UserDetail from "./user/detail";
 
 function App() {
   return (
     <div className="flex flex-col bg-blue-background min-h-screen">
-<Toaster 
+      <Toaster 
         position="top-center"
         toastOptions={{
           style: {
@@ -60,7 +61,7 @@ function App() {
           </Route>
 
           <Route element={<ProtectedRoute />}>
-            <Route path="/profile" element={<UserDetails />} />
+            <Route path="/profile" element={<UserProfile />} />
           </Route>
 
           <Route path="/" element={<Home />} />
@@ -71,6 +72,7 @@ function App() {
           <Route path="/search-results" element={<SearchResultsList />} />
           <Route path="/movies/:tmdbId" element={<MovieDetail />} />
           <Route path="/series/:tmdbId" element={<SeriesDetail />} />
+          <Route path="/user/:username" element={<UserDetail />} />
         </Routes>
       </main>
 

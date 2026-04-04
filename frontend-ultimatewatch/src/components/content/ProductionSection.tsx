@@ -1,15 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Film } from 'lucide-react';
-
-interface Company {
-  id?: number | string;
-  logoPath?: string;
-  name: string;
-}
+import type { ProductionCompany } from '../../types/production-company';
 
 interface ProductionSectionProps {
-  companies?: Company[];
+  companies?: ProductionCompany[];
   title?: string;
 }
 
@@ -30,7 +25,7 @@ const ProductionSection: React.FC<ProductionSectionProps> = ({
         {companies && companies.length > 0 ? (
           companies.map((company, index) => (
             <motion.div
-              key={company.id || index}
+              key={company.name || index}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.05 }}

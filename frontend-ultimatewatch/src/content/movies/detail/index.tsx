@@ -9,43 +9,11 @@ import { formatDate } from "../../../components/utilities/FormatDate";
 import { formatCurrency } from "../../../components/utilities/FormatCurrency";
 import WatchSection from "../../../components/content/WatchSection";
 import ProductionSection from "../../../components/content/ProductionSection";
-
-type ProductionCompany = {
-  name: string;
-  logoPath?: string;
-};
-
-type MovieDetail = {
-  tmdbId: number;
-  title: string;
-  overview: string;
-  imagePath: string;
-  status: string;
-  genres: string[];
-  productionCompanies: ProductionCompany[];
-  budget: number;
-  runtime: number;
-  revenue: number;
-  releaseDate: string;
-};
-
-type Provider = {
-  tmdbId: number,
-  name: string;
-  logoPath: string;
-};
-
-type CastMember = {
-  name: string;
-  character: string;
-  profilePath: string;
-};
-
-type CrewMember = {
-  name: string;
-  job: string;
-  profilePath: string;
-};
+import type { CastMember } from "../../../types/cast-member";
+import type { CrewMember } from "../../../types/crew-member";
+import type { ProductionCompany } from "../../../types/production-company";
+import type { Provider } from "../../../types/provider";
+import type { MovieDetail } from "../../../types/movie-detail";
 
 export default function MovieDetail() {
   const { tmdbId } = useParams();

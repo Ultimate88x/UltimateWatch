@@ -1,4 +1,4 @@
-import type { Media } from "../../types/media";
+import type { Media } from "../../types/media-item";
 import { motion } from "framer-motion";
 
 interface ListMediaProps {

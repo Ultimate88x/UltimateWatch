@@ -2,12 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Info, TvMinimal } from 'lucide-react';
 import toast from 'react-hot-toast';
-
-interface WatchProvider {
-  tmdbId: number,
-  logoPath: string;
-  name: string;
-}
+import type { WatchProvider } from '../../types/watch-provider';
 
 interface WatchSectionProps {
   providers: WatchProvider[];

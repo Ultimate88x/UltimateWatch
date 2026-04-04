@@ -1,11 +1,5 @@
 import { motion } from "framer-motion";
-import type { Media } from "../../types/media";
-
-interface Collection {
-  id: number;
-  title: string;
-  mediaItems: Media[];
-}
+import type { Collection } from "../../types/collection-item";
 
 interface ListCollectionProps {
   title: string;

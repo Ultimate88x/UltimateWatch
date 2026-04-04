@@ -5,31 +5,13 @@ import toast from 'react-hot-toast';
 import { Button } from '../Button';
 import { formatDate } from '../utilities/FormatDate';
 import { EmptyState } from '../EmptyState';
+import type { Season } from '../../types/season-detail';
+import type { Episode } from '../../types/episode';
 
 interface SeasonDetailProps {
   seriesTmdbId: number;
   activeSeason: number | string;
 }
-
-type Season = {
-  tmdbId: number;
-  title: string;
-  overview: string;
-  imagePath: string;
-  number: number;
-  releaseDate: string | null;
-};
-
-type Episode = {
-  tmdbId: number;
-  title: string;
-  overview: string;
-  imagePath: string;
-  number: number;
-  releaseDate: string | null;
-  runtime: number;
-  type: string;
-};
 
 const SeasonDetail: React.FC<SeasonDetailProps> = ({ seriesTmdbId, activeSeason }) => {
   const [season, setSeason] = useState<Season | null>(null);

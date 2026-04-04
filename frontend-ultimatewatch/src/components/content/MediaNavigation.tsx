@@ -1,14 +1,11 @@
-type Season = {
-  title: string;
-  number: number;
-};
+import type { SeasonBasic } from "../../types/season-basic";
 
 export const MediaNavigation = ({ 
   seasons, 
   activeId, 
   onChange 
 }: { 
-  seasons: Season[], 
+  seasons: SeasonBasic[], 
   activeId: number | 'basic', 
   onChange: (id: number | 'basic') => void 
 }) => {

@@ -1,13 +1,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "../Button";
-
-type Person = {
-  name: string;
-  profilePath?: string;
-  character?: string;
-  job?: string;
-  episodeCount?: number;
-};
+import type { Person } from "../../types/person";
 
 interface MediaPeopleSectionProps {
   title: string;

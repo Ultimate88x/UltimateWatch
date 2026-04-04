@@ -10,50 +10,10 @@ import { MediaNavigation } from "../../../components/content/MediaNavigation";
 import WatchSection from "../../../components/content/WatchSection";
 import ProductionSection from "../../../components/content/ProductionSection";
 import SeasonDetail from "../../../components/content/SeasonDetail";
-
-type ProductionCompany = {
-  name: string;
-  logoPath?: string;
-};
-
-type Season = {
-  title: string;
-  number: number;
-};
-
-type SeriesDetail = {
-  tmdbId: number;
-  title: string;
-  overview: string;
-  imagePath: string;
-  status: string;
-  genres: string[];
-  productionCompanies: ProductionCompany[];
-  releaseDate: string | null;
-  lastAirDate: string | null;
-  seasonsNumber: number;
-  seasonsInfo: Season[];
-};
-
-type Provider = {
-  tmdbId: number,
-  name: string;
-  logoPath: string;
-};
-
-type CastMember = {
-  name: string;
-  character: string;
-  profilePath: string;
-  episodeCount: number;
-};
-
-type CrewMember = {
-  name: string;
-  job: string;
-  profilePath: string;
-  episodeCount: number;
-};
+import type { CastMember } from "../../../types/cast-member";
+import type { CrewMember } from "../../../types/crew-member";
+import type { Provider } from "../../../types/provider";
+import type { SeriesDetail } from "../../../types/series-detail";
 
 export default function SeriesDetail() {
   const { tmdbId } = useParams();
@@ -181,7 +141,7 @@ export default function SeriesDetail() {
           animate={{ opacity: 1 }}
           className="mt-6 text-white font-inter font-bold tracking-widest uppercase text-sm"
         >
-          Fetching Movie Data...
+          Fetching Series Data...
         </motion.p>
       </div>
     );

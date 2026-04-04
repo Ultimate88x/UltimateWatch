@@ -3,7 +3,7 @@ import ListMedia from "../../../components/content/ListMedia";
 import toast from "react-hot-toast";
 import { Button } from "../../../components/Button";
 import { Plus, SearchX } from "lucide-react";
-import type { Media } from "../../../types/media";
+import type { Media } from "../../../types/media-item";
 import { motion } from "framer-motion";
 import { EmptyState } from "../../../components/EmptyState";
 import { useAdvancedNavigation } from "../../../components/utilities/SmartNavigate";

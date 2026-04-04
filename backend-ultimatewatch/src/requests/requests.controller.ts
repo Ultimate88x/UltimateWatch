@@ -65,9 +65,12 @@ export class RequestsController {
     @GetUser('userId') userId: number,
     @Param('id') id: number,
     @Body() resolveRequestDto: ResolveRequestDto,
-  ): Promise<boolean> {
+  ): Promise<{ message: string }> {
     const { accept } = resolveRequestDto;
+    await this.requestsService.resolveFriendRequest(+id, accept, userId);
 
-    return await this.requestsService.resolveFriendRequest(+id, accept, userId);
+    return {
+      message: `Friend request succesfully ${accept ? 'accepted' : 'rejected'}!`,
+    };
   }
 }

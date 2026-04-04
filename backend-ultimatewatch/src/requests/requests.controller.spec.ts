@@ -209,7 +209,9 @@ describe('RequestsController', () => {
         userId,
       );
 
-      expect(result).toBe(true);
+      expect(result).toEqual({
+        message: 'Friend request succesfully accepted!',
+      });
     });
 
     it('should return false when the request is rejected', async () => {
@@ -228,7 +230,9 @@ describe('RequestsController', () => {
         userId,
       );
 
-      expect(result).toBe(false);
+      expect(result).toEqual({
+        message: 'Friend request succesfully rejected!',
+      });
     });
 
     it('should propagate service errors (e.g., ForbiddenException)', async () => {

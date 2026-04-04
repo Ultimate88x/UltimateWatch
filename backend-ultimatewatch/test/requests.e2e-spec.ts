@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Test, TestingModule } from '@nestjs/testing';
 import {
@@ -5,6 +6,7 @@ import {
   HttpStatus,
   ValidationPipe,
   BadRequestException,
+  ExecutionContext,
 } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from './../src/app.module';
@@ -19,10 +21,15 @@ describe('RequestsController (e2e)', () => {
     createFriendRequest: jest.fn(),
     getPendingReceivedFriendRequestsFromUser: jest.fn(),
     getPendingSentFriendRequestsFromUser: jest.fn(),
+    resolveFriendRequest: jest.fn(),
   };
 
   const mockAuthGuard = {
-    canActivate: jest.fn(() => true),
+    canActivate: jest.fn((context: ExecutionContext) => {
+      const req = context.switchToHttp().getRequest();
+      req.user = { userId: 1 };
+      return true;
+    }),
   };
 
   beforeAll(async () => {
@@ -177,6 +184,72 @@ describe('RequestsController (e2e)', () => {
       return request(app.getHttpServer() as App)
         .get('/requests/sent')
         .expect(HttpStatus.INTERNAL_SERVER_ERROR);
+    });
+  });
+
+  describe('/requests/friend-request/resolve/:id (PATCH)', () => {
+    const requestId = 100;
+    const url = `/requests/friend-request/resolve/${requestId}`;
+
+    it('should return 200 and success message when accepted', () => {
+      mockRequestsService.resolveFriendRequest.mockResolvedValue(true);
+
+      return request(app.getHttpServer() as App)
+        .patch(url)
+        .send({ accept: true })
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body.message).toBe('Friend request succesfully accepted!');
+          expect(mockRequestsService.resolveFriendRequest).toHaveBeenCalledWith(
+            requestId,
+            true,
+            expect.any(Number),
+          );
+        });
+    });
+
+    it('should return 200 and success message when rejected', () => {
+      mockRequestsService.resolveFriendRequest.mockResolvedValue(false);
+
+      return request(app.getHttpServer() as App)
+        .patch(url)
+        .send({ accept: false })
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body.message).toBe('Friend request succesfully rejected!');
+          expect(mockRequestsService.resolveFriendRequest).toHaveBeenCalledWith(
+            requestId,
+            false,
+            expect.any(Number),
+          );
+        });
+    });
+
+    it('should return 400 (Bad Request) when "accept" is missing or not a boolean', () => {
+      return request(app.getHttpServer() as App)
+        .patch(url)
+        .send({ accept: 'not_a_boolean' })
+        .expect(HttpStatus.BAD_REQUEST)
+        .expect((res) => {
+          expect(res.body.message).toContain(
+            'The accept field must be a boolean value (true/false)',
+          );
+        });
+    });
+
+    it('should return 403 if the service throws a ForbiddenException', () => {
+      const forbiddenMsg = 'You are not authorized to resolve this request';
+      mockRequestsService.resolveFriendRequest.mockRejectedValue(
+        new BadRequestException(forbiddenMsg),
+      );
+
+      return request(app.getHttpServer() as App)
+        .patch(url)
+        .send({ accept: true })
+        .expect(HttpStatus.BAD_REQUEST)
+        .expect((res) => {
+          expect(res.body.message).toBe(forbiddenMsg);
+        });
     });
   });
 });

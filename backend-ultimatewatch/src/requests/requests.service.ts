@@ -45,15 +45,21 @@ export class RequestsService {
     return request;
   }
 
-  async findActiveFriendRequestBySenderIdAndReceiverId(
-    senderId: number,
-    receiverId: number,
+  async findActiveFriendRequestBetweenUsers(
+    userId1: number,
+    userId2: number,
   ): Promise<Request | null> {
     const request = await this.friendRequestsRepository.findOne({
-      where: {
-        sender: { id: senderId },
-        receiver: { id: receiverId },
-      },
+      where: [
+        {
+          sender: { id: userId1 },
+          receiver: { id: userId2 },
+        },
+        {
+          sender: { id: userId2 },
+          receiver: { id: userId1 },
+        },
+      ],
     });
 
     return request;
@@ -150,10 +156,7 @@ export class RequestsService {
     }
 
     const existingRequest: Request | null =
-      await this.findActiveFriendRequestBySenderIdAndReceiverId(
-        senderId,
-        receiverId,
-      );
+      await this.findActiveFriendRequestBetweenUsers(senderId, receiverId);
 
     if (existingRequest) {
       if (!existingRequest.accepted) {

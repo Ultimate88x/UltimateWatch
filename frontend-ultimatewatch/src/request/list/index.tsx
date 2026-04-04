@@ -58,18 +58,23 @@ const FriendRequests: React.FC = () => {
   const handleAction = async (requestId: number, action: 'accept' | 'reject' | 'cancel') => {
     setIsActionLoading(requestId);
     try {
-      const endpoint = action === 'accept' ? 'accept' : 'reject';
-      const response = await fetch(`http://localhost:3000/requests/${endpoint}/${requestId}`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      const isAccepting = action === 'accept';
+      const response = await fetch(`http://localhost:3000/requests/friend-request/resolve/${requestId}`, {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}` 
+        },
+        body: JSON.stringify({ accept: isAccepting })
       });
 
+      const data = await response.json();
+
       if (response.ok) {
-        toast.success(`Request ${action}ed successfully`);
+        toast.success(data.message || `Request ${action}ed successfully`);
         fetchRequests(); 
       } else {
-        const errorData = await response.json();
-        toast.error(errorData.message || 'Action failed');
+        toast.error(data.message || 'Action failed');
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'An unexpected error occurred';

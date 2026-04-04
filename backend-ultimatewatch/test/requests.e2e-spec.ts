@@ -13,6 +13,7 @@ import { AppModule } from './../src/app.module';
 import { RequestsService } from 'src/requests/requests.service';
 import { App } from 'supertest/types';
 import { AuthGuard } from 'src/common/guards/auth.guard';
+import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
 
 describe('RequestsController (e2e)', () => {
   let app: INestApplication;
@@ -23,6 +24,7 @@ describe('RequestsController (e2e)', () => {
     getPendingSentFriendRequestsFromUser: jest.fn(),
     resolveFriendRequest: jest.fn(),
     getFriendsFromUser: jest.fn(),
+    deleteFriend: jest.fn(),
   };
 
   const mockAuthGuard = {
@@ -311,6 +313,53 @@ describe('RequestsController (e2e)', () => {
 
       return request(app.getHttpServer() as App)
         .get('/requests/friends')
+        .expect(HttpStatus.INTERNAL_SERVER_ERROR);
+    });
+  });
+
+  describe('/requests/friend/:username (DELETE)', () => {
+    const username = 'pepito';
+    const url = `/requests/friend/${username}`;
+
+    it('should return 200 and success message when friend is deleted', () => {
+      mockRequestsService.deleteFriend.mockResolvedValue(undefined);
+
+      return request(app.getHttpServer() as App)
+        .delete(url)
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body.message).toBe('Friend deleted succesfully!');
+          expect(mockRequestsService.deleteFriend).toHaveBeenCalledWith(
+            username,
+            1,
+          );
+        });
+    });
+
+    it('should return 404 if the service throws ResourceNotFoundException', () => {
+      mockRequestsService.deleteFriend.mockRejectedValue(
+        new ResourceNotFoundException(
+          'Friend Request',
+          'USER_USERNAME, USER_ID',
+          `${username}, 1`,
+        ),
+      );
+
+      return request(app.getHttpServer() as App)
+        .delete(url)
+        .expect(HttpStatus.NOT_FOUND)
+        .expect((res) => {
+          expect(res.body.message).toBe(
+            `Friend Request with USER_USERNAME, USER_ID = ${username}, 1 not found`,
+          );
+        });
+    });
+
+    it('should return 500 if the service fails unexpectedly', () => {
+      mockRequestsService.deleteFriend.mockRejectedValue(new Error('DB Error'));
+
+      return request(app.getHttpServer() as App)
+        .delete(url)
         .expect(HttpStatus.INTERNAL_SERVER_ERROR);
     });
   });

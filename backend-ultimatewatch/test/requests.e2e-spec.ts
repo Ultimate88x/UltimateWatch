@@ -17,6 +17,8 @@ describe('RequestsController (e2e)', () => {
 
   const mockRequestsService = {
     createFriendRequest: jest.fn(),
+    getPendingReceivedFriendRequestsFromUser: jest.fn(),
+    getPendingSentFriendRequestsFromUser: jest.fn(),
   };
 
   const mockAuthGuard = {
@@ -101,6 +103,80 @@ describe('RequestsController (e2e)', () => {
         .expect((res) => {
           expect(res.body.message).toBe(errorMsg);
         });
+    });
+  });
+
+  describe('/requests/received (GET)', () => {
+    it('should return 200 and a list of pending received requests', () => {
+      const mockData = [
+        {
+          id: 10,
+          username: 'sender1',
+          userImagePath: 'img1.jpg',
+          createdAt: new Date().toISOString(),
+        },
+      ];
+
+      mockRequestsService.getPendingReceivedFriendRequestsFromUser.mockResolvedValue(
+        mockData,
+      );
+
+      return request(app.getHttpServer() as App)
+        .get('/requests/received')
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body).toEqual(mockData);
+          expect(
+            mockRequestsService.getPendingReceivedFriendRequestsFromUser,
+          ).toHaveBeenCalled();
+        });
+    });
+
+    it('should return 500 if the service fails', () => {
+      mockRequestsService.getPendingReceivedFriendRequestsFromUser.mockRejectedValue(
+        new Error(),
+      );
+
+      return request(app.getHttpServer() as App)
+        .get('/requests/received')
+        .expect(HttpStatus.INTERNAL_SERVER_ERROR);
+    });
+  });
+
+  describe('/requests/sent (GET)', () => {
+    it('should return 200 and a list of pending sent requests', () => {
+      const mockData = [
+        {
+          id: 11,
+          username: 'receiver1',
+          userImagePath: 'img2.jpg',
+          createdAt: new Date().toISOString(),
+        },
+      ];
+
+      mockRequestsService.getPendingSentFriendRequestsFromUser.mockResolvedValue(
+        mockData,
+      );
+
+      return request(app.getHttpServer() as App)
+        .get('/requests/sent')
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body).toEqual(mockData);
+          expect(
+            mockRequestsService.getPendingSentFriendRequestsFromUser,
+          ).toHaveBeenCalled();
+        });
+    });
+
+    it('should return 500 if the service fails', () => {
+      mockRequestsService.getPendingSentFriendRequestsFromUser.mockRejectedValue(
+        new Error(),
+      );
+
+      return request(app.getHttpServer() as App)
+        .get('/requests/sent')
+        .expect(HttpStatus.INTERNAL_SERVER_ERROR);
     });
   });
 });

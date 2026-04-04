@@ -94,6 +94,8 @@ describe('RequestsController', () => {
 
   describe('findPendingReceivedFriendRequests', () => {
     const userId = 1;
+    const page = 2;
+    const limit = 5;
     const mockData = [
       {
         id: 10,
@@ -103,17 +105,34 @@ describe('RequestsController', () => {
       },
     ];
 
-    it('should return pending received requests for the user', async () => {
+    it('should return pending received requests for the user with pagination', async () => {
       mockRequestsService.getPendingReceivedFriendRequestsFromUser.mockResolvedValue(
         mockData,
       );
 
-      const result = await controller.findPendingReceivedFriendRequests(userId);
+      const result = await controller.findPendingReceivedFriendRequests(
+        userId,
+        page,
+        limit,
+      );
 
       expect(
         mockRequestsService.getPendingReceivedFriendRequestsFromUser,
-      ).toHaveBeenCalledWith(userId);
+      ).toHaveBeenCalledWith(userId, page, limit);
+
       expect(result).toEqual(mockData);
+    });
+
+    it('should use default values if pagination parameters are not provided', async () => {
+      mockRequestsService.getPendingReceivedFriendRequestsFromUser.mockResolvedValue(
+        mockData,
+      );
+
+      await controller.findPendingReceivedFriendRequests(userId);
+
+      expect(
+        mockRequestsService.getPendingReceivedFriendRequestsFromUser,
+      ).toHaveBeenCalledWith(userId, 1, 10);
     });
 
     it('should propagate service errors', async () => {
@@ -122,13 +141,15 @@ describe('RequestsController', () => {
       );
 
       await expect(
-        controller.findPendingReceivedFriendRequests(userId),
+        controller.findPendingReceivedFriendRequests(userId, page, limit),
       ).rejects.toThrow('Service error');
     });
   });
 
   describe('findPendingSentFriendRequests', () => {
     const userId = 1;
+    const page = 1;
+    const limit = 20;
     const mockData = [
       {
         id: 11,
@@ -138,16 +159,21 @@ describe('RequestsController', () => {
       },
     ];
 
-    it('should return pending sent requests for the user', async () => {
+    it('should return pending sent requests for the user with pagination', async () => {
       mockRequestsService.getPendingSentFriendRequestsFromUser.mockResolvedValue(
         mockData,
       );
 
-      const result = await controller.findPendingSentFriendRequests(userId);
+      const result = await controller.findPendingSentFriendRequests(
+        userId,
+        page,
+        limit,
+      );
 
       expect(
         mockRequestsService.getPendingSentFriendRequestsFromUser,
-      ).toHaveBeenCalledWith(userId);
+      ).toHaveBeenCalledWith(userId, page, limit);
+
       expect(result).toEqual(mockData);
     });
 
@@ -157,7 +183,7 @@ describe('RequestsController', () => {
       );
 
       await expect(
-        controller.findPendingSentFriendRequests(userId),
+        controller.findPendingSentFriendRequests(userId, 1, 10),
       ).rejects.toThrow('Service error');
     });
   });

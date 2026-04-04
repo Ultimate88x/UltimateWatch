@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { RequestsService } from './requests.service';
 import { GetUser } from 'src/common/decorators/get-user.decorator';
 import { AuthGuard } from 'src/common/guards/auth.guard';
@@ -25,22 +25,29 @@ export class RequestsController {
   @UseGuards(AuthGuard)
   async findPendingReceivedFriendRequests(
     @GetUser('userId') userId: number,
-  ): Promise<RequestDto[]> {
-    const data: RequestDto[] =
-      await this.requestsService.getPendingReceivedFriendRequestsFromUser(
-        userId,
-      );
-
-    return data;
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ) {
+    return await this.requestsService.getPendingReceivedFriendRequestsFromUser(
+      userId,
+      +page,
+      +limit,
+    );
   }
 
   @Get('sent')
   @UseGuards(AuthGuard)
   async findPendingSentFriendRequests(
     @GetUser('userId') userId: number,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
   ): Promise<RequestDto[]> {
     const data: RequestDto[] =
-      await this.requestsService.getPendingSentFriendRequestsFromUser(userId);
+      await this.requestsService.getPendingSentFriendRequestsFromUser(
+        userId,
+        +page,
+        +limit,
+      );
 
     return data;
   }

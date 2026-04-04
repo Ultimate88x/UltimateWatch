@@ -129,6 +129,8 @@ describe('RequestsService', () => {
 
   describe('getPendingReceivedFriendRequestsFromUser', () => {
     const userId = 1;
+    const page = 2;
+    const limit = 5;
     const mockUser = { id: userId, username: 'me' } as User;
     const mockSender = {
       id: 2,
@@ -136,7 +138,7 @@ describe('RequestsService', () => {
       imagePath: 'path/to/img',
     } as User;
 
-    it('should return a list of pending received requests as RequestDto', async () => {
+    it('should return a paginated list of pending received requests as RequestDto', async () => {
       const friendRepo = service[
         'friendRequestsRepository'
       ] as unknown as MockRepository<FriendRequest>;
@@ -152,14 +154,20 @@ describe('RequestsService', () => {
       mockUsersService.findById.mockResolvedValue(mockUser);
       friendRepo.find?.mockResolvedValue([mockFriendRequest]);
 
-      const result =
-        await service.getPendingReceivedFriendRequestsFromUser(userId);
+      const result = await service.getPendingReceivedFriendRequestsFromUser(
+        userId,
+        page,
+        limit,
+      );
 
       expect(mockUsersService.findById).toHaveBeenCalledWith(userId);
       expect(friendRepo.find).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { receiver: { id: userId }, accepted: false },
           relations: ['sender'],
+          order: { createdAt: 'DESC' },
+          skip: 5,
+          take: 5,
         }),
       );
 
@@ -170,6 +178,8 @@ describe('RequestsService', () => {
 
   describe('getPendingSentFriendRequestsFromUser', () => {
     const userId = 1;
+    const page = 1;
+    const limit = 10;
     const mockUser = { id: userId, username: 'me' } as User;
     const mockReceiver = {
       id: 3,
@@ -177,7 +187,7 @@ describe('RequestsService', () => {
       imagePath: 'path/to/img2',
     } as User;
 
-    it('should return a list of pending sent requests as RequestDto', async () => {
+    it('should return a paginated list of pending sent requests as RequestDto', async () => {
       const friendRepo = service[
         'friendRequestsRepository'
       ] as unknown as MockRepository<FriendRequest>;
@@ -191,12 +201,24 @@ describe('RequestsService', () => {
       } as FriendRequest;
 
       mockUsersService.findById.mockResolvedValue(mockUser);
-
       friendRepo.find?.mockResolvedValue([mockFriendRequest]);
 
-      const result = await service.getPendingSentFriendRequestsFromUser(userId);
+      const result = await service.getPendingSentFriendRequestsFromUser(
+        userId,
+        page,
+        limit,
+      );
 
       expect(mockUsersService.findById).toHaveBeenCalledWith(userId);
+      expect(friendRepo.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { sender: { id: userId }, accepted: false },
+          relations: ['receiver'],
+          skip: 0, // (1 - 1) * 10
+          take: 10,
+        }),
+      );
+
       expect(result[0].username).toBe(mockReceiver.username);
       expect(result[0].userImagePath).toBe(mockReceiver.imagePath);
     });
@@ -207,7 +229,7 @@ describe('RequestsService', () => {
       );
 
       await expect(
-        service.getPendingSentFriendRequestsFromUser(1),
+        service.getPendingSentFriendRequestsFromUser(1, 1, 10),
       ).rejects.toThrow(ResourceNotFoundException);
     });
   });

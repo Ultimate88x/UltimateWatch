@@ -50,8 +50,13 @@ export class RequestsService {
     return request;
   }
 
-  async getPendingReceivedFriendRequestsFromUser(userId: number) {
+  async getPendingReceivedFriendRequestsFromUser(
+    userId: number,
+    page: number = 1,
+    limit: number = 10,
+  ) {
     await this.usersService.findById(userId);
+    const skip = (page - 1) * limit;
 
     const friendRequests = await this.friendRequestsRepository.find({
       where: {
@@ -62,10 +67,12 @@ export class RequestsService {
       order: {
         createdAt: 'DESC',
       },
+      skip: skip,
+      take: limit,
     });
 
     return friendRequests.map(
-      (request: Request) =>
+      (request: FriendRequest) =>
         new RequestDto({
           id: request.id,
           username: request.sender.username,
@@ -75,22 +82,29 @@ export class RequestsService {
     );
   }
 
-  async getPendingSentFriendRequestsFromUser(userId: number) {
+  async getPendingSentFriendRequestsFromUser(
+    userId: number,
+    page: number = 1,
+    limit: number = 10,
+  ) {
     await this.usersService.findById(userId);
+    const skip = (page - 1) * limit;
 
     const friendRequests = await this.friendRequestsRepository.find({
       where: {
-        receiver: { id: userId },
+        sender: { id: userId },
         accepted: false,
       },
       relations: ['receiver'],
       order: {
         createdAt: 'DESC',
       },
+      skip: skip,
+      take: limit,
     });
 
     return friendRequests.map(
-      (request: Request) =>
+      (request: FriendRequest) =>
         new RequestDto({
           id: request.id,
           username: request.receiver.username,

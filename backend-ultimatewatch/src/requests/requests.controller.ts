@@ -76,7 +76,7 @@ export class RequestsController {
 
   @Get('friends')
   @UseGuards(AuthGuard)
-  async findFriendsFromuser(
+  async findFriendsFromUser(
     @GetUser('userId') userId: number,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,

@@ -11,6 +11,7 @@ describe('RequestsController', () => {
     getPendingReceivedFriendRequestsFromUser: jest.fn(),
     getPendingSentFriendRequestsFromUser: jest.fn(),
     resolveFriendRequest: jest.fn(),
+    getFriendsFromUser: jest.fn(),
   };
 
   const mockAuthGuard = {
@@ -243,6 +244,78 @@ describe('RequestsController', () => {
       await expect(
         controller.resolveFriendRequest(userId, requestId, resolveDto),
       ).rejects.toThrow('You are not authorized to resolve this request');
+    });
+  });
+
+  describe('findFriendsFromuser', () => {
+    const userId = 1;
+    const page = 1;
+    const limit = 10;
+    const mockFriendsResponse = {
+      data: [
+        {
+          id: 50,
+          username: 'friend1',
+          userImagePath: 'img1.jpg',
+          createdAt: '2026-04-04T12:00:00Z',
+        },
+      ],
+      total: 1,
+      page: 1,
+      lastPage: 1,
+    };
+
+    it('should return the list of friends with pagination', async () => {
+      mockRequestsService.getFriendsFromUser.mockResolvedValue(
+        mockFriendsResponse,
+      );
+
+      const result = await controller.findFriendsFromUser(userId, page, limit);
+
+      expect(mockRequestsService.getFriendsFromUser).toHaveBeenCalledWith(
+        userId,
+        page,
+        limit,
+      );
+      expect(result).toEqual(mockFriendsResponse);
+    });
+
+    it('should correctly transform string query params to numbers', async () => {
+      mockRequestsService.getFriendsFromUser.mockResolvedValue(
+        mockFriendsResponse,
+      );
+
+      await controller.findFriendsFromUser(userId, 2, 5);
+
+      expect(mockRequestsService.getFriendsFromUser).toHaveBeenCalledWith(
+        userId,
+        2,
+        5,
+      );
+    });
+
+    it('should use default values when parameters are not provided', async () => {
+      mockRequestsService.getFriendsFromUser.mockResolvedValue(
+        mockFriendsResponse,
+      );
+
+      await controller.findFriendsFromUser(userId);
+
+      expect(mockRequestsService.getFriendsFromUser).toHaveBeenCalledWith(
+        userId,
+        1,
+        10,
+      );
+    });
+
+    it('should propagate service errors', async () => {
+      mockRequestsService.getFriendsFromUser.mockRejectedValue(
+        new Error('Database error'),
+      );
+
+      await expect(
+        controller.findFriendsFromUser(userId, page, limit),
+      ).rejects.toThrow('Database error');
     });
   });
 });

@@ -331,4 +331,92 @@ describe('RequestsService', () => {
       expect(friendRepo.delete).toHaveBeenCalledWith(requestId);
     });
   });
+
+  describe('getFriendsFromUser', () => {
+    const userId = 1;
+    const mockUser = { id: userId, username: 'me' } as User;
+    const mockFriendA = {
+      id: 2,
+      username: 'friend_A',
+      imagePath: 'img_a',
+    } as User;
+    const mockFriendB = {
+      id: 3,
+      username: 'friend_B',
+      imagePath: 'img_b',
+    } as User;
+
+    it('should return a paginated list of friends identifying the correct friend in each relation', async () => {
+      const friendRepo = service[
+        'friendRequestsRepository'
+      ] as unknown as MockRepository<FriendRequest>;
+
+      const mockFriendships = [
+        {
+          id: 101,
+          accepted: true,
+          sender: mockUser,
+          receiver: mockFriendA,
+          createdAt: new Date(),
+        },
+        {
+          id: 102,
+          accepted: true,
+          sender: mockFriendB,
+          receiver: mockUser,
+          createdAt: new Date(),
+        },
+      ] as FriendRequest[];
+
+      mockUsersService.findById.mockResolvedValue(mockUser);
+      friendRepo.findAndCount?.mockResolvedValue([mockFriendships, 2]);
+
+      const result = await service.getFriendsFromUser(userId, 1, 10);
+
+      expect(friendRepo.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: [
+            { sender: { id: userId }, accepted: true },
+            { receiver: { id: userId }, accepted: true },
+          ],
+        }),
+      );
+
+      expect(result.data).toHaveLength(2);
+
+      expect(result.data[0].username).toBe(mockFriendA.username);
+      expect(result.data[0].userImagePath).toBe(mockFriendA.imagePath);
+
+      expect(result.data[1].username).toBe(mockFriendB.username);
+      expect(result.data[1].userImagePath).toBe(mockFriendB.imagePath);
+
+      expect(result.total).toBe(2);
+      expect(result.page).toBe(1);
+    });
+
+    it('should return an empty list if the user has no friends', async () => {
+      const friendRepo = service[
+        'friendRequestsRepository'
+      ] as unknown as MockRepository<FriendRequest>;
+
+      mockUsersService.findById.mockResolvedValue(mockUser);
+      friendRepo.findAndCount?.mockResolvedValue([[], 0]);
+
+      const result = await service.getFriendsFromUser(userId, 1, 10);
+
+      expect(result.data).toEqual([]);
+      expect(result.total).toBe(0);
+      expect(result.lastPage).toBe(1);
+    });
+
+    it('should throw ResourceNotFoundException if the user does not exist', async () => {
+      mockUsersService.findById.mockRejectedValue(
+        new ResourceNotFoundException('User', 'ID', '1'),
+      );
+
+      await expect(service.getFriendsFromUser(1, 1, 10)).rejects.toThrow(
+        ResourceNotFoundException,
+      );
+    });
+  });
 });

@@ -3,6 +3,7 @@ export class UserDetailDto {
   username: string;
   email: string;
   imagePath: string;
+  relationStatus?: 'pending' | 'accepted' | 'none';
 
   constructor(init?: Partial<UserDetailDto>) {
     Object.assign(this, init);

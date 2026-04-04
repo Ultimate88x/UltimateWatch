@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { Button } from "../../components/Button";
-import { Plus, UserX, User, UserPlus, Loader2 } from "lucide-react";
+import { Plus, UserX, User, UserPlus, Loader2, Check, Clock } from "lucide-react";
 import type { ExternalUserProfile } from "../../types/external-user-profile";
 import { motion } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
@@ -59,7 +59,8 @@ export default function UserSearchResultsList() {
 
         setLastPage(data.lastPage);
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
+        const message = error instanceof Error ? error.message : "An unexpected error occurred"
+        toast.error(message);
       } finally {
         setIsLoading(false);
       }
@@ -95,8 +96,15 @@ export default function UserSearchResultsList() {
       }
 
       toast.success("Friend request sent successfully!");
+
+      setUserList((prev) =>
+        prev.map((u) =>
+          u.id === targetId ? { ...u, relationStatus: "pending" } : u
+        )
+      );
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
+      const message = error instanceof Error ? error.message : "An unexpected error occurred";
+      toast.error(message);
     } finally {
       setRequestLoadingId(null);
     }
@@ -128,7 +136,6 @@ export default function UserSearchResultsList() {
     );
   }
 
-  // Estado vacío
   if (!isLoading && userList.length === 0) {
     return (
       <EmptyState
@@ -141,7 +148,7 @@ export default function UserSearchResultsList() {
 
   return (
     <div className="relative w-full min-h-screen bg-blue-background flex flex-col justify-start items-start overflow-x-hidden">
-      <div className="relative w-full h-fit px-20 pt-10 flex flex-col justify-start items-start gap-8">
+      <div className="relative w-full h-fit px-20 flex flex-col justify-start items-start gap-8">
         
         <div className="flex flex-col gap-2">
           <h2 className="relative text-4xl text-white font-bold font-inter uppercase tracking-tight">
@@ -158,7 +165,7 @@ export default function UserSearchResultsList() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: (index % 20) * 0.04 }}
               className="relative group bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 flex items-center gap-4 hover:bg-white/10 hover:border-purple-main/50 transition-all duration-300 cursor-pointer hover:-translate-y-2"
-              onClick={() => smartNavigate(`/users/${user.username}`)}
+              onClick={(e) => smartNavigate(`/users/${user.username}`, e)}
             >
               <div className="relative w-14 h-14 shrink-0 rounded-full border border-purple-main/30 group-hover:border-purple-main overflow-hidden bg-[#1a1a1a] flex items-center justify-center">
                 {user.imagePath ? (
@@ -178,21 +185,33 @@ export default function UserSearchResultsList() {
                   {user.username}
                 </h3>
                 <p className="text-white/40 text-[10px] uppercase tracking-widest mt-1">
-                  View profile
+                  {user.relationStatus === 'accepted' ? 'Friends' : user.relationStatus === 'pending' ? 'Pending' : 'View profile'}
                 </p>
               </div>
 
-              <button
-                disabled={requestLoadingId === user.id}
-                onClick={(e) => handleSendFriendRequest(e, user.id)}
-                className="relative z-20 p-2.5 rounded-xl bg-purple-main/10 border border-purple-main/20 text-purple-main hover:bg-purple-main hover:text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {requestLoadingId === user.id ? (
-                  <Loader2 size={18} className="animate-spin" />
+              <div className="relative z-20">
+                {user.relationStatus === 'none' ? (
+                  <button
+                    disabled={requestLoadingId === user.id}
+                    onClick={(e) => handleSendFriendRequest(e, user.id)}
+                    className="p-2.5 rounded-xl bg-purple-main/10 border border-purple-main/20 text-purple-main hover:bg-purple-main hover:text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {requestLoadingId === user.id ? (
+                      <Loader2 size={18} className="animate-spin" />
+                    ) : (
+                      <UserPlus size={18} />
+                    )}
+                  </button>
+                ) : user.relationStatus === 'pending' ? (
+                  <div className="p-2.5 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-500" title="Request pending">
+                    <Clock size={18} />
+                  </div>
                 ) : (
-                  <UserPlus size={18} />
+                  <div className="p-2.5 rounded-xl bg-green-500/10 border border-green-500/20 text-green-500" title="You are friends">
+                    <Check size={18} />
+                  </div>
                 )}
-              </button>
+              </div>
 
               <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-purple-main shadow-[0_0_10px_#A855F7] transition-all duration-500 group-hover:w-full rounded-full" />
             </motion.div>

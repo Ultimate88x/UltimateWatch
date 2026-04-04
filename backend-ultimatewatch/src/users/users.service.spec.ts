@@ -12,6 +12,7 @@ import { DuplicatedResourceException } from 'src/common/exceptions/duplicated-re
 import { CreateUserDto } from './dto/create-user.dto';
 import { BadRequestException } from '@nestjs/common';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { RequestsService } from 'src/requests/requests.service';
 
 jest.mock('bcrypt');
 
@@ -44,6 +45,10 @@ describe('UsersService', () => {
     deleteImage: jest.fn(),
   };
 
+  const mockRequestsService = {
+    getRelationStatus: jest.fn().mockResolvedValue('none'),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -55,6 +60,10 @@ describe('UsersService', () => {
         {
           provide: CloudinaryService,
           useValue: mockCloudinaryService,
+        },
+        {
+          provide: RequestsService,
+          useValue: mockRequestsService,
         },
       ],
     }).compile();
@@ -101,7 +110,7 @@ describe('UsersService', () => {
 
       mockQueryBuilder.getOne.mockResolvedValue(mockUser);
 
-      const result = await service.getUserByUsername('testuser');
+      const result = await service.getUserByUsername('testuser', 1);
 
       expect(result.username).toBe('testuser');
       expect(result).not.toHaveProperty('password');

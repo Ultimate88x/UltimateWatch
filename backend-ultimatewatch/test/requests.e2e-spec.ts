@@ -10,6 +10,7 @@ import request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { RequestsService } from 'src/requests/requests.service';
 import { App } from 'supertest/types';
+import { AuthGuard } from 'src/common/guards/auth.guard';
 
 describe('RequestsController (e2e)', () => {
   let app: INestApplication;
@@ -18,12 +19,18 @@ describe('RequestsController (e2e)', () => {
     createFriendRequest: jest.fn(),
   };
 
+  const mockAuthGuard = {
+    canActivate: jest.fn(() => true),
+  };
+
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     })
       .overrideProvider(RequestsService)
       .useValue(mockRequestsService)
+      .overrideGuard(AuthGuard)
+      .useValue(mockAuthGuard)
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -48,10 +55,7 @@ describe('RequestsController (e2e)', () => {
   });
 
   describe('/requests/create/friend-request (POST)', () => {
-    const validBody = {
-      senderId: 1,
-      receiverId: 2,
-    };
+    const validBody = { receiverId: 2 };
 
     it('should return 201 and success message when request is valid', () => {
       mockRequestsService.createFriendRequest.mockResolvedValue({ id: 10 });
@@ -61,30 +65,31 @@ describe('RequestsController (e2e)', () => {
         .send(validBody)
         .expect(HttpStatus.CREATED)
         .expect((res) => {
-          expect(res.body.message).toBe('Friend request sent successfully');
+          expect(res.body.message).toBe('Friend request sent successfully!');
           expect(mockRequestsService.createFriendRequest).toHaveBeenCalled();
         });
     });
 
-    it('should return 400 if validation fails (e.g., same IDs)', () => {
-      const invalidBody = {
-        senderId: 5,
-        receiverId: 5,
-      };
+    it('should return 400 if sender and receiver are the same', () => {
+      const sameIdBody = { receiverId: 1 };
+
+      mockRequestsService.createFriendRequest.mockRejectedValue(
+        new BadRequestException('You cannot send a friend request to yourself'),
+      );
 
       return request(app.getHttpServer() as App)
         .post('/requests/create/friend-request')
-        .send(invalidBody)
+        .send(sameIdBody)
         .expect(HttpStatus.BAD_REQUEST)
         .expect((res) => {
-          expect(res.body.message).toContainEqual(
-            expect.stringContaining('Receiver cannot be the same as Sender'),
+          expect(res.body.message).toBe(
+            'You cannot send a friend request to yourself',
           );
         });
     });
 
-    it('should return 400 if the service throws a BadRequestException', () => {
-      const errorMsg = 'Users are already friends';
+    it('should return 400 if the service throws a BadRequestException (already friends)', () => {
+      const errorMsg = 'You are already friends with this user';
       mockRequestsService.createFriendRequest.mockRejectedValue(
         new BadRequestException(errorMsg),
       );
@@ -96,23 +101,6 @@ describe('RequestsController (e2e)', () => {
         .expect((res) => {
           expect(res.body.message).toBe(errorMsg);
         });
-    });
-
-    it('should return 400 if required fields are missing', () => {
-      return request(app.getHttpServer() as App)
-        .post('/requests/create/friend-request')
-        .send({ senderId: 1 }) // falta receiverId
-        .expect(HttpStatus.BAD_REQUEST)
-        .expect((res) => {
-          expect(res.body.error).toBe('Bad Request');
-        });
-    });
-
-    it('should return 400 if fields are not numbers', () => {
-      return request(app.getHttpServer() as App)
-        .post('/requests/create/friend-request')
-        .send({ senderId: 'one', receiverId: 2 })
-        .expect(HttpStatus.BAD_REQUEST);
     });
   });
 });

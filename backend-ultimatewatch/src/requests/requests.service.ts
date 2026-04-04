@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { FriendRequest } from './entities/friend-request.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -14,6 +19,7 @@ export class RequestsService {
     private readonly requestsRepository: Repository<Request>,
     @InjectRepository(FriendRequest)
     private readonly friendRequestsRepository: Repository<FriendRequest>,
+    @Inject(forwardRef(() => UsersService))
     private readonly usersService: UsersService,
   ) {}
 
@@ -78,5 +84,20 @@ export class RequestsService {
     });
 
     return await this.friendRequestsRepository.save(newRequest);
+  }
+
+  async getRelationStatus(
+    senderId: number,
+    receiverId: number,
+  ): Promise<'pending' | 'accepted' | 'none'> {
+    const request = await this.friendRequestsRepository.findOne({
+      where: [
+        { sender: { id: senderId }, receiver: { id: receiverId } },
+        { sender: { id: receiverId }, receiver: { id: senderId } },
+      ],
+    });
+
+    if (!request) return 'none';
+    return request.accepted ? 'accepted' : 'pending';
   }
 }

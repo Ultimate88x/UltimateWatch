@@ -1,13 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RequestsController } from './requests.controller';
 import { RequestsService } from './requests.service';
-import { CreateFriendRequestDto } from './dto/create-friend-request-dto';
+import { AuthGuard } from 'src/common/guards/auth.guard';
 
 describe('RequestsController', () => {
   let controller: RequestsController;
 
   const mockRequestsService = {
     createFriendRequest: jest.fn(),
+  };
+
+  const mockAuthGuard = {
+    canActivate: jest.fn(() => true),
   };
 
   beforeEach(async () => {
@@ -19,7 +23,10 @@ describe('RequestsController', () => {
           useValue: mockRequestsService,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(AuthGuard)
+      .useValue(mockAuthGuard)
+      .compile();
 
     controller = module.get<RequestsController>(RequestsController);
   });
@@ -33,23 +40,25 @@ describe('RequestsController', () => {
   });
 
   describe('createFriendRequest', () => {
-    const dto: CreateFriendRequestDto = {
-      senderId: 1,
-      receiverId: 2,
-    };
+    const senderId = 1;
+    const receiverId = 2;
 
     it('should call the service and return a success message', async () => {
       mockRequestsService.createFriendRequest.mockResolvedValue({
         id: 10,
-        ...dto,
+        senderId,
+        receiverId,
       });
 
-      const result = await controller.createFriendRequest(dto);
+      const result = await controller.createFriendRequest(senderId, receiverId);
 
-      expect(mockRequestsService.createFriendRequest).toHaveBeenCalledWith(dto);
+      expect(mockRequestsService.createFriendRequest).toHaveBeenCalledWith(
+        senderId,
+        receiverId,
+      );
 
       expect(result).toEqual({
-        message: 'Friend request sent successfully',
+        message: 'Friend request sent successfully!',
       });
     });
 
@@ -60,11 +69,14 @@ describe('RequestsController', () => {
         new Error(errorMessage),
       );
 
-      await expect(controller.createFriendRequest(dto)).rejects.toThrow(
-        errorMessage,
-      );
+      await expect(
+        controller.createFriendRequest(senderId, receiverId),
+      ).rejects.toThrow(errorMessage);
 
-      expect(mockRequestsService.createFriendRequest).toHaveBeenCalledWith(dto);
+      expect(mockRequestsService.createFriendRequest).toHaveBeenCalledWith(
+        senderId,
+        receiverId,
+      );
     });
 
     it('should propagate unexpected service errors', async () => {
@@ -72,9 +84,9 @@ describe('RequestsController', () => {
         new Error('Unexpected error'),
       );
 
-      await expect(controller.createFriendRequest(dto)).rejects.toThrow(
-        'Unexpected error',
-      );
+      await expect(
+        controller.createFriendRequest(senderId, receiverId),
+      ).rejects.toThrow('Unexpected error');
     });
   });
 });

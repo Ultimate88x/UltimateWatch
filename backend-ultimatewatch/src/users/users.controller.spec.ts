@@ -81,9 +81,9 @@ describe('UsersController', () => {
 
       mockUsersService.getUserByUsername.mockResolvedValue(expectedUser);
 
-      const result = await controller.findByUsername(username);
+      const result = await controller.findByUsername(username, 1);
 
-      expect(service.getUserByUsername).toHaveBeenCalledWith(username);
+      expect(service.getUserByUsername).toHaveBeenCalledWith(username, 1);
       expect(result).toEqual(expectedUser);
     });
   });

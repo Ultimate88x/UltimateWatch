@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ILike, Not, Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -11,6 +16,7 @@ import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-fo
 import { DuplicatedResourceException } from 'src/common/exceptions/duplicated-resource-exception';
 import { UserDetailDto } from './dto/user-detail.dto';
 import { UserResponseDto } from './dto/user-response.dto';
+import { RequestsService } from 'src/requests/requests.service';
 
 @Injectable()
 export class UsersService {
@@ -18,6 +24,8 @@ export class UsersService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly cloudinaryService: CloudinaryService,
+    @Inject(forwardRef(() => RequestsService))
+    private readonly requestsService: RequestsService,
   ) {}
 
   async create(dto: CreateUserDto): Promise<User> {
@@ -146,13 +154,22 @@ export class UsersService {
     return user;
   }
 
-  async getUserByUsername(username: string): Promise<UserDetailDto> {
+  async getUserByUsername(
+    username: string,
+    currentUserId: number,
+  ): Promise<UserDetailDto> {
     const user = await this.findByUsername(username);
 
-    return this.createUserDetailDto({
+    const status = await this.requestsService.getRelationStatus(
+      currentUserId,
+      user.id,
+    );
+
+    return new UserDetailDto({
       id: user.id,
       username: user.username,
       imagePath: user.imagePath,
+      relationStatus: status,
     });
   }
 
@@ -173,22 +190,27 @@ export class UsersService {
       skip: skip,
     });
 
-    const userData = users.map((user) =>
-      this.createUserDetailDto({
-        id: user.id,
-        username: user.username,
-        imagePath: user.imagePath,
+    const userData = await Promise.all(
+      users.map(async (user) => {
+        const status = await this.requestsService.getRelationStatus(
+          userId,
+          user.id,
+        );
+
+        return new UserDetailDto({
+          id: user.id,
+          username: user.username,
+          imagePath: user.imagePath,
+          relationStatus: status,
+        });
       }),
     );
-
-    const totalPages = Math.ceil(total / limit);
-    const isLastPage = page >= totalPages;
 
     return new UserResponseDto({
       data: userData,
       total: total,
       page: page,
-      lastPage: isLastPage,
+      lastPage: page >= Math.ceil(total / limit),
     });
   }
 

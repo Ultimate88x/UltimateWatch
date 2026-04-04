@@ -24,8 +24,11 @@ export class UsersController {
 
   @Get('profile/:username')
   @UseGuards(AuthGuard)
-  findByUsername(@Param('username') username: string): Promise<UserDetailDto> {
-    return this.usersService.getUserByUsername(username);
+  findByUsername(
+    @Param('username') username: string,
+    @GetUser('userId') userId: number,
+  ): Promise<UserDetailDto> {
+    return this.usersService.getUserByUsername(username, userId);
   }
 
   @Get('search')

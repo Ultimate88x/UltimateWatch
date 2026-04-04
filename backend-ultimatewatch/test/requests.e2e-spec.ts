@@ -22,6 +22,7 @@ describe('RequestsController (e2e)', () => {
     getPendingReceivedFriendRequestsFromUser: jest.fn(),
     getPendingSentFriendRequestsFromUser: jest.fn(),
     resolveFriendRequest: jest.fn(),
+    getFriendsFromUser: jest.fn(),
   };
 
   const mockAuthGuard = {
@@ -250,6 +251,67 @@ describe('RequestsController (e2e)', () => {
         .expect((res) => {
           expect(res.body.message).toBe(forbiddenMsg);
         });
+    });
+  });
+
+  describe('/requests/friends (GET)', () => {
+    it('should return 200 and a paginated list of friends', () => {
+      const mockFriendsData = {
+        data: [
+          {
+            id: 101,
+            username: 'friend_user',
+            userImagePath: 'avatar.png',
+            createdAt: new Date().toISOString(),
+          },
+        ],
+        total: 1,
+        page: 1,
+        lastPage: 1,
+      };
+
+      mockRequestsService.getFriendsFromUser.mockResolvedValue(mockFriendsData);
+
+      return request(app.getHttpServer() as App)
+        .get('/requests/friends')
+        .query({ page: 1, limit: 10 })
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body).toEqual(mockFriendsData);
+          expect(mockRequestsService.getFriendsFromUser).toHaveBeenCalledWith(
+            1,
+            1,
+            10,
+          );
+        });
+    });
+
+    it('should return 200 with default pagination if no queries are provided', () => {
+      mockRequestsService.getFriendsFromUser.mockResolvedValue({
+        data: [],
+        total: 0,
+      });
+
+      return request(app.getHttpServer() as App)
+        .get('/requests/friends')
+        .expect(HttpStatus.OK)
+        .expect(() => {
+          expect(mockRequestsService.getFriendsFromUser).toHaveBeenCalledWith(
+            1,
+            1,
+            10,
+          );
+        });
+    });
+
+    it('should return 500 if the service fails', () => {
+      mockRequestsService.getFriendsFromUser.mockRejectedValue(
+        new Error('DB Error'),
+      );
+
+      return request(app.getHttpServer() as App)
+        .get('/requests/friends')
+        .expect(HttpStatus.INTERNAL_SERVER_ERROR);
     });
   });
 });

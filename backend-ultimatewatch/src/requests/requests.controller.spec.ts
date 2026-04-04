@@ -335,7 +335,7 @@ describe('RequestsController', () => {
       );
 
       expect(result).toEqual({
-        message: 'Friend deleted succesfully!',
+        message: 'Succesfully removed!',
       });
     });
 

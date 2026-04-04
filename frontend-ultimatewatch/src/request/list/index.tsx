@@ -20,12 +20,9 @@ export default function FriendRequests() {
   const [isActionLoading, setIsActionLoading] = useState<boolean>(false);
 
   const fetchRequests = React.useCallback(async () => {
-    const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
     setIsLoading(true);
     try {
-      const [response] = await Promise.all([
-        fetch(
+      const response = await fetch(
         `http://localhost:3000/requests/${activeTab}?page=${page}&limit=5`,
           {
             method: 'GET',
@@ -34,9 +31,7 @@ export default function FriendRequests() {
               Authorization: `Bearer ${localStorage.getItem('token')}`,
             },
           }
-        ),
-        wait(750)
-      ]);
+      );
 
       const data = await response.json();
 
@@ -51,7 +46,7 @@ export default function FriendRequests() {
       const message = error instanceof Error ? error.message : 'Error';
       toast.error(message);
     } finally {
-      setIsLoading(false);
+      setTimeout(() => setIsLoading(false), 600);
     }
   }, [page, activeTab]);
 
@@ -92,6 +87,40 @@ export default function FriendRequests() {
       toast.error(message);
     } finally {
       setIsActionLoading(false);
+    }
+  };
+
+  const deleteFriend = async (username: string) => {
+    setIsLoading(true);
+    const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    try {
+      const [response] = await Promise.all([
+        fetch(`http://localhost:3000/requests/friend/${username}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        }),
+        wait(600),
+      ]);
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.message || "Failed to perform action");
+        return;
+      }
+
+      toast.success(data.message || `Friend request deleted successfully`);
+      
+      await fetchRequests(); 
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "An unexpected error occurred";
+      toast.error(message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -228,7 +257,7 @@ export default function FriendRequests() {
                         className="w-auto px-4 group/btn"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleAction(request.id, 'cancel');
+                          deleteFriend(request.username);
                         }}
                         disabled={isActionLoading}
                       >

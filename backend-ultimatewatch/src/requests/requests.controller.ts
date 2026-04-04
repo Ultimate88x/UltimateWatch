@@ -92,6 +92,6 @@ export class RequestsController {
     @Param('username') username: string,
   ): Promise<{ message: string }> {
     await this.requestsService.deleteFriend(username, userId);
-    return { message: 'Friend deleted succesfully!' };
+    return { message: 'Succesfully removed!' };
   }
 }

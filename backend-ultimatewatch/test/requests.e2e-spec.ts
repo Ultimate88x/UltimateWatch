@@ -328,7 +328,7 @@ describe('RequestsController (e2e)', () => {
         .delete(url)
         .expect(HttpStatus.OK)
         .expect((res) => {
-          expect(res.body.message).toBe('Friend deleted succesfully!');
+          expect(res.body.message).toBe('Succesfully removed!');
           expect(mockRequestsService.deleteFriend).toHaveBeenCalledWith(
             username,
             1,

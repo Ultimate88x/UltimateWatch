@@ -7,7 +7,6 @@ import type { ExternalUserProfile } from "../../types/external-user-profile";
 import type { Media } from "../../types/media-item";
 import type { Collection } from "../../types/collection-item";
 import { useParams } from "react-router-dom";
-import { Loader2, UserPlus, Clock, Check } from "lucide-react";
 
 export default function UserDetail() {
   const { username } = useParams();
@@ -15,7 +14,6 @@ export default function UserDetail() {
   const [user, setUser] = useState<ExternalUserProfile | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
-  const [isRequestLoading, setIsRequestLoading] = useState(false);
   
   
   const MOCK_MOVIES: Media[] = [
@@ -104,37 +102,6 @@ export default function UserDetail() {
     fetchUser();
   }, [username]);
 
-  const handleSendFriendRequest = async () => {
-    if (!user) return;
-    setIsRequestLoading(true);
-
-    try {
-      const response = await fetch(`http://localhost:3000/requests/create/friend-request`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({ receiverId: user.id }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        toast.error(data.message || "Failed to send friend request");
-        return;
-      }
-
-      toast.success("Friend request sent!");
-      setUser((prev) => prev ? { ...prev, relationStatus: "pending" } : null);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "An unexpected error occurred";
-      toast.error(message);
-    } finally {
-      setIsRequestLoading(false);
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="fixed inset-0 bg-blue-background flex flex-col items-center justify-center">
@@ -170,31 +137,6 @@ export default function UserDetail() {
             alt="Profile" 
           />
           <h2 className="relative text-4xl text-white font-bold font-inter">{user?.username || 'Guest'}</h2>
-
-          {user && (
-            <div className="mt-10 w-full flex justify-center">
-              {user.relationStatus === 'none' ? (
-                <button
-                  onClick={handleSendFriendRequest}
-                  disabled={isRequestLoading}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-purple-main text-white font-bold hover:bg-purple-main/80 transition-all disabled:opacity-50"
-                >
-                  {isRequestLoading ? <Loader2 className="animate-spin" size={20} /> : <UserPlus size={20} />}
-                  Add Friend
-                </button>
-              ) : user.relationStatus === 'pending' ? (
-                <div className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-yellow-500/20 border border-yellow-500/50 text-yellow-500 font-bold">
-                  <Clock size={20} />
-                  Pending
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-green-500/20 border border-green-500/50 text-green-500 font-bold">
-                  <Check size={20} />
-                  Friends
-                </div>
-              )}
-            </div>
-          )}
         </div>
       </div>
 

@@ -85,12 +85,11 @@ describe('RequestsService', () => {
       friendRepo.create?.mockReturnValue(mockFriendRequest);
       friendRepo.save?.mockResolvedValue(mockFriendRequest);
 
-      const result = await service.createFriendRequest(senderId, receiverId);
+      await service.createFriendRequest(senderId, receiverId);
 
       expect(mockUsersService.findById).toHaveBeenCalledTimes(2);
       expect(friendRepo.create).toHaveBeenCalled();
       expect(friendRepo.save).toHaveBeenCalled();
-      expect(result).toEqual(mockFriendRequest);
     });
 
     it('should propagate error if usersService.findById fails', async () => {

@@ -11,6 +11,7 @@ import { Request } from './entities/request.entity';
 import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
 import { User } from 'src/users/entities/user.entity';
 import { UsersService } from 'src/users/users.service';
+import { RequestDto } from './dto/request-dto';
 
 @Injectable()
 export class RequestsService {
@@ -49,10 +50,56 @@ export class RequestsService {
     return request;
   }
 
+  async getPendingReceivedFriendRequestsFromUser(userId: number) {
+    const friendRequests = await this.friendRequestsRepository.find({
+      where: {
+        receiver: { id: userId },
+        accepted: false,
+      },
+      relations: ['sender'],
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+
+    return friendRequests.map(
+      (request: Request) =>
+        new RequestDto({
+          id: request.id,
+          username: request.sender.username,
+          userImagePath: request.sender.imagePath,
+          createdAt: request.createdAt.toISOString(),
+        }),
+    );
+  }
+
+  async getPendingSentFriendRequestsFromUser(userId: number) {
+    const friendRequests = await this.friendRequestsRepository.find({
+      where: {
+        receiver: { id: userId },
+        accepted: false,
+      },
+      relations: ['receiver'],
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+
+    return friendRequests.map(
+      (request: Request) =>
+        new RequestDto({
+          id: request.id,
+          username: request.receiver.username,
+          userImagePath: request.receiver.imagePath,
+          createdAt: request.createdAt.toISOString(),
+        }),
+    );
+  }
+
   async createFriendRequest(
     senderId: number,
     receiverId: number,
-  ): Promise<FriendRequest> {
+  ): Promise<void> {
     if (senderId === receiverId) {
       throw new BadRequestException(
         'You cannot send a friend request to yourself',
@@ -83,7 +130,7 @@ export class RequestsService {
       receiver,
     });
 
-    return await this.friendRequestsRepository.save(newRequest);
+    await this.friendRequestsRepository.save(newRequest);
   }
 
   async getRelationStatus(

@@ -14,7 +14,6 @@ import { App } from 'supertest/types';
 describe('ProvidersController (e2e)', () => {
   let app: INestApplication;
 
-  // Mock de la URL de retorno
   const mockProviderLink = {
     url: 'https://www.netflix.com/title/80057281',
   };

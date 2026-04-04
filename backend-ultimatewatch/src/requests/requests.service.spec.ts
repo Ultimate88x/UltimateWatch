@@ -203,7 +203,7 @@ describe('RequestsService', () => {
 
       expect(friendRepo.findAndCount).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { receiver: { id: userId }, accepted: false },
+          where: { sender: { id: userId }, accepted: false },
         }),
       );
       expect(result.data[0].username).toBe(mockReceiver.username);

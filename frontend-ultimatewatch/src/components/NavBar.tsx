@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
   ChevronDown, 
@@ -8,9 +8,9 @@ import {
   Tv, 
   MonitorPlay, 
   UserPlus, 
-  Users, 
 } from "lucide-react";
 import type { MenuItem } from "../types/menu-item";
+import { useOutsideClick } from "./utilities/UseOutsideClick";
 
 type MenuConfig = Record<string, MenuItem[]>;
 
@@ -25,20 +25,28 @@ const ALL_MENUS: MenuConfig = {
   ]
 };
 
+const SEARCH_OPTIONS_CONFIG = [
+  { label: "Movies", value: "movies", requiresAuth: false },
+  { label: "Series", value: "series", requiresAuth: false },
+  { label: "Users", value: "users", requiresAuth: true },
+];
+
 export default function Navbar() {
   const isLoggedIn = !!localStorage.getItem("token");
-
   const navigate = useNavigate();
-  const [openMenu, setOpenMenu] = useState<string | null>(null);
   
-  const searchOptions = {
-    "Movies": "movies",
-    "Series": "series",
-    "Users": "users",
-  }
-
-  const [searchMedia, setSearchMedia] = useState<string>(searchOptions.Movies);
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [searchText, setSearchText] = useState<string>("");
+
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useOutsideClick(menuRef, () => setOpenMenu(null));
+
+  const visibleSearchOptions = useMemo(() => {
+    return SEARCH_OPTIONS_CONFIG.filter(opt => !opt.requiresAuth || isLoggedIn);
+  }, [isLoggedIn]);
+
+  const [searchMedia, setSearchMedia] = useState<string>(visibleSearchOptions[0].value);
 
   const toggleMenu = (menu: string) => {
     setOpenMenu(openMenu === menu ? null : menu);
@@ -46,14 +54,12 @@ export default function Navbar() {
 
   const visibleMenus = useMemo<MenuConfig>(() => {
     const filtered: MenuConfig = {};
-    
     Object.entries(ALL_MENUS).forEach(([key, items]) => {
       const visibleItems = items.filter(item => !item.requiresAuth || (item.requiresAuth && isLoggedIn));
       if (visibleItems.length > 0) {
         filtered[key] = visibleItems;
       }
     });
-    
     return filtered;
   }, [isLoggedIn]);
 
@@ -79,7 +85,7 @@ export default function Navbar() {
           </span>
         </Link>
 
-        <div className="flex items-center gap-6">
+        <div ref={menuRef} className="flex items-center gap-6">
           {Object.keys(visibleMenus).map((menuKey) => (
             <div key={menuKey} className="relative">
               <button 
@@ -121,11 +127,12 @@ export default function Navbar() {
               onChange={(e) => setSearchMedia(e.target.value)}
               value={searchMedia}
             >
-              {Object.entries(searchOptions).map(([label, value]) => (
-                  <option key={value} value={value} className="bg-white text-black">
-                    {label}
-                  </option>
-                ))}
+              {/* Iteramos sobre las opciones filtradas */}
+              {visibleSearchOptions.map((opt) => (
+                <option key={opt.value} value={opt.value} className="bg-white text-black">
+                  {opt.label}
+                </option>
+              ))}
             </select>
             <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
               <ChevronDown size={14} className="text-black/40" />

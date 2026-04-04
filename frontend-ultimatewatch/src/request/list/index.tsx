@@ -1,10 +1,11 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Clock, ChevronLeft, ChevronRight, UserPlus, UserCheck, UserX } from 'lucide-react';
+import { Clock, ChevronLeft, ChevronRight, UserPlus, UserCheck, UserX, Trash2 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { EmptyState } from '../../components/EmptyState';
-import { formatDate } from '../../components/utilities/FormatDate';
 import { Button } from '../../components/Button';
+import { getRelativeDate } from '../../components/utilities/RelativeDate';
+import { useAdvancedNavigation } from '../../components/utilities/SmartNavigate';
 
 interface RequestDto {
   id: number;
@@ -14,12 +15,12 @@ interface RequestDto {
 }
 
 const FriendRequests: React.FC = () => {
+  const { smartNavigate } = useAdvancedNavigation();
   const [requests, setRequests] = useState<RequestDto[]>([]);
   const [activeTab, setActiveTab] = useState<'received' | 'sent'>('received');
   
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
   
   const [isLoading, setIsLoading] = useState(true);
   const [isActionLoading, setIsActionLoading] = useState<number | null>(null);
@@ -43,7 +44,6 @@ const FriendRequests: React.FC = () => {
 
       setRequests(data.data);
       setTotalPages(data.lastPage || 1);
-      setTotalItems(data.total || 0);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Error');
     } finally {
@@ -66,7 +66,6 @@ const FriendRequests: React.FC = () => {
 
       if (response.ok) {
         toast.success(`Request ${action}ed successfully`);
-        // Ahora fetchRequests es accesible aquí
         fetchRequests(); 
       } else {
         const errorData = await response.json();
@@ -95,8 +94,7 @@ const FriendRequests: React.FC = () => {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto flex flex-col gap-8 p-6">
-      {/* Header & Tabs */}
+    <div className="w-full max-w-4xl mx-auto flex flex-col gap-8">
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -104,7 +102,7 @@ const FriendRequests: React.FC = () => {
               <UserPlus className="text-purple-main" size={24} />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-white tracking-tight">Social Requests</h2>
+              <h2 className="text-2xl font-bold text-white tracking-tight">Friend Requests</h2>
               <p className="text-white/40 text-xs font-medium uppercase tracking-widest">Manage your connections</p>
             </div>
           </div>
@@ -126,7 +124,6 @@ const FriendRequests: React.FC = () => {
         </div>
       </div>
 
-      {/* List Container */}
       <div className="flex flex-col gap-4 min-h-100">
         <AnimatePresence mode="wait">
           {requests.length === 0 ? (
@@ -149,55 +146,76 @@ const FriendRequests: React.FC = () => {
                   key={request.id}
                   className="group flex items-center gap-5 p-4 rounded-2xl bg-white/2 border border-white/5 hover:bg-white/4 hover:border-purple-main/30 transition-all duration-300"
                 >
-                  {/* User Avatar */}
-                  <div className="relative w-14 h-14 shrink-0">
-                    <div className="absolute -inset-1 bg-purple-main/20 rounded-full blur opacity-0 group-hover:opacity-100 transition duration-500" />
-                    <img 
-                      src={request.userImagePath || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'} 
-                      className="relative w-full h-full rounded-full object-cover border border-white/10"
-                      alt={request.username}
-                    />
-                  </div>
+                  <div 
+                    className="flex flex-1 items-center gap-5 cursor-pointer"
+                    onClick={(e) => smartNavigate(`/users/${request.username}`, e)}
+                  >
+                    <div className="relative w-14 h-14 shrink-0">
+                      <div className="absolute -inset-1 bg-purple-main/20 rounded-full blur opacity-0 group-hover:opacity-100 transition duration-500" />
+                      <img 
+                        src={request.userImagePath || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'} 
+                        className="relative w-full h-full rounded-full object-cover border border-white/10"
+                        alt={request.username}
+                      />
+                    </div>
 
-                  {/* Info */}
-                  <div className="flex-1 flex flex-col">
-                    <h4 className="text-white font-bold text-lg group-hover:text-purple-300 transition-colors">
-                      {request.username}
-                    </h4>
-                    <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-white/30">
-                      <Clock size={12} />
-                      {formatDate(request.createdAt)}
+                    <div className="flex flex-col">
+                      <h4 className="text-white font-bold text-lg group-hover:text-purple-300 transition-colors">
+                        {request.username}
+                      </h4>
+                      <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-white/30">
+                        <Clock size={12} />
+                        {getRelativeDate(request.createdAt)}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Actions */}
                   <div className="flex items-center gap-2">
                     {activeTab === 'received' ? (
                       <>
                         <Button 
                           size="sm" 
-                          className="bg-green-500/10 hover:bg-green-500 text-green-500 hover:text-white border-green-500/20"
-                          onClick={() => handleAction(request.id, 'accept')}
-                          disabled={!!isActionLoading}
+                          variant="success"
+                          icon={UserCheck}
+                          className="w-auto px-3 group/btn overflow-hidden transition-all duration-500"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAction(request.id, 'accept');
+                          }}
+                          isLoading={isActionLoading === request.id}
                         >
-                          <UserCheck size={16} />
+                          <span className="max-w-0 overflow-hidden group-hover/btn:max-w-xs transition-all duration-500 ease-in-out whitespace-nowrap">
+                            Accept
+                          </span>
                         </Button>
+
                         <Button 
                           size="sm" 
-                          className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white border-red-500/20"
-                          onClick={() => handleAction(request.id, 'reject')}
-                          disabled={!!isActionLoading}
+                          variant="solid-error"
+                          icon={UserX}
+                          className="w-auto px-3 group/btn overflow-hidden transition-all duration-500"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAction(request.id, 'reject');
+                          }}
+                          isLoading={isActionLoading === request.id}
                         >
-                          <UserX size={16} />
+                          <span className="max-w-0 overflow-hidden group-hover/btn:max-w-xs transition-all duration-500 ease-in-out whitespace-nowrap">
+                            Reject
+                          </span>
                         </Button>
                       </>
                     ) : (
                       <Button 
                         size="sm" 
-                        variant="link"
-                        className="text-white/20 hover:text-red-500"
-                        onClick={() => handleAction(request.id, 'cancel')}
-                        disabled={!!isActionLoading}
+                        variant="solid-error"
+                        icon={Trash2}
+                        className="w-auto px-4 group/btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAction(request.id, 'cancel');
+                        }}
+                        isLoading={isActionLoading === request.id}
                       >
                         Cancel Request
                       </Button>
@@ -210,7 +228,6 @@ const FriendRequests: React.FC = () => {
         </AnimatePresence>
       </div>
 
-      {/* Pagination (Estilo SeasonDetail) */}
       {totalPages > 1 && (
         <div className="flex flex-col items-center gap-6 mt-4">
           <div className="flex gap-1.5">

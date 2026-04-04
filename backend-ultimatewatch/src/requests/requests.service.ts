@@ -102,7 +102,7 @@ export class RequestsService {
     const [friendRequests, total] =
       await this.friendRequestsRepository.findAndCount({
         where: {
-          receiver: { id: userId },
+          sender: { id: userId },
           accepted: false,
         },
         relations: ['receiver'],

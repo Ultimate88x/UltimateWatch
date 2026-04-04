@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   forwardRef,
   Inject,
   Injectable,
@@ -25,9 +26,16 @@ export class RequestsService {
     private readonly usersService: UsersService,
   ) {}
 
+  async saveFriendRequest(
+    friendRequest: FriendRequest,
+  ): Promise<FriendRequest> {
+    return await this.friendRequestsRepository.save(friendRequest);
+  }
+
   async findById(id: number): Promise<Request> {
     const request = await this.requestsRepository.findOne({
       where: { id },
+      relations: ['sender', 'receiver'],
     });
 
     if (!request) {
@@ -165,7 +173,7 @@ export class RequestsService {
       receiver,
     });
 
-    await this.friendRequestsRepository.save(newRequest);
+    await this.saveFriendRequest(newRequest);
   }
 
   async getRelationStatus(
@@ -181,5 +189,41 @@ export class RequestsService {
 
     if (!request) return 'none';
     return request.accepted ? 'accepted' : 'pending';
+  }
+
+  async acceptFriendRequest(friendRequest: FriendRequest): Promise<void> {
+    friendRequest.accepted = true;
+
+    await this.saveFriendRequest(friendRequest);
+  }
+
+  async deleteFriendRequest(id: number): Promise<void> {
+    await this.friendRequestsRepository.delete(id);
+  }
+
+  async resolveFriendRequest(
+    id: number,
+    accept: boolean,
+    currentUserId,
+  ): Promise<boolean> {
+    const request: Request = await this.findById(id);
+
+    if (request.receiver.id !== currentUserId) {
+      throw new ForbiddenException(
+        'You are not authorized to resolve this request',
+      );
+    }
+
+    if (request.accepted) {
+      throw new BadRequestException('This request has already been resolved');
+    }
+
+    if (accept) {
+      await this.acceptFriendRequest(request);
+    } else {
+      await this.deleteFriendRequest(id);
+    }
+
+    return accept;
   }
 }

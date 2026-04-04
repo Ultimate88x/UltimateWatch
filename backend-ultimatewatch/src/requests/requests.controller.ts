@@ -1,8 +1,18 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { RequestsService } from './requests.service';
 import { GetUser } from 'src/common/decorators/get-user.decorator';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { RequestResponseDto } from './dto/request-response-dto';
+import { ResolveRequestDto } from './dto/resolve-request-dto';
 
 @Controller('requests')
 export class RequestsController {
@@ -47,5 +57,17 @@ export class RequestsController {
       +page,
       +limit,
     );
+  }
+
+  @Patch('friend-request/resolve/:id')
+  @UseGuards(AuthGuard)
+  async resolveFriendRequest(
+    @GetUser('userId') userId: number,
+    @Param('id') id: number,
+    @Body() resolveRequestDto: ResolveRequestDto,
+  ): Promise<boolean> {
+    const { accept } = resolveRequestDto;
+
+    return await this.requestsService.resolveFriendRequest(+id, accept, userId);
   }
 }

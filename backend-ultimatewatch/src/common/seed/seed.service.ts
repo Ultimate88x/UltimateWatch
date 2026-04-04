@@ -53,7 +53,7 @@ export class SeedService implements OnApplicationBootstrap {
 
     this.logger.log('Seeding database...');
 
-    const testUser = this.userRepository.create({
+    const testAdmin = this.userRepository.create({
       id: 1,
       username: 'admin',
       email: 'admin@watch.com',
@@ -61,6 +61,15 @@ export class SeedService implements OnApplicationBootstrap {
       imagePath: 'https://ui-avatars.com/api/?name=admin&background=random',
     });
 
+    const testUser = this.userRepository.create({
+      id: 2,
+      username: 'user',
+      email: 'user@watch.com',
+      password: await bcrypt.hash('123456', 10),
+      imagePath: 'https://ui-avatars.com/api/?name=user&background=random',
+    });
+
+    await this.userRepository.save(testAdmin);
     await this.userRepository.save(testUser);
 
     if ((await this.genreRepository.count()) === 0) {

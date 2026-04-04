@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
@@ -148,7 +148,27 @@ export class UsersService {
   async getUserByUsername(username: string): Promise<UserDetailDto> {
     const user = await this.findByUsername(username);
 
-    return this.createUserDetailDto(user);
+    return this.createUserDetailDto({
+      id: user.id,
+      username: user.username,
+      imagePath: user.imagePath,
+    });
+  }
+
+  async getAllByUsername(username: string): Promise<UserDetailDto[]> {
+    const users = await this.userRepository.find({
+      where: {
+        username: ILike(`%${username}%`),
+      },
+    });
+
+    return users.map((user: User) =>
+      this.createUserDetailDto({
+        id: user.id,
+        username: user.username,
+        imagePath: user.imagePath,
+      }),
+    );
   }
 
   async findByEmail(email: string) {
@@ -234,7 +254,7 @@ export class UsersService {
     }
   }
 
-  private createUserDetailDto(user: User): UserDetailDto {
+  private createUserDetailDto(user: Partial<User>): UserDetailDto {
     return new UserDetailDto({
       id: user.id,
       username: user.username,

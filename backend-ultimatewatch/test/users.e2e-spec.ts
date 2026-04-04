@@ -76,7 +76,6 @@ describe('UsersController (e2e)', () => {
         .expect(HttpStatus.OK);
 
       expect(res.body.username).toBe(currentUsername);
-      expect(res.body).toHaveProperty('email');
       expect(res.body).not.toHaveProperty('password');
     });
 

@@ -9,6 +9,7 @@ export default function Navbar() {
   const searchOptions = {
     "Movies": "movies",
     "Series": "series",
+    "Users": "users",
   }
 
   const [searchMedia, setSearchMedia] = useState<string>(searchOptions.Movies);
@@ -36,12 +37,16 @@ export default function Navbar() {
     e.preventDefault();
     if (!searchText.trim()) return;
 
-    const url = `search-results?media=${searchMedia}&query=${encodeURIComponent(searchText)}`;
-    navigate(url);
+    if (searchMedia === "users") {
+      navigate(`/users-search?username=${encodeURIComponent(searchText)}`);
+    } else {
+      const url = `/media-search?media=${searchMedia}&query=${encodeURIComponent(searchText)}`;
+      navigate(url);
+    }
   };
 
   return (
-<nav className="sticky top-0 w-full h-16 px-8 mb-8 bg-linear-to-br from-purple-500 via-purple-main to-purple-900 shadow-2xl flex items-center justify-between z-50 font-inter border-white/10 backdrop-blur-sm">
+    <nav className="sticky top-0 w-full h-16 px-8 mb-8 bg-linear-to-br from-purple-500 via-purple-main to-purple-900 shadow-2xl flex items-center justify-between z-50 font-inter border-white/10 backdrop-blur-sm">
       
       <div className="flex items-center gap-10">
         <Link to="/" className="flex items-center gap-2 shrink-0 cursor-pointer">
@@ -105,7 +110,7 @@ export default function Navbar() {
 
           <input 
             type="text" 
-            placeholder="Search for content..." 
+            placeholder={searchMedia === 'users' ? "Search users by name..." : "Search for content..."}
             className="flex-1 py-2.5 px-4 bg-transparent cursor-text focus:outline-none text-sm text-black placeholder:text-black/50 transition-all"
             onChange={(e) => setSearchText(e.target.value)}
           />

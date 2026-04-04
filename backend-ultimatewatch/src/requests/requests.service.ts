@@ -1,11 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { FriendRequest } from './entities/friend-request.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Request } from './entities/request.entity';
 import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
-import { CreateFriendRequestDto } from './dto/create-friend-request-dto';
 import { User } from 'src/users/entities/user.entity';
 import { UsersService } from 'src/users/users.service';
 
@@ -31,16 +29,44 @@ export class RequestsService {
     return request;
   }
 
-  async createFriendRequest(
-    createFriendRequestDto: CreateFriendRequestDto,
-  ): Promise<FriendRequest> {
-    const { senderId, receiverId }: { senderId: number; receiverId: number } =
-      createFriendRequestDto;
+  async findActiveFriendRequestBySenderIdAndReceiverId(
+    senderId: number,
+    receiverId: number,
+  ): Promise<Request | null> {
+    const request = await this.friendRequestsRepository.findOne({
+      where: {
+        sender: { id: senderId },
+        receiver: { id: receiverId },
+      },
+    });
 
+    return request;
+  }
+
+  async createFriendRequest(
+    senderId: number,
+    receiverId: number,
+  ): Promise<FriendRequest> {
     if (senderId === receiverId) {
       throw new BadRequestException(
         'You cannot send a friend request to yourself',
       );
+    }
+
+    const existingRequest: Request | null =
+      await this.findActiveFriendRequestBySenderIdAndReceiverId(
+        senderId,
+        receiverId,
+      );
+
+    if (existingRequest) {
+      if (!existingRequest.accepted) {
+        throw new BadRequestException(
+          'A friend request is already pending for this user',
+        );
+      }
+
+      throw new BadRequestException('You are already friends with this user');
     }
 
     const sender: User = await this.usersService.findById(senderId);

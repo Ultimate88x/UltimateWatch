@@ -12,10 +12,11 @@ import PublicRoute from "./components/auth/PublicRoute";
 import Home from "./home";
 import SeriesList from "./content/series/list";
 import MovieList from "./content/movies/list";
-import SearchResultsList from "./content/searchResults";
+import SearchResultsList from "./content/search";
 import MovieDetail from "./content/movies/detail";
 import SeriesDetail from "./content/series/detail";
 import UserDetail from "./user/detail";
+import UserSearchResultsList from "./user/search";
 
 function App() {
   return (
@@ -69,10 +70,11 @@ function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/series" element={<SeriesList />} />
           <Route path="/movies" element={<MovieList />} />
-          <Route path="/search-results" element={<SearchResultsList />} />
+          <Route path="/media-search" element={<SearchResultsList />} />
           <Route path="/movies/:tmdbId" element={<MovieDetail />} />
           <Route path="/series/:tmdbId" element={<SeriesDetail />} />
-          <Route path="/user/:username" element={<UserDetail />} />
+          <Route path="/users/:username" element={<UserDetail />} />
+          <Route path="/users-search" element={<UserSearchResultsList />} />
         </Routes>
       </main>
 

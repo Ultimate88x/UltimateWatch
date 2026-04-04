@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, Repository } from 'typeorm';
+import { ILike, Not, Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
@@ -10,6 +10,7 @@ import { CloudinaryService } from 'src/common/cloudinary/cloudinary.service';
 import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
 import { DuplicatedResourceException } from 'src/common/exceptions/duplicated-resource-exception';
 import { UserDetailDto } from './dto/user-detail.dto';
+import { UserResponseDto } from './dto/user-response.dto';
 
 @Injectable()
 export class UsersService {
@@ -155,20 +156,40 @@ export class UsersService {
     });
   }
 
-  async getAllByUsername(username: string): Promise<UserDetailDto[]> {
-    const users = await this.userRepository.find({
+  async getAllByUsername(
+    username: string,
+    userId: number,
+    page: number = 1,
+    limit: number = 20,
+  ): Promise<UserResponseDto> {
+    const skip = (page - 1) * limit;
+
+    const [users, total] = await this.userRepository.findAndCount({
       where: {
         username: ILike(`%${username}%`),
+        id: Not(userId),
       },
+      take: limit,
+      skip: skip,
     });
 
-    return users.map((user: User) =>
+    const userData = users.map((user) =>
       this.createUserDetailDto({
         id: user.id,
         username: user.username,
         imagePath: user.imagePath,
       }),
     );
+
+    const totalPages = Math.ceil(total / limit);
+    const isLastPage = page >= totalPages;
+
+    return new UserResponseDto({
+      data: userData,
+      total: total,
+      page: page,
+      lastPage: isLastPage,
+    });
   }
 
   async findByEmail(email: string) {

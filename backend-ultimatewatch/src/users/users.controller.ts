@@ -16,6 +16,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { GetUser } from 'src/common/decorators/get-user.decorator';
 import { UserDetailDto } from './dto/user-detail.dto';
+import { UserResponseDto } from './dto/user-response.dto';
 
 @Controller('users')
 export class UsersController {
@@ -31,8 +32,10 @@ export class UsersController {
   @UseGuards(AuthGuard)
   findAllByUsername(
     @Query('username') username: string,
-  ): Promise<UserDetailDto[]> {
-    return this.usersService.getAllByUsername(username);
+    @GetUser('userId') userId: number,
+    @Query('page') page: string = '1',
+  ): Promise<UserResponseDto> {
+    return this.usersService.getAllByUsername(username, userId, +page);
   }
 
   @Get(':id')

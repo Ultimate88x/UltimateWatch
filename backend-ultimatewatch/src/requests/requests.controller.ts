@@ -1,19 +1,22 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { RequestsService } from './requests.service';
-import { CreateFriendRequestDto } from './dto/create-friend-request-dto';
+import { GetUser } from 'src/common/decorators/get-user.decorator';
+import { AuthGuard } from 'src/common/guards/auth.guard';
 
 @Controller('requests')
 export class RequestsController {
   constructor(private readonly requestsService: RequestsService) {}
 
   @Post('create/friend-request')
+  @UseGuards(AuthGuard)
   async createFriendRequest(
-    @Body() createFriendRequestDto: CreateFriendRequestDto,
+    @GetUser('userId') userId: number,
+    @Body('receiverId') receiverId: number,
   ): Promise<{ message: string }> {
-    await this.requestsService.createFriendRequest(createFriendRequestDto);
+    await this.requestsService.createFriendRequest(userId, receiverId);
 
     return {
-      message: 'Friend request sent successfully',
+      message: 'Friend request sent successfully!',
     };
   }
 }

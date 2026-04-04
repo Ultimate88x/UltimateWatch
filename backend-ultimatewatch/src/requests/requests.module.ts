@@ -4,9 +4,10 @@ import { RequestsController } from './requests.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Request } from './entities/request.entity';
 import { FriendRequest } from './entities/friend-request.entity';
+import { UsersModule } from 'src/users/users.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Request, FriendRequest])],
+  imports: [TypeOrmModule.forFeature([Request, FriendRequest]), UsersModule],
   controllers: [RequestsController],
   providers: [RequestsService],
 })

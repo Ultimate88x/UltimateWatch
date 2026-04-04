@@ -51,7 +51,7 @@ export default function FriendRequests() {
       const message = error instanceof Error ? error.message : 'Error';
       toast.error(message);
     } finally {
-      setTimeout(() => setIsLoading(false), 400);
+      setIsLoading(false);
     }
   }, [page, activeTab]);
 
@@ -256,14 +256,14 @@ export default function FriendRequests() {
           <div className="flex items-center gap-10">
             <Button 
               variant="link" size="sm" icon={ChevronLeft} 
-              onClick={() => { setPage(p => Math.max(1, p - 1)); setIsLoading(true); }} 
+              onClick={() => setPage(p => Math.max(1, p - 1))} 
               disabled={page === 1 || isLoading}
             >
               Prev
             </Button>
             <Button 
               variant="link" size="sm" icon={ChevronRight} 
-              onClick={() => { setPage(p => Math.min(totalPages, p + 1)); setIsLoading(true); }} 
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))} 
               disabled={page === totalPages || isLoading} 
               className="flex-row-reverse"
             >

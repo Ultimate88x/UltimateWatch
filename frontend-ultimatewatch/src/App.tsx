@@ -17,7 +17,8 @@ import MovieDetail from "./content/movies/detail";
 import SeriesDetail from "./content/series/detail";
 import UserDetail from "./user/detail";
 import UserSearchResultsList from "./user/search";
-import ListSentFriendRequests from "./request/list";
+import FriendRequests from "./request/list";
+import FriendsList from "./request/friend-list";
 
 function App() {
   return (
@@ -66,7 +67,8 @@ function App() {
             <Route path="/profile" element={<UserProfile />} />
             <Route path="/users/:username" element={<UserDetail />} />
             <Route path="/users-search" element={<UserSearchResultsList />} />
-            <Route path="/friend-requests" element={<ListSentFriendRequests />} />
+            <Route path="/friend-requests" element={<FriendRequests />} />
+            <Route path="/friends" element={<FriendsList />} />
           </Route>
 
           <Route path="/" element={<Home />} />

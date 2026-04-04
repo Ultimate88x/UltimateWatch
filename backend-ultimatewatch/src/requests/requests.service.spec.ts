@@ -358,6 +358,7 @@ describe('RequestsService', () => {
           sender: mockUser,
           receiver: mockFriendA,
           createdAt: new Date(),
+          updatedAt: new Date(),
         },
         {
           id: 102,
@@ -365,6 +366,7 @@ describe('RequestsService', () => {
           sender: mockFriendB,
           receiver: mockUser,
           createdAt: new Date(),
+          updatedAt: new Date(),
         },
       ] as FriendRequest[];
 

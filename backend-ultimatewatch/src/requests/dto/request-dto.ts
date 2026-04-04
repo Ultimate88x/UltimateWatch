@@ -3,6 +3,7 @@ export class RequestDto {
   username: string;
   userImagePath: string;
   createdAt: string;
+  updatedAt: string;
 
   constructor(init?: Partial<RequestDto>) {
     Object.assign(this, init);

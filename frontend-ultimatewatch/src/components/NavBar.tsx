@@ -7,7 +7,8 @@ import {
   Film, 
   Tv, 
   MonitorPlay, 
-  UserPlus, 
+  UserPlus,
+  Users, 
 } from "lucide-react";
 import type { MenuItem } from "../types/menu-item";
 import { useOutsideClick } from "./utilities/UseOutsideClick";
@@ -21,6 +22,7 @@ const ALL_MENUS: MenuConfig = {
     { label: 'What to see', path: '/suggested', icon: <MonitorPlay size={16}/>, requiresAuth: false },
   ],
   social: [
+    { label: 'Friends', path: '/friends', icon: <Users size={16}/>, requiresAuth: true },
     { label: 'Friend Requests', path: '/friend-requests', icon: <UserPlus size={16}/>, requiresAuth: true },
   ]
 };

@@ -258,6 +258,7 @@ export class RequestsService {
         username: friend.username,
         userImagePath: friend.imagePath,
         createdAt: request.createdAt.toISOString(),
+        updatedAt: request.updatedAt.toISOString(),
       });
     });
 

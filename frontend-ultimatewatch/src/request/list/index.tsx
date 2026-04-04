@@ -6,46 +6,50 @@ import { EmptyState } from '../../components/EmptyState';
 import { Button } from '../../components/Button';
 import { getRelativeDate } from '../../components/utilities/RelativeDate';
 import { useAdvancedNavigation } from '../../components/utilities/SmartNavigate';
+import type { Request } from '../../types/request';
 
-interface RequestDto {
-  id: number;
-  username: string;
-  userImagePath: string;
-  createdAt: string;
-}
-
-const FriendRequests: React.FC = () => {
+export default function FriendRequests() {
   const { smartNavigate } = useAdvancedNavigation();
-  const [requests, setRequests] = useState<RequestDto[]>([]);
+  const [requests, setRequests] = useState<Request[]>([]);
   const [activeTab, setActiveTab] = useState<'received' | 'sent'>('received');
   
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
   
   const [isLoading, setIsLoading] = useState(true);
-  const [isActionLoading, setIsActionLoading] = useState<number | null>(null);
+  const [isActionLoading, setIsActionLoading] = useState<boolean>(false);
 
   const fetchRequests = React.useCallback(async () => {
+    const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
     setIsLoading(true);
     try {
-      const response = await fetch(
+      const [response] = await Promise.all([
+        fetch(
         `http://localhost:3000/requests/${activeTab}?page=${page}&limit=5`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        }
-      );
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+            },
+          }
+        ),
+        wait(750)
+      ]);
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Error fetching');
+
+      if (!response.ok) {
+        toast.error(data.message || "Failed to fetch friend requests");
+        return;
+      }
 
       setRequests(data.data);
       setTotalPages(data.lastPage || 1);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Error');
+      const message = error instanceof Error ? error.message : 'Error';
+      toast.error(message);
     } finally {
       setTimeout(() => setIsLoading(false), 400);
     }
@@ -56,36 +60,42 @@ const FriendRequests: React.FC = () => {
   }, [fetchRequests]);
 
   const handleAction = async (requestId: number, action: 'accept' | 'reject' | 'cancel') => {
-    setIsActionLoading(requestId);
+    const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+    setIsActionLoading(true);
+
     try {
       const isAccepting = action === 'accept';
-      const response = await fetch(`http://localhost:3000/requests/friend-request/resolve/${requestId}`, {
-        method: 'PATCH',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}` 
-        },
-        body: JSON.stringify({ accept: isAccepting })
-      });
+      const [response] = await Promise.all([
+        fetch(
+          `http://localhost:3000/requests/friend-request/resolve/${requestId}`, {
+          method: 'PATCH',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}` 
+          },
+          body: JSON.stringify({ accept: isAccepting })
+        }),
+        wait(750)
+      ]);
 
       const data = await response.json();
 
-      if (response.ok) {
-        toast.success(data.message || `Request ${action}ed successfully`);
-        fetchRequests(); 
-      } else {
-        toast.error(data.message || 'Action failed');
+      if (!response.ok) {
+        toast.error(data.message || "Failed to perform action");
+        return;
       }
+
+      toast.success(data.message || `Request ${action}ed successfully`);
+      await fetchRequests(); 
     } catch (error) {
       const message = error instanceof Error ? error.message : 'An unexpected error occurred';
       toast.error(message);
-      setIsLoading(false);
     } finally {
-      setIsActionLoading(null);
+      setIsActionLoading(false);
     }
   };
 
-  if (isLoading && page === 1) {
+  if (isLoading && totalPages === 0) {
     return (
       <div className="w-full h-64 flex flex-col items-center justify-center">
         <motion.div
@@ -187,7 +197,7 @@ const FriendRequests: React.FC = () => {
                             e.stopPropagation();
                             handleAction(request.id, 'accept');
                           }}
-                          isLoading={isActionLoading === request.id}
+                          disabled={isActionLoading}
                         >
                           <span className="max-w-0 overflow-hidden group-hover/btn:max-w-xs transition-all duration-500 ease-in-out whitespace-nowrap">
                             Accept
@@ -203,7 +213,7 @@ const FriendRequests: React.FC = () => {
                             e.stopPropagation();
                             handleAction(request.id, 'reject');
                           }}
-                          isLoading={isActionLoading === request.id}
+                          disabled={isActionLoading}
                         >
                           <span className="max-w-0 overflow-hidden group-hover/btn:max-w-xs transition-all duration-500 ease-in-out whitespace-nowrap">
                             Reject
@@ -220,7 +230,7 @@ const FriendRequests: React.FC = () => {
                           e.stopPropagation();
                           handleAction(request.id, 'cancel');
                         }}
-                        isLoading={isActionLoading === request.id}
+                        disabled={isActionLoading}
                       >
                         Cancel Request
                       </Button>
@@ -265,5 +275,3 @@ const FriendRequests: React.FC = () => {
     </div>
   );
 };
-
-export default FriendRequests;

@@ -269,4 +269,22 @@ export class RequestsService {
       lastPage: Math.ceil(total / limit) || 1,
     });
   }
+
+  async deleteFriend(username: string, userId: number): Promise<void> {
+    const friend: User = await this.usersService.findByUsername(username);
+    await this.usersService.findById(userId);
+
+    const friendRequest: FriendRequest | null =
+      await this.findActiveFriendRequestBetweenUsers(friend.id, userId);
+
+    if (!friendRequest) {
+      throw new ResourceNotFoundException(
+        'Friend Request',
+        'USER_USERNAME, USER_ID',
+        `${username}, ${userId}`,
+      );
+    }
+
+    await this.deleteFriendRequest(friendRequest.id);
+  }
 }

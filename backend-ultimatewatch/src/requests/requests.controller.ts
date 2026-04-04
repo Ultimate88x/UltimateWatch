@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -82,5 +83,15 @@ export class RequestsController {
     @Query('limit') limit: number = 10,
   ): Promise<RequestResponseDto> {
     return await this.requestsService.getFriendsFromUser(userId, +page, +limit);
+  }
+
+  @Delete('friend/:username')
+  @UseGuards(AuthGuard)
+  async deleteFriend(
+    @GetUser('userId') userId: number,
+    @Param('username') username: string,
+  ): Promise<{ message: string }> {
+    await this.requestsService.deleteFriend(username, userId);
+    return { message: 'Friend deleted succesfully!' };
   }
 }

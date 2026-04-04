@@ -1,11 +1,36 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ChevronDown, Search, User, Film, Tv, MonitorPlay, } from "lucide-react";
+import { 
+  ChevronDown, 
+  Search, 
+  User, 
+  Film, 
+  Tv, 
+  MonitorPlay, 
+  UserPlus, 
+  Users, 
+} from "lucide-react";
+import type { MenuItem } from "../types/menu-item";
+
+type MenuConfig = Record<string, MenuItem[]>;
+
+const ALL_MENUS: MenuConfig = {
+  catalog: [
+    { label: 'Discover Movies', path: '/movies', icon: <Film size={16}/>, requiresAuth: false },
+    { label: 'Discover Series', path: '/series', icon: <Tv size={16}/>, requiresAuth: false },
+    { label: 'What to see', path: '/suggested', icon: <MonitorPlay size={16}/>, requiresAuth: false },
+  ],
+  social: [
+    { label: 'Friend Requests', path: '/friend-requests', icon: <UserPlus size={16}/>, requiresAuth: true },
+  ]
+};
 
 export default function Navbar() {
+  const isLoggedIn = !!localStorage.getItem("token");
+
   const navigate = useNavigate();
   const [openMenu, setOpenMenu] = useState<string | null>(null);
-
+  
   const searchOptions = {
     "Movies": "movies",
     "Series": "series",
@@ -19,19 +44,18 @@ export default function Navbar() {
     setOpenMenu(openMenu === menu ? null : menu);
   };
 
-  const menus = {
-    catalog: [
-      { label: 'Discover Movies', path: '/movies', icon: <Film size={16}/> },
-      { label: 'Discover Series', path: '/series', icon: <Tv size={16}/> },
-      { label: 'What to see', path: '/suggested', icon: <MonitorPlay size={16}/> },
-    ],
-    collection: [
-    ],
-    events: [
-    ],
-    social: [
-    ]
-  };
+  const visibleMenus = useMemo<MenuConfig>(() => {
+    const filtered: MenuConfig = {};
+    
+    Object.entries(ALL_MENUS).forEach(([key, items]) => {
+      const visibleItems = items.filter(item => !item.requiresAuth || (item.requiresAuth && isLoggedIn));
+      if (visibleItems.length > 0) {
+        filtered[key] = visibleItems;
+      }
+    });
+    
+    return filtered;
+  }, [isLoggedIn]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +80,7 @@ export default function Navbar() {
         </Link>
 
         <div className="flex items-center gap-6">
-          {Object.keys(menus).map((menuKey) => (
+          {Object.keys(visibleMenus).map((menuKey) => (
             <div key={menuKey} className="relative">
               <button 
                 onClick={() => toggleMenu(menuKey)}
@@ -67,8 +91,8 @@ export default function Navbar() {
               </button>
 
               {openMenu === menuKey && (
-                <div className="absolute top-10 left-0 w-60 py-2 bg-white shadow-2xl border rounded-xl border-gray-100">
-                  {menus[menuKey as keyof typeof menus].map((item, index) => (
+                <div className="absolute top-10 left-0 w-60 py-2 bg-white shadow-2xl border rounded-xl border-gray-100 overflow-hidden">
+                  {visibleMenus[menuKey].map((item, index: number) => (
                     <Link
                       key={index}
                       to={item.path}
@@ -115,7 +139,7 @@ export default function Navbar() {
             onChange={(e) => setSearchText(e.target.value)}
           />
 
-          <button className="h-full px-5 py-2.5 text-purple-main transition-all flex items-center justify-center cursor-pointer group-focus-within:shadow-[-5px_0_15px_rgba(168,85,247,0.2)]">
+          <button type="submit" className="h-full px-5 py-2.5 text-purple-main transition-all flex items-center justify-center cursor-pointer group-focus-within:shadow-[-5px_0_15px_rgba(168,85,247,0.2)]">
             <Search 
               className="transition-transform group-hover:scale-110" 
               size={18} 
@@ -124,9 +148,9 @@ export default function Navbar() {
         </form>
 
         <Link 
-          to="/profile" 
+          to={isLoggedIn ? "/profile" : "/login"} 
           className="p-2.5 bg-white/10 shadow-sm border rounded-xl border-white/10 cursor-pointer hover:bg-purple-200 hover:text-purple-main text-white active:scale-90 transition-all"
-          title="My Profile"
+          title={isLoggedIn ? "My Profile" : "Login"}
         >
           <User size={24} />
         </Link>

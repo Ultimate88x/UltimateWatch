@@ -1,26 +1,20 @@
+import { BaseEntity } from 'src/common/entities/base.entity';
 import { Media } from 'src/media/entities/media.entity';
 import { Member } from 'src/members/entities/member.entity';
-import {
-  BaseEntity,
-  Column,
-  Entity,
-  JoinTable,
-  ManyToMany,
-  OneToMany,
-} from 'typeorm';
+import { Column, Entity, JoinTable, ManyToMany, OneToMany } from 'typeorm';
 
 @Entity('events')
 export class Event extends BaseEntity {
   @Column()
   name: string;
 
-  @Column()
-  description: string;
+  @Column({ type: 'text', nullable: true })
+  description: string | null | undefined;
 
   @Column()
   visibility: string;
 
-  @Column({ type: 'date', nullable: true })
+  @Column()
   eventDate: Date;
 
   @Column({ type: 'date', nullable: true })
@@ -30,7 +24,7 @@ export class Event extends BaseEntity {
   timer: number = 0;
 
   @OneToMany(() => Member, (member) => member.event)
-  member: Member[];
+  members: Member[];
 
   @ManyToMany(() => Media, { onDelete: 'CASCADE' })
   @JoinTable({

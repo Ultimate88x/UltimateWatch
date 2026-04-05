@@ -11,16 +11,25 @@ export class MediaService {
     private readonly mediaRepository: Repository<Media>,
   ) {}
 
-  async findByTmdbId(tmdbId: number): Promise<Media> {
-    const media: Media | null =
-      await this.mediaRepository.findOne({ where: { tmdbId } });
+  async findById(id: number): Promise<Media> {
+    const media: Media | null = await this.mediaRepository.findOne({
+      where: { id },
+    });
 
     if (!media) {
-      throw new ResourceNotFoundException(
-        'Media Content',
-        'TMDB_ID',
-        String(tmdbId),
-      );
+      throw new ResourceNotFoundException('Media', 'ID', String(id));
+    }
+
+    return media;
+  }
+
+  async findByTmdbId(tmdbId: number): Promise<Media> {
+    const media: Media | null = await this.mediaRepository.findOne({
+      where: { tmdbId },
+    });
+
+    if (!media) {
+      throw new ResourceNotFoundException('Media', 'TMDB_ID', String(tmdbId));
     }
 
     return media;

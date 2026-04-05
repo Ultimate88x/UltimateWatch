@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { MediaContentsService } from './media.service';
+import { MediaService } from './media.service';
 import { Media } from './entities/media.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ObjectLiteral, Repository } from 'typeorm';
@@ -9,8 +9,8 @@ type MockRepository<T extends ObjectLiteral> = Partial<
   Record<keyof Repository<T>, jest.Mock>
 >;
 
-describe('MediaContentsService', () => {
-  let service: MediaContentsService;
+describe('MediaService', () => {
+  let service: MediaService;
   let repository: MockRepository<Media>;
 
   const createMockRepository = (): MockRepository<Media> => ({
@@ -20,7 +20,7 @@ describe('MediaContentsService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        MediaContentsService,
+        MediaService,
         {
           provide: getRepositoryToken(Media),
           useValue: createMockRepository(),
@@ -28,7 +28,7 @@ describe('MediaContentsService', () => {
       ],
     }).compile();
 
-    service = module.get<MediaContentsService>(MediaContentsService);
+    service = module.get<MediaService>(MediaService);
     repository = module.get(getRepositoryToken(Media));
   });
 
@@ -38,18 +38,18 @@ describe('MediaContentsService', () => {
 
   describe('findByTmdbId', () => {
     const tmdbId = 550;
-    const mockMediaContent = {
+    const mockmedia = {
       id: 1,
       tmdbId,
       title: 'Fight Club',
     } as Media;
 
     it('should return media content when found', async () => {
-      repository.findOne?.mockResolvedValue(mockMediaContent);
+      repository.findOne?.mockResolvedValue(mockmedia);
 
       const result = await service.findByTmdbId(tmdbId);
 
-      expect(result).toEqual(mockMediaContent);
+      expect(result).toEqual(mockmedia);
       expect(repository.findOne).toHaveBeenCalledWith({
         where: { tmdbId },
       });

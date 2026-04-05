@@ -83,6 +83,9 @@ describe('EpisodeService', () => {
       expect(result.total).toBe(1);
       expect(episodeRepo.findAndCount).toHaveBeenCalledWith({
         where: { season: { tmdbId: 100 } },
+        order: {
+          number: 'ASC',
+        },
         take: 10,
         skip: 0,
       });

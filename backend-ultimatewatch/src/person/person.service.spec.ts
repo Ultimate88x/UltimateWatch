@@ -4,7 +4,7 @@ import { Person } from './entities/person.entity';
 import { MediaPerson } from './entities/media.person.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { TmdbApiService } from 'src/common/tmdbapi/tmdbapi.service';
-import { MediaContentsService } from 'src/media/media.service';
+import { MediaService } from 'src/media/media.service';
 import { ObjectLiteral, Repository } from 'typeorm';
 import { MediaType } from 'src/common/enums/media.type.enum';
 import { PersonType } from 'src/common/enums/person.type.enum';
@@ -25,7 +25,7 @@ describe('PersonService', () => {
   const mockTmdbApiService = {
     getMediaPeople: jest.fn(),
   };
-  const mockMediaContentsService = {
+  const mockMediaService = {
     findByTmdbId: jest.fn(),
   };
 
@@ -55,8 +55,8 @@ describe('PersonService', () => {
           useValue: mockTmdbApiService,
         },
         {
-          provide: MediaContentsService,
-          useValue: mockMediaContentsService,
+          provide: MediaService,
+          useValue: mockMediaService,
         },
       ],
     }).compile();
@@ -156,7 +156,7 @@ describe('PersonService', () => {
 
     it('should throw ResourceNotFoundException if person is not in TMDB info', async () => {
       (personRepo.findOne as jest.Mock).mockResolvedValue(personData);
-      mockMediaContentsService.findByTmdbId.mockResolvedValue({
+      mockMediaService.findByTmdbId.mockResolvedValue({
         id: 1,
       });
 
@@ -171,7 +171,7 @@ describe('PersonService', () => {
     });
 
     it('should upsert and return MediaCastDto', async () => {
-      const mockMediaContent = { id: 1, tmdbId: 500 };
+      const mockmedia = { id: 1, tmdbId: 500 };
       const mockSavedMediaPerson = {
         type: PersonType.CAST,
         person: personData,
@@ -181,7 +181,7 @@ describe('PersonService', () => {
 
       (personRepo.upsert as jest.Mock).mockResolvedValue(undefined);
       (personRepo.findOne as jest.Mock).mockResolvedValue(personData);
-      mockMediaContentsService.findByTmdbId.mockResolvedValue(mockMediaContent);
+      mockMediaService.findByTmdbId.mockResolvedValue(mockmedia);
       (mediaPersonRepo.upsert as jest.Mock).mockResolvedValue(undefined);
       (mediaPersonRepo.findOne as jest.Mock).mockResolvedValue(
         mockSavedMediaPerson,

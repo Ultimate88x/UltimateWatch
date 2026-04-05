@@ -20,7 +20,7 @@ export class ComplianceService {
     @InjectRepository(Provider)
     private readonly providerRepository: Repository<Provider>,
     @InjectRepository(Media)
-    private readonly mediaContentRepository: Repository<Media>,
+    private readonly mediaRepository: Repository<Media>,
     @InjectRepository(Person)
     private readonly personRepository: Repository<Person>,
     private readonly genresService: GenresService,
@@ -69,7 +69,7 @@ export class ComplianceService {
       `-------------------- TMDB: Purging obsolete data. --------------------`,
     );
 
-    const mediaResult = await this.mediaContentRepository.delete({
+    const mediaResult = await this.mediaRepository.delete({
       updatedAt: LessThan(limitDate),
     });
 

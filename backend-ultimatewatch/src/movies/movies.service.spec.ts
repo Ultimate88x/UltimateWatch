@@ -46,16 +46,12 @@ describe('MoviesService', () => {
     del: jest.fn(),
   };
 
-  /**
-   * HELPER: Crea un DTO de TMDB mínimo para evitar que el Mapper
-   * falle al intentar leer .map() de géneros o productoras.
-   */
   const createValidTmdbMovieDto = (data: Partial<TmdbMovieDto>): TmdbMovieDto =>
     ({
       id: 1,
       title: 'Default Title',
-      genres: [], // Necesario para evitar error .map()
-      production_companies: [], // Necesario para evitar error .map()
+      genres: [],
+      production_companies: [],
       ...data,
     }) as unknown as TmdbMovieDto;
 
@@ -353,12 +349,10 @@ describe('MoviesService', () => {
     it('should return from DB if data is fresh (not stale)', async () => {
       const tmdbId = 123;
       const mockMovie = {
-        media: {
-          tmdbId,
-          updatedAt: new Date(),
-          genres: [{ name: 'Action' }],
-          productionCompanies: [{ name: 'Warner', logoPath: '/logo.png' }],
-        },
+        tmdbId,
+        updatedAt: new Date(),
+        genres: [{ name: 'Action' }],
+        productionCompanies: [{ name: 'Warner', logoPath: '/logo.png' }],
         budget: 1000,
         runtime: 120,
         revenue: 5000,
@@ -387,12 +381,10 @@ describe('MoviesService', () => {
         name: 'Action',
       });
       mockMovieRepository.save?.mockResolvedValue({
-        media: {
-          tmdbId,
-          title: 'New Movie',
-          genres: [],
-          productionCompanies: [],
-        },
+        tmdbId,
+        title: 'New Movie',
+        genres: [],
+        productionCompanies: [],
       });
 
       await service.findMovieFromTmdbId(tmdbId);
@@ -428,7 +420,7 @@ describe('MoviesService', () => {
     });
 
     it('should update an existing movie and refresh timestamps', async () => {
-      const existing = { media: { id: 10, tmdbId: 789 } } as Movie;
+      const existing = { id: 10, tmdbId: 789 } as Movie;
       const dto = createValidTmdbMovieDto({ id: 789, title: 'Update Test' });
 
       mockGenresService.findByTmdbId.mockResolvedValue({

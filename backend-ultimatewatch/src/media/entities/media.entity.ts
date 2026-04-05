@@ -46,7 +46,7 @@ export class Media extends TmdbEntity {
   @JoinTable({
     name: 'media_contents_genres',
     joinColumn: {
-      name: 'mediaContentId',
+      name: 'mediaId',
       referencedColumnName: 'id',
     },
     inverseJoinColumn: {
@@ -60,7 +60,7 @@ export class Media extends TmdbEntity {
   @JoinTable({
     name: 'media_contents_production_companies',
     joinColumn: {
-      name: 'mediaContentId',
+      name: 'mediaId',
       referencedColumnName: 'id',
     },
     inverseJoinColumn: {

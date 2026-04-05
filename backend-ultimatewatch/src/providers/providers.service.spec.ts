@@ -6,7 +6,7 @@ import { ObjectLiteral, Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { TmdbApiService } from 'src/common/tmdbapi/tmdbapi.service';
 import { WatchmodeService } from 'src/common/watchmode/watchmode.service';
-import { MediaContentsService } from 'src/media/media.service';
+import { MediaService } from 'src/media/media.service';
 import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
 import { MediaType } from 'src/common/enums/media.type.enum';
 
@@ -38,7 +38,7 @@ describe('ProvidersService', () => {
   const mockWatchmodeService = {
     getProvidersForMediaFromWatchmode: jest.fn(),
   };
-  const mockMediaContentsService = {
+  const mockMediaService = {
     findByTmdbId: jest.fn(),
   };
 
@@ -63,8 +63,8 @@ describe('ProvidersService', () => {
           useValue: mockWatchmodeService,
         },
         {
-          provide: MediaContentsService,
-          useValue: mockMediaContentsService,
+          provide: MediaService,
+          useValue: mockMediaService,
         },
       ],
     }).compile();
@@ -81,7 +81,7 @@ describe('ProvidersService', () => {
     const mediaTmdbId = 500;
 
     it('should throw ResourceNotFoundException if media does not exist', async () => {
-      mockMediaContentsService.findByTmdbId.mockResolvedValue(null);
+      mockMediaService.findByTmdbId.mockResolvedValue(null);
 
       await expect(
         service.findOrCreate(mediaTmdbId, providerData),
@@ -98,7 +98,7 @@ describe('ProvidersService', () => {
       ] as unknown as MockRepository<MediaProvider>;
 
       providerRepo.findOne?.mockResolvedValue(providerData);
-      mockMediaContentsService.findByTmdbId.mockResolvedValue(mockMedia);
+      mockMediaService.findByTmdbId.mockResolvedValue(mockMedia);
       mediaProviderRepo.upsert?.mockResolvedValue(undefined);
 
       const result = await service.findOrCreate(mediaTmdbId, providerData);

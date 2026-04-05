@@ -8,12 +8,12 @@ import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-fo
 export class MediaService {
   constructor(
     @InjectRepository(Media)
-    private readonly mediaContentRepository: Repository<Media>,
+    private readonly mediaRepository: Repository<Media>,
   ) {}
 
   async findByTmdbId(tmdbId: number): Promise<Media> {
     const media: Media | null =
-      await this.mediaContentRepository.findOne({ where: { tmdbId } });
+      await this.mediaRepository.findOne({ where: { tmdbId } });
 
     if (!media) {
       throw new ResourceNotFoundException(

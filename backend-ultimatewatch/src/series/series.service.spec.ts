@@ -379,7 +379,8 @@ describe('SeriesService', () => {
     it('should merge new data into existing series', async () => {
       const existingSeries = {
         id: 1,
-        media: { id: 10, genres: [], productionCompanies: [] },
+        genres: [],
+        productionCompanies: [],
         seasons: [],
       } as unknown as Series;
 
@@ -407,12 +408,10 @@ describe('SeriesService', () => {
 
     it('should return from DB if data is fresh', async () => {
       const freshSeries = {
-        media: {
-          tmdbId,
-          updatedAt: new Date(),
-          genres: [],
-          productionCompanies: [],
-        },
+        tmdbId,
+        updatedAt: new Date(),
+        genres: [],
+        productionCompanies: [],
         seasons: [],
         getSeasonsNumber: () => 0,
       } as unknown as Series;
@@ -434,7 +433,9 @@ describe('SeriesService', () => {
       } as unknown as Series;
 
       const updatedSeries = {
-        media: { tmdbId, genres: [], productionCompanies: [] },
+        tmdbId,
+        genres: [],
+        productionCompanies: [],
         seasons: [],
         getSeasonsNumber: () => 0,
       } as unknown as Series;
@@ -457,13 +458,11 @@ describe('SeriesService', () => {
   describe('createSeriesDetailDto (private)', () => {
     it('should correctly format dates into ISO strings', () => {
       const series = {
-        media: {
-          tmdbId: 1,
-          title: 'Test',
-          genres: [{ name: 'Action' }],
-          productionCompanies: [{ name: 'HBO', logoPath: '/hbo.png' }],
-          releaseDate: new Date('2020-01-01'),
-        },
+        tmdbId: 1,
+        title: 'Test',
+        genres: [{ name: 'Action' }],
+        productionCompanies: [{ name: 'HBO', logoPath: '/hbo.png' }],
+        releaseDate: new Date('2020-01-01'),
         lastAirDate: new Date('2022-01-01'),
         seasons: [{ title: 'S1', number: 1 }],
         getSeasonsNumber: () => 1,

@@ -18,7 +18,7 @@ describe('ComplianceService', () => {
   let service: ComplianceService;
   let mediaProviderRepo: MockRepository<MediaProvider>;
   let providerRepo: MockRepository<Provider>;
-  let mediaContentRepo: MockRepository<Media>;
+  let mediaRepo: MockRepository<Media>;
   let personRepo: MockRepository<Person>;
   let genresService: jest.Mocked<GenresService>;
   let productionCompaniesService: jest.Mocked<ProductionCompaniesService>;
@@ -30,7 +30,7 @@ describe('ComplianceService', () => {
   const createProviderMockRepository = (): MockRepository<Provider> => ({
     delete: jest.fn().mockResolvedValue({ affected: 5 }),
   });
-  const createMediaContentMockRepository = (): MockRepository<Media> => ({
+  const createmediaMockRepository = (): MockRepository<Media> => ({
     delete: jest.fn().mockResolvedValue({ affected: 5 }),
   });
   const createPersonMockRepository = (): MockRepository<Person> => ({
@@ -58,7 +58,7 @@ describe('ComplianceService', () => {
         },
         {
           provide: getRepositoryToken(Media),
-          useValue: createMediaContentMockRepository(),
+          useValue: createmediaMockRepository(),
         },
         {
           provide: getRepositoryToken(Person),
@@ -78,7 +78,7 @@ describe('ComplianceService', () => {
     service = module.get<ComplianceService>(ComplianceService);
     mediaProviderRepo = module.get(getRepositoryToken(MediaProvider));
     providerRepo = module.get(getRepositoryToken(Provider));
-    mediaContentRepo = module.get(getRepositoryToken(Media));
+    mediaRepo = module.get(getRepositoryToken(Media));
     personRepo = module.get(getRepositoryToken(Person));
     genresService = module.get(GenresService);
     productionCompaniesService = module.get(ProductionCompaniesService);
@@ -119,7 +119,7 @@ describe('ComplianceService', () => {
 
     it('purgeTmdbData should call delete on media and provider repositories', async () => {
       await service['purgeTmdbData']();
-      expect(mediaContentRepo.delete).toHaveBeenCalled();
+      expect(mediaRepo.delete).toHaveBeenCalled();
       expect(providerRepo.delete).toHaveBeenCalled();
     });
 

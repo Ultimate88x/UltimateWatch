@@ -44,7 +44,7 @@ export class Media extends TmdbEntity {
 
   @ManyToMany(() => Genre, { onDelete: 'CASCADE' })
   @JoinTable({
-    name: 'media_contents_genres',
+    name: 'media_genres',
     joinColumn: {
       name: 'mediaId',
       referencedColumnName: 'id',
@@ -58,7 +58,7 @@ export class Media extends TmdbEntity {
 
   @ManyToMany(() => ProductionCompany, { onDelete: 'CASCADE' })
   @JoinTable({
-    name: 'media_contents_production_companies',
+    name: 'media_production_companies',
     joinColumn: {
       name: 'mediaId',
       referencedColumnName: 'id',

@@ -22,6 +22,7 @@ import { SeasonModule } from './seasons/seasons.module';
 import { EpisodeModule } from './episodes/episodes.module';
 import { RequestsModule } from './requests/requests.module';
 import { EventsModule } from './events/events.module';
+import { MembersModule } from './members/members.module';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { EventsModule } from './events/events.module';
     EpisodeModule,
     RequestsModule,
     EventsModule,
+    MembersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

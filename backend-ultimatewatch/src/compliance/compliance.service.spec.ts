@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ComplianceService } from './compliance.service';
 import { MediaProvider } from 'src/providers/entities/media.provider.entity';
 import { Provider } from 'src/providers/entities/provider.entity';
-import { MediaContent } from 'src/media-contents/entities/media-content.entity';
+import { Media } from 'src/media/entities/media.entity';
 import { Person } from 'src/person/entities/person.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { GenresService } from 'src/genres/genres.service';
@@ -18,7 +18,7 @@ describe('ComplianceService', () => {
   let service: ComplianceService;
   let mediaProviderRepo: MockRepository<MediaProvider>;
   let providerRepo: MockRepository<Provider>;
-  let mediaContentRepo: MockRepository<MediaContent>;
+  let mediaContentRepo: MockRepository<Media>;
   let personRepo: MockRepository<Person>;
   let genresService: jest.Mocked<GenresService>;
   let productionCompaniesService: jest.Mocked<ProductionCompaniesService>;
@@ -30,10 +30,9 @@ describe('ComplianceService', () => {
   const createProviderMockRepository = (): MockRepository<Provider> => ({
     delete: jest.fn().mockResolvedValue({ affected: 5 }),
   });
-  const createMediaContentMockRepository =
-    (): MockRepository<MediaContent> => ({
-      delete: jest.fn().mockResolvedValue({ affected: 5 }),
-    });
+  const createMediaContentMockRepository = (): MockRepository<Media> => ({
+    delete: jest.fn().mockResolvedValue({ affected: 5 }),
+  });
   const createPersonMockRepository = (): MockRepository<Person> => ({
     delete: jest.fn().mockResolvedValue({ affected: 20 }),
   });
@@ -58,7 +57,7 @@ describe('ComplianceService', () => {
           useValue: createProviderMockRepository(),
         },
         {
-          provide: getRepositoryToken(MediaContent),
+          provide: getRepositoryToken(Media),
           useValue: createMediaContentMockRepository(),
         },
         {
@@ -79,7 +78,7 @@ describe('ComplianceService', () => {
     service = module.get<ComplianceService>(ComplianceService);
     mediaProviderRepo = module.get(getRepositoryToken(MediaProvider));
     providerRepo = module.get(getRepositoryToken(Provider));
-    mediaContentRepo = module.get(getRepositoryToken(MediaContent));
+    mediaContentRepo = module.get(getRepositoryToken(Media));
     personRepo = module.get(getRepositoryToken(Person));
     genresService = module.get(GenresService);
     productionCompaniesService = module.get(ProductionCompaniesService);
@@ -118,7 +117,7 @@ describe('ComplianceService', () => {
       expect(mediaProviderRepo.update).toHaveBeenCalled();
     });
 
-    it('purgeTmdbData should call delete on mediaContent and provider repositories', async () => {
+    it('purgeTmdbData should call delete on media and provider repositories', async () => {
       await service['purgeTmdbData']();
       expect(mediaContentRepo.delete).toHaveBeenCalled();
       expect(providerRepo.delete).toHaveBeenCalled();

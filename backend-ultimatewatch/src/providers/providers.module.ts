@@ -5,7 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { MediaProvider } from './entities/media.provider.entity';
 import { ProvidersController } from './providers.controller';
 import { TmdbApiModule } from 'src/common/tmdbapi/tmdbapi.module';
-import { MediaContentsModule } from 'src/media-contents/media-contents.module';
+import { MediaModule } from 'src/media/media.module';
 import { WatchmodeModule } from 'src/common/watchmode/watchmode.module';
 
 @Module({
@@ -13,7 +13,7 @@ import { WatchmodeModule } from 'src/common/watchmode/watchmode.module';
     TypeOrmModule.forFeature([Provider, MediaProvider]),
     TmdbApiModule,
     WatchmodeModule,
-    MediaContentsModule,
+    MediaModule,
   ],
   providers: [ProvidersService],
   controllers: [ProvidersController],

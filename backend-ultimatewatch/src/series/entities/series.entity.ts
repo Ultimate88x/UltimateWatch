@@ -1,19 +1,12 @@
-import { BaseEntity } from 'src/common/entities/base.entity';
-import { MediaContent } from 'src/media-contents/entities/media-content.entity';
+import { MediaType } from 'src/common/enums/media.type.enum';
+import { Media } from 'src/media/entities/media.entity';
 import { Season } from 'src/seasons/entities/seasons.entity';
-import { Column, Entity, JoinColumn, OneToMany, OneToOne } from 'typeorm';
+import { ChildEntity, Column, OneToMany } from 'typeorm';
 
-@Entity('series')
-export class Series extends BaseEntity {
+@ChildEntity(MediaType.SERIES)
+export class Series extends Media {
   @Column({ type: 'date', nullable: true })
   lastAirDate: Date | null | undefined;
-
-  @OneToOne(() => MediaContent, (mediaContent) => mediaContent.series, {
-    onDelete: 'CASCADE',
-    cascade: true,
-  })
-  @JoinColumn()
-  mediaContent: MediaContent;
 
   @OneToMany(() => Season, (season) => season.series)
   seasons: Season[];

@@ -14,13 +14,14 @@ import { MoviesModule } from './movies/movies.module';
 import { GenresModule } from './genres/genres.module';
 import { ProductionCompaniesModule } from './production-companies/production-companies.module';
 import { ProvidersModule } from './providers/providers.module';
-import { MediaContentsModule } from './media-contents/media-contents.module';
+import { MediaModule } from './media/media.module';
 import { WatchmodeModule } from './common/watchmode/watchmode.module';
 import { ComplianceModule } from './compliance/compliance.module';
 import { PersonModule } from './person/person.module';
 import { SeasonModule } from './seasons/seasons.module';
 import { EpisodeModule } from './episodes/episodes.module';
 import { RequestsModule } from './requests/requests.module';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
@@ -53,13 +54,14 @@ import { RequestsModule } from './requests/requests.module';
     GenresModule,
     ProductionCompaniesModule,
     ProvidersModule,
-    MediaContentsModule,
+    MediaModule,
     WatchmodeModule,
     ComplianceModule,
     PersonModule,
     SeasonModule,
     EpisodeModule,
     RequestsModule,
+    EventsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

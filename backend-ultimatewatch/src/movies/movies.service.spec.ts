@@ -353,7 +353,7 @@ describe('MoviesService', () => {
     it('should return from DB if data is fresh (not stale)', async () => {
       const tmdbId = 123;
       const mockMovie = {
-        mediaContent: {
+        media: {
           tmdbId,
           updatedAt: new Date(),
           genres: [{ name: 'Action' }],
@@ -387,7 +387,7 @@ describe('MoviesService', () => {
         name: 'Action',
       });
       mockMovieRepository.save?.mockResolvedValue({
-        mediaContent: {
+        media: {
           tmdbId,
           title: 'New Movie',
           genres: [],
@@ -428,7 +428,7 @@ describe('MoviesService', () => {
     });
 
     it('should update an existing movie and refresh timestamps', async () => {
-      const existing = { mediaContent: { id: 10, tmdbId: 789 } } as Movie;
+      const existing = { media: { id: 10, tmdbId: 789 } } as Movie;
       const dto = createValidTmdbMovieDto({ id: 789, title: 'Update Test' });
 
       mockGenresService.findByTmdbId.mockResolvedValue({

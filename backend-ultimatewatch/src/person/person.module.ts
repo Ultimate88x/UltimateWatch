@@ -5,13 +5,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Person } from './entities/person.entity';
 import { TmdbApiModule } from 'src/common/tmdbapi/tmdbapi.module';
 import { MediaPerson } from './entities/media.person.entity';
-import { MediaContentsModule } from 'src/media-contents/media-contents.module';
+import { MediaModule } from 'src/media/media.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Person, MediaPerson]),
     TmdbApiModule,
-    MediaContentsModule,
+    MediaModule,
   ],
   controllers: [PersonController],
   providers: [PersonService],

@@ -120,14 +120,14 @@ export class SeriesService {
   async create(series: TmdbSeriesDto) {
     const mappedSeries: Series = TmdbApiMapper.tmdbSeriesDtoToSeries(series);
 
-    mappedSeries.mediaContent.genres = await Promise.all(
-      mappedSeries.mediaContent.genres.map((genre: Genre) =>
+    mappedSeries.genres = await Promise.all(
+      mappedSeries.genres.map((genre: Genre) =>
         this.genresService.findByTmdbId(genre.tmdbId),
       ),
     );
 
-    mappedSeries.mediaContent.productionCompanies = await Promise.all(
-      mappedSeries.mediaContent.productionCompanies.map(
+    mappedSeries.productionCompanies = await Promise.all(
+      mappedSeries.productionCompanies.map(
         (productionCompany: ProductionCompany) =>
           this.productionCompaniesService.upsert(productionCompany),
       ),
@@ -147,16 +147,15 @@ export class SeriesService {
 
   async update(existingSeries: Series, series: TmdbSeriesDto) {
     const mappedSeries: Series = TmdbApiMapper.tmdbSeriesDtoToSeries(series);
-    mappedSeries.mediaContent.id = existingSeries.mediaContent.id;
 
-    mappedSeries.mediaContent.genres = await Promise.all(
-      mappedSeries.mediaContent.genres.map((genre: Genre) =>
+    mappedSeries.genres = await Promise.all(
+      mappedSeries.genres.map((genre: Genre) =>
         this.genresService.findByTmdbId(genre.tmdbId),
       ),
     );
 
-    mappedSeries.mediaContent.productionCompanies = await Promise.all(
-      mappedSeries.mediaContent.productionCompanies.map(
+    mappedSeries.productionCompanies = await Promise.all(
+      mappedSeries.productionCompanies.map(
         (productionCompany: ProductionCompany) =>
           this.productionCompaniesService.upsert(productionCompany),
       ),
@@ -169,7 +168,6 @@ export class SeriesService {
       }),
     );
 
-    mappedSeries.mediaContent.updatedAt = new Date();
     mappedSeries.updatedAt = new Date();
 
     this.seriesRepository.merge(existingSeries, mappedSeries);
@@ -178,16 +176,11 @@ export class SeriesService {
 
   async findSeriesFromTmdbId(tmdbId: number): Promise<SeriesDetailDto> {
     const existingSeries = await this.seriesRepository.findOne({
-      where: { mediaContent: { tmdbId } },
-      relations: [
-        'mediaContent',
-        'mediaContent.genres',
-        'mediaContent.productionCompanies',
-        'seasons',
-      ],
+      where: { tmdbId },
+      relations: ['genres', 'productionCompanies', 'seasons'],
     });
 
-    if (existingSeries && !isDataStale(existingSeries.mediaContent.updatedAt)) {
+    if (existingSeries && !isDataStale(existingSeries.updatedAt)) {
       return this.createSeriesDetailDto(existingSeries);
     }
 
@@ -207,13 +200,13 @@ export class SeriesService {
 
   private createSeriesDetailDto(series: Series): SeriesDetailDto {
     return new SeriesDetailDto({
-      tmdbId: series?.mediaContent?.tmdbId,
-      title: series?.mediaContent?.title,
-      overview: series?.mediaContent?.overview,
-      imagePath: series?.mediaContent?.imagePath,
-      status: series?.mediaContent?.status,
-      genres: series?.mediaContent?.genres.map((genre) => genre.name),
-      productionCompanies: series?.mediaContent?.productionCompanies.map(
+      tmdbId: series?.tmdbId,
+      title: series?.title,
+      overview: series?.overview,
+      imagePath: series?.imagePath,
+      status: series?.status,
+      genres: series?.genres.map((genre) => genre.name),
+      productionCompanies: series?.productionCompanies.map(
         (company) =>
           new ProductionCompanyDto({
             name: company.name,
@@ -221,11 +214,10 @@ export class SeriesService {
           }),
       ),
       releaseDate:
-        series?.mediaContent?.releaseDate &&
-        !(series?.mediaContent?.releaseDate instanceof Date)
-          ? new Date(series?.mediaContent?.releaseDate).toISOString()
-          : series?.mediaContent?.releaseDate instanceof Date
-            ? series?.mediaContent?.releaseDate.toISOString()
+        series?.releaseDate && !(series?.releaseDate instanceof Date)
+          ? new Date(series?.releaseDate).toISOString()
+          : series?.releaseDate instanceof Date
+            ? series?.releaseDate.toISOString()
             : null,
       lastAirDate:
         series?.lastAirDate && !(series?.lastAirDate instanceof Date)

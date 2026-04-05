@@ -6,7 +6,7 @@ import { ObjectLiteral, Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { TmdbApiService } from 'src/common/tmdbapi/tmdbapi.service';
 import { WatchmodeService } from 'src/common/watchmode/watchmode.service';
-import { MediaContentsService } from 'src/media-contents/media-contents.service';
+import { MediaContentsService } from 'src/media/media.service';
 import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
 import { MediaType } from 'src/common/enums/media.type.enum';
 
@@ -80,7 +80,7 @@ describe('ProvidersService', () => {
     const providerData = { tmdbId: 10, name: 'Netflix' } as Provider;
     const mediaTmdbId = 500;
 
-    it('should throw ResourceNotFoundException if mediaContent does not exist', async () => {
+    it('should throw ResourceNotFoundException if media does not exist', async () => {
       mockMediaContentsService.findByTmdbId.mockResolvedValue(null);
 
       await expect(
@@ -170,7 +170,7 @@ describe('ProvidersService', () => {
         {
           lastLinkUpdate: new Date(),
           link: 'exists',
-          mediaContent: { type: MediaType.MOVIE },
+          media: { type: MediaType.MOVIE },
         },
       ]);
       mediaProviderRepo.createQueryBuilder?.mockReturnValue(mockQueryBuilder);

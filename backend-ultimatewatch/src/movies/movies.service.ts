@@ -116,14 +116,14 @@ export class MoviesService {
   async create(movie: TmdbMovieDto) {
     const mappedMovie: Movie = TmdbApiMapper.tmdbMovieDtoToMovie(movie);
 
-    mappedMovie.mediaContent.genres = await Promise.all(
-      mappedMovie.mediaContent.genres.map((genre: Genre) =>
+    mappedMovie.genres = await Promise.all(
+      mappedMovie.genres.map((genre: Genre) =>
         this.genresService.findByTmdbId(genre.tmdbId),
       ),
     );
 
-    mappedMovie.mediaContent.productionCompanies = await Promise.all(
-      mappedMovie.mediaContent.productionCompanies.map(
+    mappedMovie.productionCompanies = await Promise.all(
+      mappedMovie.productionCompanies.map(
         (productionCompany: ProductionCompany) =>
           this.productionCompaniesService.upsert(productionCompany),
       ),
@@ -134,22 +134,20 @@ export class MoviesService {
 
   async update(existingMovie: Movie, movie: TmdbMovieDto) {
     const mappedMovie: Movie = TmdbApiMapper.tmdbMovieDtoToMovie(movie);
-    mappedMovie.mediaContent.id = existingMovie.mediaContent.id;
 
-    mappedMovie.mediaContent.genres = await Promise.all(
-      mappedMovie.mediaContent.genres.map((genre: Genre) =>
+    mappedMovie.genres = await Promise.all(
+      mappedMovie.genres.map((genre: Genre) =>
         this.genresService.findByTmdbId(genre.tmdbId),
       ),
     );
 
-    mappedMovie.mediaContent.productionCompanies = await Promise.all(
-      mappedMovie.mediaContent.productionCompanies.map(
+    mappedMovie.productionCompanies = await Promise.all(
+      mappedMovie.productionCompanies.map(
         (productionCompany: ProductionCompany) =>
           this.productionCompaniesService.upsert(productionCompany),
       ),
     );
 
-    mappedMovie.mediaContent.updatedAt = new Date();
     mappedMovie.updatedAt = new Date();
 
     this.movieRepository.merge(existingMovie, mappedMovie);
@@ -158,15 +156,11 @@ export class MoviesService {
 
   async findMovieFromTmdbId(tmdbId: number): Promise<MovieDetailDto> {
     const existingMovie = await this.movieRepository.findOne({
-      where: { mediaContent: { tmdbId } },
-      relations: [
-        'mediaContent',
-        'mediaContent.genres',
-        'mediaContent.productionCompanies',
-      ],
+      where: { tmdbId },
+      relations: ['genres', 'productionCompanies'],
     });
 
-    if (existingMovie && !isDataStale(existingMovie.mediaContent.updatedAt)) {
+    if (existingMovie && !isDataStale(existingMovie.updatedAt)) {
       return this.createMovieDetailDto(existingMovie);
     }
 
@@ -186,13 +180,13 @@ export class MoviesService {
 
   private createMovieDetailDto(movie: Movie): MovieDetailDto {
     return new MovieDetailDto({
-      tmdbId: movie?.mediaContent?.tmdbId,
-      title: movie?.mediaContent?.title,
-      overview: movie?.mediaContent?.overview,
-      imagePath: movie?.mediaContent?.imagePath,
-      status: movie?.mediaContent?.status,
-      genres: movie?.mediaContent?.genres.map((genre) => genre.name),
-      productionCompanies: movie?.mediaContent?.productionCompanies.map(
+      tmdbId: movie?.tmdbId,
+      title: movie?.title,
+      overview: movie?.overview,
+      imagePath: movie?.imagePath,
+      status: movie?.status,
+      genres: movie?.genres.map((genre) => genre.name),
+      productionCompanies: movie?.productionCompanies.map(
         (company) =>
           new ProductionCompanyDto({
             name: company.name,
@@ -203,11 +197,10 @@ export class MoviesService {
       runtime: movie?.runtime,
       revenue: movie?.revenue,
       releaseDate:
-        movie?.mediaContent?.releaseDate &&
-        !(movie?.mediaContent?.releaseDate instanceof Date)
-          ? new Date(movie?.mediaContent?.releaseDate).toISOString()
-          : movie?.mediaContent?.releaseDate instanceof Date
-            ? movie?.mediaContent?.releaseDate.toISOString()
+        movie?.releaseDate && !(movie?.releaseDate instanceof Date)
+          ? new Date(movie?.releaseDate).toISOString()
+          : movie?.releaseDate instanceof Date
+            ? movie?.releaseDate.toISOString()
             : null,
     });
   }

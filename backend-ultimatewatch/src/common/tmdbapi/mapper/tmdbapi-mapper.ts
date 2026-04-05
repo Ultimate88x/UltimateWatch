@@ -14,7 +14,6 @@ import {
   TmdbProviderInfoDto,
 } from '../dto/tmdb-provider-response-dto';
 import { Provider } from 'src/providers/entities/provider.entity';
-import { MediaContent } from 'src/media-contents/entities/media-content.entity';
 import { MediaType } from 'src/common/enums/media.type.enum';
 import { Person } from 'src/person/entities/person.entity';
 import {
@@ -63,59 +62,54 @@ export class TmdbApiMapper {
   }
 
   static tmdbMovieDtoToMovie(response: TmdbMovieDto): Movie {
-    const mediaContent = new MediaContent();
     const movie = new Movie();
 
-    mediaContent.tmdbId = response.id;
-    mediaContent.title = response.title;
-    mediaContent.overview = response.overview;
-    mediaContent.imagePath = `https://image.tmdb.org/t/p/w500${response.poster_path}`;
-    mediaContent.releaseDate =
+    movie.tmdbId = response.id;
+    movie.title = response.title;
+    movie.overview = response.overview;
+    movie.imagePath = `https://image.tmdb.org/t/p/w500${response.poster_path}`;
+    movie.releaseDate =
       response.release_date && response.release_date.trim() !== ''
         ? new Date(response.release_date)
         : null;
-    mediaContent.status = response.status;
-    mediaContent.type = MediaType.MOVIE;
-    mediaContent.genres = this.tmdbGenreDtoListToGenreList(
+    movie.status = response.status;
+    movie.type = MediaType.MOVIE;
+    movie.genres = this.tmdbGenreDtoListToGenreList(
       response.genres,
       MediaType.MOVIE,
     );
-    mediaContent.productionCompanies =
+    movie.productionCompanies =
       this.tmdbProductionCompanyDtoListToProductionCompanyList(
         response.production_companies,
       );
-
     movie.budget = response.budget || 0;
     movie.runtime = response.runtime || 0;
     movie.revenue = response.revenue || 0;
-    movie.mediaContent = mediaContent;
 
     return movie;
   }
 
   static tmdbSeriesDtoToSeries(response: TmdbSeriesDto): Series {
-    const mediaContent = new MediaContent();
     const series = new Series();
 
-    mediaContent.tmdbId = response.id;
-    mediaContent.title = response.name;
-    mediaContent.overview = response.overview;
-    mediaContent.imagePath = `https://image.tmdb.org/t/p/w500${response.poster_path}`;
-    mediaContent.releaseDate =
+    series.tmdbId = response.id;
+    series.title = response.name;
+    series.overview = response.overview;
+    series.imagePath = `https://image.tmdb.org/t/p/w500${response.poster_path}`;
+    series.releaseDate =
       response.first_air_date && response.first_air_date.trim() !== ''
         ? new Date(response.first_air_date)
         : null;
-    mediaContent.status = response.status;
-    mediaContent.type = MediaType.SERIES;
-    mediaContent.genres = this.tmdbGenreDtoListToGenreList(
+    series.status = response.status;
+    series.type = MediaType.SERIES;
+    series.genres = this.tmdbGenreDtoListToGenreList(
       response.genres,
       MediaType.SERIES,
     );
-    mediaContent.productionCompanies =
+    series.productionCompanies =
       this.tmdbProductionCompanyDtoListToProductionCompanyList(
         response.production_companies,
       );
-
     series.lastAirDate =
       response.last_air_date && response.last_air_date.trim() !== ''
         ? new Date(response.last_air_date)
@@ -123,7 +117,6 @@ export class TmdbApiMapper {
     series.seasons = response.seasons
       ? this.tmdbSeasonDtoListToSeasonList(response.seasons)
       : [];
-    series.mediaContent = mediaContent;
 
     return series;
   }
@@ -307,7 +300,7 @@ export class TmdbApiMapper {
         : null;
     episode.number = response.episode_number;
     episode.runtime = response.runtime || 0;
-    episode.type = response.episode_type;
+    episode.episodeType = response.episode_type;
 
     return episode;
   }

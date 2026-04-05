@@ -3,7 +3,7 @@ import { Cron } from '@nestjs/schedule';
 import { CronExpression } from '@nestjs/schedule/dist/enums/cron-expression.enum';
 import { InjectRepository } from '@nestjs/typeorm';
 import { GenresService } from 'src/genres/genres.service';
-import { MediaContent } from 'src/media-contents/entities/media-content.entity';
+import { Media } from 'src/media/entities/media.entity';
 import { Person } from 'src/person/entities/person.entity';
 import { ProductionCompaniesService } from 'src/production-companies/production-companies.service';
 import { MediaProvider } from 'src/providers/entities/media.provider.entity';
@@ -19,8 +19,8 @@ export class ComplianceService {
     private readonly mediaProviderRepository: Repository<MediaProvider>,
     @InjectRepository(Provider)
     private readonly providerRepository: Repository<Provider>,
-    @InjectRepository(MediaContent)
-    private readonly mediaContentRepository: Repository<MediaContent>,
+    @InjectRepository(Media)
+    private readonly mediaContentRepository: Repository<Media>,
     @InjectRepository(Person)
     private readonly personRepository: Repository<Person>,
     private readonly genresService: GenresService,

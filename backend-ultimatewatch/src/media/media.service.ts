@@ -1,21 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { MediaContent } from './entities/media-content.entity';
+import { Media } from './entities/media.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
 
 @Injectable()
-export class MediaContentsService {
+export class MediaService {
   constructor(
-    @InjectRepository(MediaContent)
-    private readonly mediaContentRepository: Repository<MediaContent>,
+    @InjectRepository(Media)
+    private readonly mediaContentRepository: Repository<Media>,
   ) {}
 
-  async findByTmdbId(tmdbId: number): Promise<MediaContent> {
-    const mediaContent: MediaContent | null =
+  async findByTmdbId(tmdbId: number): Promise<Media> {
+    const media: Media | null =
       await this.mediaContentRepository.findOne({ where: { tmdbId } });
 
-    if (!mediaContent) {
+    if (!media) {
       throw new ResourceNotFoundException(
         'Media Content',
         'TMDB_ID',
@@ -23,6 +23,6 @@ export class MediaContentsService {
       );
     }
 
-    return mediaContent;
+    return media;
   }
 }

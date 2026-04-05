@@ -65,7 +65,7 @@ describe('SeasonService', () => {
 
       expect(repository.findOne).toHaveBeenCalledWith({
         where: { tmdbId: 123 },
-        relations: ['series.mediaContent'],
+        relations: ['series.media'],
       });
       expect(result).toEqual(mockSeason);
     });
@@ -86,7 +86,7 @@ describe('SeasonService', () => {
       const result = await service.findSeasonDetailDtoBySeriesIdAndNumber(1, 1);
 
       expect(repository.findOne).toHaveBeenCalledWith({
-        where: { series: { mediaContent: { tmdbId: 1 } }, number: 1 },
+        where: { series: { media: { tmdbId: 1 } }, number: 1 },
       });
       expect(result.tmdbId).toBe(mockSeason.tmdbId);
       expect(result.releaseDate).toBe(mockSeason.releaseDate?.toISOString());

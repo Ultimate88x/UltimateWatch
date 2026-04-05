@@ -11,7 +11,7 @@ import {
   TmdbPeopleResponseDto,
 } from 'src/common/tmdbapi/dto/tmdb-people-response-dto';
 import { TmdbApiMapper } from 'src/common/tmdbapi/mapper/tmdbapi-mapper';
-import { MediaContentsService } from 'src/media-contents/media-contents.service';
+import { MediaService } from 'src/media/media.service';
 import { MediaCastDto } from './dto/media-cast-dto';
 import { MediaCrewDto } from './dto/media-crew-dto';
 import { PersonType } from 'src/common/enums/person.type.enum';
@@ -19,7 +19,7 @@ import { MediaCastResponseDto } from './dto/media-cast-response-dto';
 import { MediaCrewResponseDto } from './dto/media-crew-response-dto';
 import { isDataStale } from 'src/common/helpers/data-stale.helper';
 import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
-import { MediaContent } from 'src/media-contents/entities/media-content.entity';
+import { Media } from 'src/media/entities/media.entity';
 
 @Injectable()
 export class PersonService {
@@ -29,7 +29,7 @@ export class PersonService {
     @InjectRepository(MediaPerson)
     private readonly mediaPersonRepository: Repository<MediaPerson>,
     private readonly tmdbapiService: TmdbApiService,
-    private readonly mediaContentService: MediaContentsService,
+    private readonly mediaService: MediaService,
   ) {}
 
   async findByTmdbId(tmdbId: number): Promise<Person | null> {
@@ -44,7 +44,7 @@ export class PersonService {
     mediaTmdbId: number,
   ): Promise<MediaPerson[]> {
     return await this.mediaPersonRepository.find({
-      where: { mediaContent: { tmdbId: mediaTmdbId } },
+      where: { media: { tmdbId: mediaTmdbId } },
       relations: ['person'],
     });
   }
@@ -60,7 +60,7 @@ export class PersonService {
     const skip = (page - 1) * limit;
     const [data, total] = await this.mediaPersonRepository.findAndCount({
       where: {
-        mediaContent: { tmdbId: mediaTmdbId },
+        media: { tmdbId: mediaTmdbId },
         type: PersonType.CAST,
       },
       relations: ['person'],
@@ -93,7 +93,7 @@ export class PersonService {
     const query = this.mediaPersonRepository
       .createQueryBuilder('mp')
       .leftJoinAndSelect('mp.person', 'person')
-      .leftJoin('mp.mediaContent', 'mc')
+      .leftJoin('mp.media', 'm')
       .addSelect(
         `CASE 
           WHEN mp.job LIKE '%Director%' THEN 1 
@@ -106,7 +106,7 @@ export class PersonService {
           ELSE 99 END`,
         'priority',
       )
-      .where('mc.tmdbId = :tmdbId', { tmdbId: mediaTmdbId })
+      .where('m.tmdbId = :tmdbId', { tmdbId: mediaTmdbId })
       .andWhere('mp.type = :type', { type: PersonType.CREW })
       .orderBy('priority', 'ASC')
       .addOrderBy('mp.id', 'ASC')
@@ -154,8 +154,8 @@ export class PersonService {
     await this.personRepository.upsert(person, ['tmdbId']);
     const savedPerson: Person | null = await this.findByTmdbId(personTmdbId);
 
-    const mediaContent: MediaContent | null =
-      await this.mediaContentService.findByTmdbId(mediaTmdbId);
+    const media: Media | null =
+      await this.mediaService.findByTmdbId(mediaTmdbId);
 
     const personInfo: TmdbCastDto | TmdbCrewDto | undefined =
       peopleInfo.cast.find((c) => c.id === personTmdbId) ||
@@ -180,15 +180,15 @@ export class PersonService {
         order: mediaPersonEntity.order,
         episodeCount: mediaPersonEntity.episodeCount || 0,
         person: savedPerson,
-        mediaContent: mediaContent,
+        media: media,
       },
-      ['person', 'mediaContent', 'character', 'job'],
+      ['person', 'media', 'character', 'job'],
     );
 
     const finalMediaPerson = await this.mediaPersonRepository.findOne({
       where: {
         person: { id: savedPerson.id },
-        mediaContent: { id: mediaContent.id },
+        media: { id: media.id },
         character: mediaPersonEntity.character || 'N/A',
         job: mediaPersonEntity.job || 'N/A',
       },
@@ -198,8 +198,8 @@ export class PersonService {
     if (!finalMediaPerson) {
       throw new ResourceNotFoundException(
         'MediaPerson',
-        'PERSON_ID, MEDIA_CONTENT_ID, CHARACTER/JOB',
-        `${savedPerson.id}, ${mediaContent.id}, ${mediaPersonEntity.character || mediaPersonEntity.job}`,
+        'PERSON_ID, MEDIA_ID, CHARACTER/JOB',
+        `${savedPerson.id}, ${media.id}, ${mediaPersonEntity.character || mediaPersonEntity.job}`,
       );
     }
 

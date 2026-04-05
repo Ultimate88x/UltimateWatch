@@ -6,7 +6,7 @@ import { MediaProvider } from './entities/media.provider.entity';
 import { TmdbApiService } from 'src/common/tmdbapi/tmdbapi.service';
 import { TmdbProviderInfoDto } from 'src/common/tmdbapi/dto/tmdb-provider-response-dto';
 import { TmdbApiMapper } from 'src/common/tmdbapi/mapper/tmdbapi-mapper';
-import { MediaContentsService } from 'src/media-contents/media-contents.service';
+import { MediaService } from 'src/media/media.service';
 import { WatchmodeService } from 'src/common/watchmode/watchmode.service';
 import { MediaType } from 'src/common/enums/media.type.enum';
 import { WatchmodeProviderDto } from 'src/common/watchmode/dto/watchmode-provider-dto';
@@ -23,7 +23,7 @@ export class ProvidersService {
     private readonly mediaProviderRepository: Repository<MediaProvider>,
     private readonly tmdbapiService: TmdbApiService,
     private readonly watchmodeService: WatchmodeService,
-    private readonly mediaContentService: MediaContentsService,
+    private readonly mediaService: MediaService,
   ) {}
 
   async createProvider(provider: Provider): Promise<Provider> {
@@ -48,7 +48,7 @@ export class ProvidersService {
     mediaTmdbId: number,
   ): Promise<MediaProvider[]> {
     const mediaProviders = await this.mediaProviderRepository.find({
-      where: { mediaContent: { tmdbId: mediaTmdbId } },
+      where: { media: { tmdbId: mediaTmdbId } },
       relations: ['provider'],
     });
 
@@ -62,10 +62,9 @@ export class ProvidersService {
     await this.providerRepository.upsert(providerData, ['tmdbId']);
     const savedProvider = await this.findByTmdbId(providerData.tmdbId);
 
-    const mediaContent =
-      await this.mediaContentService.findByTmdbId(mediaTmdbId);
+    const media = await this.mediaService.findByTmdbId(mediaTmdbId);
 
-    if (!mediaContent) {
+    if (!media) {
       throw new ResourceNotFoundException(
         'Media Content',
         'TMDB_ID',
@@ -83,11 +82,11 @@ export class ProvidersService {
 
     await this.mediaProviderRepository.upsert(
       {
-        mediaContent: mediaContent,
+        media: media,
         provider: savedProvider,
         uniqueLastRetrieved: new Date(),
       },
-      ['mediaContent', 'provider'],
+      ['media', 'provider'],
     );
 
     return savedProvider;
@@ -199,8 +198,8 @@ export class ProvidersService {
     providerTmdbId: number,
   ): Promise<string | null | undefined> {
     const mediaProviders = await this.mediaProviderRepository.find({
-      where: { mediaContent: { tmdbId: mediaTmdbId } },
-      relations: ['mediaContent', 'provider'],
+      where: { media: { tmdbId: mediaTmdbId } },
+      relations: ['media', 'provider'],
     });
 
     if (mediaProviders.length === 0) return null;
@@ -216,7 +215,7 @@ export class ProvidersService {
       const watchmodeProviders =
         await this.watchmodeService.getProvidersForMediaFromWatchmode(
           mediaTmdbId,
-          mediaProviders[0].mediaContent.type,
+          mediaProviders[0].media.type,
         );
 
       const updatedProviders = mediaProviders.map((mediaProvider) => {
@@ -236,7 +235,7 @@ export class ProvidersService {
     const mediaProvider = await this.mediaProviderRepository
       .createQueryBuilder('mp')
       .select('mp.link', 'link')
-      .innerJoin('mp.mediaContent', 'mc')
+      .innerJoin('mp.media', 'mc')
       .innerJoin('mp.provider', 'p')
       .where('mc.tmdbId = :mediaTmdbId', { mediaTmdbId })
       .andWhere('p.tmdbId = :providerTmdbId', { providerTmdbId })

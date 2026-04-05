@@ -1,10 +1,11 @@
-import { MediaEntity } from 'src/common/entities/media.entity';
+import { MediaType } from 'src/common/enums/media.type.enum';
 import { Episode } from 'src/episodes/entities/episode.entity';
+import { Media } from 'src/media/entities/media.entity';
 import { Series } from 'src/series/entities/series.entity';
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import { ChildEntity, Column, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 
-@Entity('seasons')
-export class Season extends MediaEntity {
+@ChildEntity(MediaType.SEASON)
+export class Season extends Media {
   @Column()
   number: number;
 

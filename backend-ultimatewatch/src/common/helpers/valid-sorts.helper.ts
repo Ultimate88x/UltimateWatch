@@ -1,7 +1,7 @@
 import { MediaType } from '../enums/media.type.enum';
 import { SortEnum } from '../enums/sort.enum';
 
-const VALID_SORTS_BY_TYPE: Record<MediaType, SortEnum[]> = {
+const VALID_SORTS_BY_TYPE: Partial<Record<MediaType, SortEnum[]>> = {
   [MediaType.MOVIE]: [
     SortEnum.POPULARITY_DESC,
     SortEnum.POPULARITY_ASC,
@@ -20,12 +20,13 @@ const VALID_SORTS_BY_TYPE: Record<MediaType, SortEnum[]> = {
 
 export const getSafeSortBy = (type: MediaType, sortValue?: string): string => {
   const defaultSort = SortEnum.POPULARITY_DESC;
+  const validSorts = VALID_SORTS_BY_TYPE[type];
 
-  if (!sortValue || !VALID_SORTS_BY_TYPE[type]) {
+  if (!sortValue || !validSorts) {
     return defaultSort;
   }
 
-  const isValid = VALID_SORTS_BY_TYPE[type].includes(sortValue as SortEnum);
+  const isValid = validSorts.includes(sortValue as SortEnum);
 
   return isValid ? sortValue : defaultSort;
 };

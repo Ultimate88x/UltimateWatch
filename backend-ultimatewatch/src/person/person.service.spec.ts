@@ -4,7 +4,7 @@ import { Person } from './entities/person.entity';
 import { MediaPerson } from './entities/media.person.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { TmdbApiService } from 'src/common/tmdbapi/tmdbapi.service';
-import { MediaContentsService } from 'src/media-contents/media-contents.service';
+import { MediaContentsService } from 'src/media/media.service';
 import { ObjectLiteral, Repository } from 'typeorm';
 import { MediaType } from 'src/common/enums/media.type.enum';
 import { PersonType } from 'src/common/enums/person.type.enum';

@@ -1,27 +1,46 @@
-import { Column, Entity, JoinTable, ManyToMany, OneToOne } from 'typeorm';
-import { MediaEntity } from '../../common/entities/media.entity';
+import {
+  Column,
+  Entity,
+  JoinTable,
+  ManyToMany,
+  TableInheritance,
+  Unique,
+} from 'typeorm';
 import { Genre } from 'src/genres/entities/genre.entity';
 import { ProductionCompany } from 'src/production-companies/entities/production-company.entity';
-import { Movie } from 'src/movies/entities/movie.entity';
-import { Series } from 'src/series/entities/series.entity';
+import { TmdbEntity } from 'src/common/entities/tmdb.entity';
 import { MediaType } from 'src/common/enums/media.type.enum';
 
-@Entity('media_contents')
-export class MediaContent extends MediaEntity {
+@Entity('media')
+@TableInheritance({
+  column: {
+    type: 'enum',
+    enum: MediaType,
+    name: 'type',
+  },
+})
+@Unique(['tmdbId'])
+export class Media extends TmdbEntity {
   @Column()
-  status: string;
+  title: string;
+
+  @Column({ type: 'text' })
+  overview: string;
+
+  @Column()
+  imagePath: string;
+
+  @Column({ type: 'date', nullable: true })
+  releaseDate: Date | null | undefined;
+
+  @Column({ type: 'varchar', nullable: true })
+  status?: string | undefined;
 
   @Column({
     type: 'enum',
     enum: MediaType,
   })
   type: MediaType;
-
-  @OneToOne(() => Movie, (movie) => movie.mediaContent, { nullable: true })
-  movie?: Movie;
-
-  @OneToOne(() => Series, (series) => series.mediaContent, { nullable: true })
-  series?: Series;
 
   @ManyToMany(() => Genre, { onDelete: 'CASCADE' })
   @JoinTable({

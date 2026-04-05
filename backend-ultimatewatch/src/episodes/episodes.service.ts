@@ -30,6 +30,9 @@ export class EpisodeService {
       where: {
         season: { tmdbId: seasonTmdbId },
       },
+      order: {
+        number: 'ASC',
+      },
       take: limit,
       skip: skip,
     });
@@ -70,7 +73,7 @@ export class EpisodeService {
     if (needsUpdate) {
       const tmdbSeason: TmdbSeasonDto =
         await this.tmdbApiService.getSeasonFromTmdb(
-          existingSeason.series.mediaContent.tmdbId,
+          existingSeason.series.tmdbId,
           existingSeason.number,
         );
 
@@ -107,7 +110,7 @@ export class EpisodeService {
             ? episode.releaseDate.toISOString()
             : null,
       runtime: episode.runtime,
-      type: episode.type,
+      type: episode.episodeType,
     });
   }
 }

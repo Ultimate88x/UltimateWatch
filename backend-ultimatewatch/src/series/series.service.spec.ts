@@ -352,7 +352,7 @@ describe('SeriesService', () => {
       const mockSavedSeries = {
         id: 1,
         seasons: [{ number: 1 }],
-        mediaContent: { genres: [], productionCompanies: [] },
+        media: { genres: [], productionCompanies: [] },
       } as unknown as Series;
 
       mockGenresService.findByTmdbId.mockResolvedValue({
@@ -379,7 +379,7 @@ describe('SeriesService', () => {
     it('should merge new data into existing series', async () => {
       const existingSeries = {
         id: 1,
-        mediaContent: { id: 10, genres: [], productionCompanies: [] },
+        media: { id: 10, genres: [], productionCompanies: [] },
         seasons: [],
       } as unknown as Series;
 
@@ -407,7 +407,7 @@ describe('SeriesService', () => {
 
     it('should return from DB if data is fresh', async () => {
       const freshSeries = {
-        mediaContent: {
+        media: {
           tmdbId,
           updatedAt: new Date(),
           genres: [],
@@ -430,11 +430,11 @@ describe('SeriesService', () => {
       staleDate.setDate(staleDate.getDate() - 10);
 
       const staleSeries = {
-        mediaContent: { tmdbId, updatedAt: staleDate },
+        media: { tmdbId, updatedAt: staleDate },
       } as unknown as Series;
 
       const updatedSeries = {
-        mediaContent: { tmdbId, genres: [], productionCompanies: [] },
+        media: { tmdbId, genres: [], productionCompanies: [] },
         seasons: [],
         getSeasonsNumber: () => 0,
       } as unknown as Series;
@@ -457,7 +457,7 @@ describe('SeriesService', () => {
   describe('createSeriesDetailDto (private)', () => {
     it('should correctly format dates into ISO strings', () => {
       const series = {
-        mediaContent: {
+        media: {
           tmdbId: 1,
           title: 'Test',
           genres: [{ name: 'Action' }],

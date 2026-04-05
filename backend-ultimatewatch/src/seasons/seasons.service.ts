@@ -19,7 +19,7 @@ export class SeasonService {
   async findByTmdbId(tmdbId: number): Promise<Season> {
     const season = await this.seasonRepository.findOne({
       where: { tmdbId },
-      relations: ['series.mediaContent'],
+      relations: ['series'],
     });
 
     if (!season) {
@@ -38,7 +38,7 @@ export class SeasonService {
     number: number,
   ): Promise<SeasonDetailDto> {
     const season = await this.seasonRepository.findOne({
-      where: { series: { mediaContent: { tmdbId } }, number },
+      where: { series: { tmdbId }, number },
     });
 
     if (!season) {

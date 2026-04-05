@@ -104,7 +104,7 @@ describe('EpisodeService', () => {
       number: 1,
       uniqueLastRetrieved: new Date(),
       getEpisodeNumber: () => 10,
-      series: { mediaContent: { tmdbId: 50 } },
+      series: { media: { tmdbId: 50 } },
     } as unknown as Season;
 
     it('should skip TMDB call if data is fresh', async () => {

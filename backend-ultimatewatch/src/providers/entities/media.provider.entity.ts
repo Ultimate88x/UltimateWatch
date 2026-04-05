@@ -1,10 +1,10 @@
 import { BaseEntity } from 'src/common/entities/base.entity';
-import { MediaContent } from 'src/media-contents/entities/media-content.entity';
+import { Media } from 'src/media/entities/media.entity';
 import { Column, Entity, JoinColumn, ManyToOne, Unique } from 'typeorm';
 import { Provider } from './provider.entity';
 
 @Entity('media_providers')
-@Unique(['mediaContent', 'provider'])
+@Unique(['media', 'provider'])
 export class MediaProvider extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   link?: string | null;
@@ -21,9 +21,9 @@ export class MediaProvider extends BaseEntity {
   @JoinColumn()
   provider: Provider;
 
-  @ManyToOne(() => MediaContent, {
+  @ManyToOne(() => Media, {
     onDelete: 'CASCADE',
   })
   @JoinColumn()
-  mediaContent: MediaContent;
+  media: Media;
 }

@@ -33,8 +33,8 @@ export class MembersService {
     if (!member) {
       throw new ResourceNotFoundException(
         'Member',
-        'USER_ID, EVENT_ID',
-        `${userId}, ${eventId}`,
+        '{ USER_ID, EVENT_ID }',
+        `{ ${userId}, ${eventId} }`,
       );
     }
 

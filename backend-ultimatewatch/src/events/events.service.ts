@@ -96,6 +96,7 @@ export class EventsService {
     const event: VotingEvent | null = await this.votingEventsRepository.findOne(
       {
         where: { id },
+        relations: ['proposedMedia'],
       },
     );
 

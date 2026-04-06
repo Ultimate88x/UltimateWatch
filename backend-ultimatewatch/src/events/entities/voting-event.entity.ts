@@ -1,16 +1,18 @@
 import { EventType } from 'src/common/enums/event.type.enum';
 import { Event } from './event.entity';
-import { Check, ChildEntity, Column } from 'typeorm';
+import { Check, ChildEntity, Column, JoinTable, ManyToMany } from 'typeorm';
 import { IsDate, IsInt, IsNotEmpty, Min, MinDate } from 'class-validator';
 import { Type } from 'class-transformer';
+import { Media } from 'src/media/entities/media.entity';
 
 @ChildEntity(EventType.VOTING)
 @Check(`"eventDate" > "votingEndDate"`)
+@Check(`"maxMedia" >= "maxVotesPerMember"`)
 export class VotingEvent extends Event {
   @Column()
   @IsNotEmpty()
   @IsInt()
-  @Min(2)
+  @Min(1)
   maxMedia: number;
 
   @Column()
@@ -25,4 +27,12 @@ export class VotingEvent extends Event {
   @IsDate()
   @MinDate(() => new Date(Date.now() + 60000))
   votingEndDate: Date;
+
+  @ManyToMany(() => Media, { onDelete: 'CASCADE' })
+  @JoinTable({
+    name: 'voting_event_proposed_media',
+    joinColumn: { name: 'eventId' },
+    inverseJoinColumn: { name: 'mediaId' },
+  })
+  proposedMedia: Media[];
 }

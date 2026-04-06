@@ -8,9 +8,11 @@ import {
   IsString,
   MinDate,
   MinLength,
+  Validate,
 } from 'class-validator';
 import { BaseEntity } from 'src/common/entities/base.entity';
 import { EventType } from 'src/common/enums/event.type.enum';
+import { IsAfterDateConstraint } from 'src/common/validations/IsAfterDateConstraint';
 import { Media } from 'src/media/entities/media.entity';
 import { Member } from 'src/members/entities/member.entity';
 import {
@@ -31,7 +33,7 @@ import {
     name: 'type',
   },
 })
-@Check(`"endDate" > "eventDate"`)
+@Check(`"endDate" IS NULL OR "endDate" > "eventDate"`)
 export class Event extends BaseEntity {
   @Column()
   @IsNotEmpty()
@@ -59,17 +61,13 @@ export class Event extends BaseEntity {
   @IsOptional()
   @Type(() => Date)
   @IsDate()
+  @Validate(IsAfterDateConstraint, ['eventDate'])
   endDate?: Date | null;
 
   @Column({ default: 0 })
   @IsInt()
   timer: number;
 
-  @Column({
-    type: 'enum',
-    enum: EventType,
-    default: EventType.STANDARD,
-  })
   @IsEnum(EventType)
   type: EventType;
 
@@ -84,5 +82,5 @@ export class Event extends BaseEntity {
     joinColumn: { name: 'eventId' },
     inverseJoinColumn: { name: 'mediaId' },
   })
-  media: Media[];
+  media?: Media[];
 }

@@ -3,10 +3,9 @@ import {
   IsString,
   IsNotEmpty,
   IsOptional,
-  IsArray,
-  IsNumber,
   MinLength,
   IsDate,
+  MinDate,
 } from 'class-validator';
 
 export class CreateEventDto {
@@ -24,10 +23,8 @@ export class CreateEventDto {
   @IsNotEmpty()
   @Type(() => Date)
   @IsDate()
+  @MinDate(() => new Date(Date.now() + 60000), {
+    message: 'Voting period must start at least one minute after creation',
+  })
   eventDate: Date;
-
-  @IsNotEmpty()
-  @IsArray()
-  @IsNumber({}, { each: true, message: 'Each media ID must be a number' })
-  mediaIds: number[];
 }

@@ -16,5 +16,6 @@ import { StandardEvent } from './entities/standard-event.entity';
   ],
   controllers: [EventsController],
   providers: [EventsService],
+  exports: [EventsService],
 })
 export class EventsModule {}

@@ -11,6 +11,7 @@ import { VotingEvent } from './entities/voting-event.entity';
 import { CreateVotingEventDto } from './dto/create-voting-event-dto';
 import { StandardEvent } from './entities/standard-event.entity';
 import { CreateStandardEventDto } from './dto/create-standard-event-dto';
+import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
 
 @Injectable()
 export class EventsService {
@@ -77,6 +78,18 @@ export class EventsService {
       visibility: '',
     });
     await this.saveVotingEvent(event);
+  }
+
+  async findBydId(id: number): Promise<Event> {
+    const event: Event | null = await this.eventsRepository.findOne({
+      where: { id },
+    });
+
+    if (!event) {
+      throw new ResourceNotFoundException('Event', 'ID', id.toString());
+    }
+
+    return event;
   }
 
   private async mapEventCommonValues(

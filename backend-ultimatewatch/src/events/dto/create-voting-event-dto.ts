@@ -6,7 +6,6 @@ import {
   Min,
   MinDate,
   IsArray,
-  IsNumber,
   Validate,
 } from 'class-validator';
 import { CreateEventDto } from './create-event-dto';
@@ -14,11 +13,13 @@ import { IsUniqueArrayConstraint } from 'src/common/validations/IsUniqueArrayCon
 
 export class CreateVotingEventDto extends CreateEventDto {
   @IsNotEmpty()
+  @Type(() => Number)
   @IsInt()
   @Min(1, { message: 'At least one media must end up selected' })
   maxMedia: number;
 
   @IsNotEmpty()
+  @Type(() => Number)
   @IsInt()
   @Min(1, { message: 'Event member should each get at least one vote' })
   maxVotesPerMember: number;
@@ -33,7 +34,7 @@ export class CreateVotingEventDto extends CreateEventDto {
 
   @IsNotEmpty()
   @IsArray()
-  @IsNumber({}, { each: true, message: 'Each media ID must be a number' })
+  @IsInt({ each: true, message: 'Each media ID must be an int' })
   @Validate(IsUniqueArrayConstraint, ['Proposed Media List'])
   proposedMediaIds: number[];
 }

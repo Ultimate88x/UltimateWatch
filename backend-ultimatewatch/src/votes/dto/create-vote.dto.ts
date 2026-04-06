@@ -1,14 +1,14 @@
 import { Type } from 'class-transformer';
 import { IsNotEmpty, IsInt } from 'class-validator';
 
-export class MediaProviderQueryDto {
+export class CreateVoteDto {
   @IsNotEmpty()
   @Type(() => Number)
   @IsInt()
-  mediaTmdbId: number;
+  eventId: number;
 
   @IsNotEmpty()
   @Type(() => Number)
   @IsInt()
-  providerTmdbId: number;
+  mediaId: number;
 }

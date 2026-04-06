@@ -1,17 +1,11 @@
 import { Type } from 'class-transformer';
-import {
-  IsOptional,
-  IsString,
-  IsDate,
-  IsNumber,
-  Validate,
-} from 'class-validator';
+import { IsOptional, IsString, IsDate, Validate, IsInt } from 'class-validator';
 import { IsAfterDateConstraint } from '../validations/IsAfterDateConstraint';
 
 export class MediaFilterDto {
   @IsOptional()
   @Type(() => Number)
-  @IsNumber()
+  @IsInt()
   page?: number;
 
   @IsOptional()

@@ -27,7 +27,7 @@ export class MembersService {
         user: { id: userId },
         event: { id: eventId },
       },
-      relations: ['event'],
+      relations: ['votes'],
     });
 
     if (!member) {

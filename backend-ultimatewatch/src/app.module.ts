@@ -23,6 +23,7 @@ import { EpisodeModule } from './episodes/episodes.module';
 import { RequestsModule } from './requests/requests.module';
 import { EventsModule } from './events/events.module';
 import { MembersModule } from './members/members.module';
+import { VotesModule } from './votes/votes.module';
 
 @Module({
   imports: [
@@ -64,6 +65,7 @@ import { MembersModule } from './members/members.module';
     RequestsModule,
     EventsModule,
     MembersModule,
+    VotesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

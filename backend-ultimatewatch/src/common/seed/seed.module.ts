@@ -18,6 +18,7 @@ import { Person } from 'src/person/entities/person.entity';
       ProductionCompany,
       Provider,
       Person,
+      Event,
     ]),
     GenresModule,
   ],

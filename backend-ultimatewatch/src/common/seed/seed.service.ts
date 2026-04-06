@@ -27,6 +27,8 @@ export class SeedService implements OnApplicationBootstrap {
     private readonly providerRepository: Repository<Provider>,
     @InjectRepository(Person)
     private readonly personRepository: Repository<Person>,
+    @InjectRepository(Event)
+    private readonly eventRepository: Repository<Event>,
     private readonly genreService: GenresService,
   ) {}
 
@@ -35,6 +37,8 @@ export class SeedService implements OnApplicationBootstrap {
   }
 
   async runSeed() {
+    this.logger.log('Deleting previous data...');
+
     await this.userRepository.query(
       'TRUNCATE TABLE "users" RESTART IDENTITY CASCADE',
     );
@@ -50,6 +54,11 @@ export class SeedService implements OnApplicationBootstrap {
     await this.personRepository.query(
       'TRUNCATE TABLE "people" RESTART IDENTITY CASCADE',
     );
+    await this.eventRepository.query(
+      'TRUNCATE TABLE "events" RESTART IDENTITY CASCADE',
+    );
+
+    this.logger.log('Data deleted succesfully!');
 
     this.logger.log('Seeding database...');
 

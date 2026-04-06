@@ -38,6 +38,7 @@ export class EventsService {
       ...createEventDto,
       members: [creator],
       media: mediaList,
+      timer: 0,
       visibility: '',
     });
     await this.save(event);

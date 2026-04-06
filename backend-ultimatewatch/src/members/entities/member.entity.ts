@@ -13,7 +13,6 @@ export class Member extends BaseEntity {
 
   @ManyToOne(() => Event, {
     onDelete: 'CASCADE',
-    cascade: true,
   })
   @JoinColumn()
   event: Event;

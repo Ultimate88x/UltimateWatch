@@ -1,42 +1,88 @@
+import { Type } from 'class-transformer';
+import {
+  IsDate,
+  IsEnum,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MinDate,
+  MinLength,
+} from 'class-validator';
 import { BaseEntity } from 'src/common/entities/base.entity';
+import { EventType } from 'src/common/enums/event.type.enum';
 import { Media } from 'src/media/entities/media.entity';
 import { Member } from 'src/members/entities/member.entity';
-import { Column, Entity, JoinTable, ManyToMany, OneToMany } from 'typeorm';
+import {
+  Check,
+  Column,
+  Entity,
+  JoinTable,
+  ManyToMany,
+  OneToMany,
+  TableInheritance,
+} from 'typeorm';
 
 @Entity('events')
+@TableInheritance({
+  column: {
+    type: 'enum',
+    enum: EventType,
+    name: 'type',
+  },
+})
+@Check(`"endDate" > "eventDate"`)
 export class Event extends BaseEntity {
   @Column()
+  @IsNotEmpty()
+  @IsString()
+  @MinLength(3)
   name: string;
 
   @Column({ type: 'text', nullable: true })
-  description: string | null | undefined;
+  @IsOptional()
+  @IsString()
+  description?: string | null;
 
-  @Column()
+  @Column({ default: 'public' })
+  @IsString()
   visibility: string;
 
-  @Column()
+  @Column({ type: 'timestamp' })
+  @IsNotEmpty()
+  @Type(() => Date)
+  @IsDate()
+  @MinDate(() => new Date(Date.now() + 60000))
   eventDate: Date;
 
-  @Column({ type: 'date', nullable: true })
-  endDate: Date | null | undefined;
+  @Column({ type: 'timestamp', nullable: true })
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  endDate?: Date | null;
 
-  @Column()
-  timer: number = 0;
+  @Column({ default: 0 })
+  @IsInt()
+  timer: number;
 
-  @OneToMany(() => Member, (member) => member.event)
+  @Column({
+    type: 'enum',
+    enum: EventType,
+    default: EventType.STANDARD,
+  })
+  @IsEnum(EventType)
+  type: EventType;
+
+  @OneToMany(() => Member, (member) => member.event, {
+    cascade: true,
+  })
   members: Member[];
 
   @ManyToMany(() => Media, { onDelete: 'CASCADE' })
   @JoinTable({
     name: 'event_media',
-    joinColumn: {
-      name: 'eventId',
-      referencedColumnName: 'id',
-    },
-    inverseJoinColumn: {
-      name: 'mediaId',
-      referencedColumnName: 'id',
-    },
+    joinColumn: { name: 'eventId' },
+    inverseJoinColumn: { name: 'mediaId' },
   })
   media: Media[];
 }

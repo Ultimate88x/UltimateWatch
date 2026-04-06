@@ -5,9 +5,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Event } from './entities/event.entity';
 import { UsersModule } from 'src/users/users.module';
 import { MediaModule } from 'src/media/media.module';
+import { VotingEvent } from './entities/voting-event.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Event]), UsersModule, MediaModule],
+  imports: [
+    TypeOrmModule.forFeature([Event, VotingEvent]),
+    UsersModule,
+    MediaModule,
+  ],
   controllers: [EventsController],
   providers: [EventsService],
 })

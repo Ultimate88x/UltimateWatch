@@ -9,6 +9,8 @@ import { MediaService } from 'src/media/media.service';
 import { Media } from 'src/media/entities/media.entity';
 import { VotingEvent } from 'src/events/entities/voting-event.entity';
 import { EventsService } from 'src/events/events.service';
+import { DeleteVoteDto } from './dto/delete-vote.dto';
+import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
 
 @Injectable()
 export class VotesService {
@@ -66,5 +68,51 @@ export class VotesService {
     });
 
     await this.save(vote);
+  }
+
+  async findByMemberIdAndMediaId(
+    memberId: number,
+    mediaId: number,
+  ): Promise<Vote> {
+    const vote: Vote | null = await this.votesRepository.findOne({
+      where: {
+        member: { id: memberId },
+        media: { tmdbId: mediaId },
+      },
+    });
+
+    if (!vote) {
+      throw new ResourceNotFoundException(
+        'Vote',
+        '{ MEMBER_ID, MEDIA_TMDB_ID }',
+        `{ ${memberId}, ${mediaId} }`,
+      );
+    }
+
+    return vote;
+  }
+
+  async deleteVote(
+    deleteVoteDto: DeleteVoteDto,
+    userId: number,
+  ): Promise<void> {
+    const { eventId, mediaId }: { eventId: number; mediaId: number } =
+      deleteVoteDto;
+    const member: Member = await this.membersService.findByUserIdAndEventId(
+      userId,
+      eventId,
+    );
+    const event: VotingEvent =
+      await this.eventsService.findVotingEventBydId(eventId);
+
+    if (new Date() > event.votingEndDate) {
+      throw new BadRequestException('The voting period has ended');
+    }
+
+    await this.mediaService.findByTmdbId(mediaId);
+
+    const vote: Vote = await this.findByMemberIdAndMediaId(member.id, mediaId);
+
+    await this.votesRepository.delete(vote.id);
   }
 }

@@ -5,14 +5,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Vote } from './entities/vote.entity';
 import { MembersModule } from 'src/members/members.module';
 import { MediaModule } from 'src/media/media.module';
-import { EventsModule } from 'src/events/events.module';
+import { VotingEvent } from 'src/events/entities/voting-event.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Vote]),
+    TypeOrmModule.forFeature([Vote, VotingEvent]),
     MembersModule,
     MediaModule,
-    EventsModule,
   ],
   controllers: [VotesController],
   providers: [VotesService],

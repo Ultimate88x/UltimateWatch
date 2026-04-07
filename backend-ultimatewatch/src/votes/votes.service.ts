@@ -8,18 +8,19 @@ import { MembersService } from 'src/members/members.service';
 import { MediaService } from 'src/media/media.service';
 import { Media } from 'src/media/entities/media.entity';
 import { VotingEvent } from 'src/events/entities/voting-event.entity';
-import { EventsService } from 'src/events/events.service';
 import { DeleteVoteDto } from './dto/delete-vote.dto';
 import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
+import { VoteResultDto } from './dto/vote-result.dto';
 
 @Injectable()
 export class VotesService {
   constructor(
     @InjectRepository(Vote)
     private readonly votesRepository: Repository<Vote>,
+    @InjectRepository(VotingEvent)
+    private readonly votingEventsRepository: Repository<VotingEvent>,
     private readonly membersService: MembersService,
     private readonly mediaService: MediaService,
-    private readonly eventsService: EventsService,
   ) {}
 
   async save(vote: Vote): Promise<Vote> {
@@ -36,8 +37,7 @@ export class VotesService {
       userId,
       eventId,
     );
-    const event: VotingEvent =
-      await this.eventsService.findVotingEventBydId(eventId);
+    const event: VotingEvent = await this.findVotingEventBydId(eventId);
 
     if (new Date() > event.votingEndDate) {
       throw new BadRequestException('The voting period has ended');
@@ -102,8 +102,7 @@ export class VotesService {
       userId,
       eventId,
     );
-    const event: VotingEvent =
-      await this.eventsService.findVotingEventBydId(eventId);
+    const event: VotingEvent = await this.findVotingEventBydId(eventId);
 
     if (new Date() > event.votingEndDate) {
       throw new BadRequestException('The voting period has ended');
@@ -114,5 +113,52 @@ export class VotesService {
     const vote: Vote = await this.findByMemberIdAndMediaId(member.id, mediaId);
 
     await this.votesRepository.delete(vote.id);
+  }
+
+  async getResultsByEvent(eventId: number): Promise<VoteResultDto[]> {
+    await this.findVotingEventBydId(eventId);
+
+    const results = await this.votesRepository
+      .createQueryBuilder('vote')
+      .innerJoin('vote.member', 'member')
+      .innerJoin('vote.media', 'media')
+      .select('media.tmdbId', 'mediaId')
+      .addSelect('media.title', 'title')
+      .addSelect('media.imagePath', 'imagePath')
+      .addSelect('COUNT(vote.id)', 'count')
+      .where('member.eventId = :eventId', { eventId })
+      .groupBy('media.tmdbId')
+      .addGroupBy('media.title')
+      .orderBy('count', 'DESC')
+      .getRawMany();
+
+    const voteResults: VoteResultDto[] = results.map(
+      (row: {
+        mediaId: number;
+        title: string;
+        imagePath: string;
+        count: string;
+      }) => ({
+        ...row,
+        count: Number(row.count),
+      }),
+    );
+
+    return voteResults;
+  }
+
+  async findVotingEventBydId(id: number): Promise<VotingEvent> {
+    const event: VotingEvent | null = await this.votingEventsRepository.findOne(
+      {
+        where: { id },
+        relations: ['proposedMedia'],
+      },
+    );
+
+    if (!event) {
+      throw new ResourceNotFoundException('Voting Event', 'ID', id.toString());
+    }
+
+    return event;
   }
 }

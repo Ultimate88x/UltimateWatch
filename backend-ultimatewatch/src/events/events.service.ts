@@ -92,21 +92,6 @@ export class EventsService {
     return event;
   }
 
-  async findVotingEventBydId(id: number): Promise<VotingEvent> {
-    const event: VotingEvent | null = await this.votingEventsRepository.findOne(
-      {
-        where: { id },
-        relations: ['proposedMedia'],
-      },
-    );
-
-    if (!event) {
-      throw new ResourceNotFoundException('Voting Event', 'ID', id.toString());
-    }
-
-    return event;
-  }
-
   private async mapEventCommonValues(
     userId: number,
   ): Promise<{ creator: Member }> {

@@ -27,4 +27,8 @@ export class CreateEventDto {
     message: 'Event date must be at least five minutes after creation',
   })
   eventDate: Date;
+
+  constructor(init?: Partial<CreateEventDto>) {
+    Object.assign(this, init);
+  }
 }

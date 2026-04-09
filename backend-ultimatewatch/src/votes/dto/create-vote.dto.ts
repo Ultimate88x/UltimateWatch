@@ -11,4 +11,8 @@ export class CreateVoteDto {
   @Type(() => Number)
   @IsInt()
   mediaId: number;
+
+  constructor(init?: Partial<CreateVoteDto>) {
+    Object.assign(this, init);
+  }
 }

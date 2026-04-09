@@ -15,4 +15,9 @@ export class CreateStandardEventDto extends CreateEventDto {
   @IsInt({ each: true, message: 'Each media ID must be a number' })
   @Validate(IsUniqueArrayConstraint, ['Media List'])
   mediaIds: number[];
+
+  constructor(init?: Partial<CreateEventDto>) {
+    super();
+    Object.assign(this, init);
+  }
 }

@@ -10,6 +10,7 @@ import {
 } from 'class-validator';
 import { CreateEventDto } from './create-event-dto';
 import { IsUniqueArrayConstraint } from 'src/common/validations/IsUniqueArrayConstraint';
+import { IsBeforeDateConstraint } from 'src/common/validations/IsBeforeDateConstraint';
 
 export class CreateVotingEventDto extends CreateEventDto {
   @IsNotEmpty()
@@ -30,6 +31,11 @@ export class CreateVotingEventDto extends CreateEventDto {
   @MinDate(() => new Date(Date.now() + 300000), {
     message: 'Voting period must last at least five minutes',
   })
+  @Validate(IsBeforeDateConstraint, [
+    'eventDate',
+    'Event Start Date',
+    'Voting End Date',
+  ])
   votingEndDate: Date;
 
   @IsNotEmpty()
@@ -37,4 +43,9 @@ export class CreateVotingEventDto extends CreateEventDto {
   @IsInt({ each: true, message: 'Each media ID must be an int' })
   @Validate(IsUniqueArrayConstraint, ['Proposed Media List'])
   proposedMediaIds: number[];
+
+  constructor(init?: Partial<CreateVotingEventDto>) {
+    super();
+    Object.assign(this, init);
+  }
 }

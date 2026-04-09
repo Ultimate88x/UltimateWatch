@@ -27,18 +27,20 @@ export class EventsService {
     private readonly mediaService: MediaService,
   ) {}
 
-  async saveStandardEvent(standardEvent: StandardEvent): Promise<Event> {
+  async saveStandardEvent(
+    standardEvent: StandardEvent,
+  ): Promise<StandardEvent> {
     return await this.standardEventsRepository.save(standardEvent);
   }
 
-  async saveVotingEvent(votingEvent: VotingEvent): Promise<Event> {
+  async saveVotingEvent(votingEvent: VotingEvent): Promise<VotingEvent> {
     return await this.votingEventsRepository.save(votingEvent);
   }
 
   async createStandardEvent(
     createEventDto: CreateStandardEventDto,
     userId: number,
-  ): Promise<void> {
+  ): Promise<StandardEvent> {
     const { creator }: { creator: Member } =
       await this.mapEventCommonValues(userId);
 
@@ -56,13 +58,13 @@ export class EventsService {
       status: EventStatus.WAITING,
       visibility: '',
     });
-    await this.saveStandardEvent(event);
+    return await this.saveStandardEvent(event);
   }
 
   async createVotingEvent(
     createEventDto: CreateVotingEventDto,
     userId: number,
-  ): Promise<void> {
+  ): Promise<VotingEvent> {
     const { creator }: { creator: Member } =
       await this.mapEventCommonValues(userId);
 
@@ -80,7 +82,7 @@ export class EventsService {
       status: EventStatus.VOTING,
       visibility: '',
     });
-    await this.saveVotingEvent(event);
+    return await this.saveVotingEvent(event);
   }
 
   async findBydId(id: number): Promise<Event> {

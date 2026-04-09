@@ -25,5 +25,6 @@ import { SeasonModule } from 'src/seasons/seasons.module';
   ],
   controllers: [SeriesController],
   providers: [SeriesService],
+  exports: [SeriesService],
 })
 export class SeriesModule {}

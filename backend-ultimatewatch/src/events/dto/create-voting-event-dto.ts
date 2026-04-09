@@ -27,8 +27,8 @@ export class CreateVotingEventDto extends CreateEventDto {
   @IsNotEmpty()
   @Type(() => Date)
   @IsDate()
-  @MinDate(() => new Date(Date.now() + 60000), {
-    message: 'Voting period must last at least one minute',
+  @MinDate(() => new Date(Date.now() + 300000), {
+    message: 'Voting period must last at least five minutes',
   })
   votingEndDate: Date;
 

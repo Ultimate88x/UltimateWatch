@@ -9,7 +9,7 @@ export class Vote extends BaseEntity {
   @JoinColumn()
   member: Member;
 
-  @ManyToOne(() => Media, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Media, (media) => media.votes, { onDelete: 'CASCADE' })
   @JoinColumn()
   media: Media;
 }

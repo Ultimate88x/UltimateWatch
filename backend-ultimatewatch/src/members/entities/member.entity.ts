@@ -4,7 +4,7 @@ import { Event } from 'src/events/entities/event.entity';
 import { Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { Vote } from 'src/votes/entities/vote.entity';
 
-@Entity('member')
+@Entity('members')
 export class Member extends BaseEntity {
   @ManyToOne(() => User, {
     onDelete: 'CASCADE',

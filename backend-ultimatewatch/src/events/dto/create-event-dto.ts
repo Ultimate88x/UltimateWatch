@@ -23,8 +23,8 @@ export class CreateEventDto {
   @IsNotEmpty()
   @Type(() => Date)
   @IsDate()
-  @MinDate(() => new Date(Date.now() + 60000), {
-    message: 'Voting period must start at least one minute after creation',
+  @MinDate(() => new Date(Date.now() + 300000), {
+    message: 'Event date must be at least five minutes after creation',
   })
   eventDate: Date;
 }

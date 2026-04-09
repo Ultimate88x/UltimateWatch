@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Event } from './entities/event.entity';
-import { Repository } from 'typeorm';
+import { LessThanOrEqual, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UsersService } from 'src/users/users.service';
 import { User } from 'src/users/entities/user.entity';
@@ -12,6 +12,7 @@ import { CreateVotingEventDto } from './dto/create-voting-event-dto';
 import { StandardEvent } from './entities/standard-event.entity';
 import { CreateStandardEventDto } from './dto/create-standard-event-dto';
 import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
+import { EventStatus } from 'src/common/enums/event.status.enum';
 
 @Injectable()
 export class EventsService {
@@ -52,6 +53,7 @@ export class EventsService {
       members: [creator],
       media: mediaList,
       timer: 0,
+      status: EventStatus.WAITING,
       visibility: '',
     });
     await this.saveStandardEvent(event);
@@ -75,6 +77,7 @@ export class EventsService {
       members: [creator],
       proposedMedia: proposedMediaList,
       timer: 0,
+      status: EventStatus.VOTING,
       visibility: '',
     });
     await this.saveVotingEvent(event);
@@ -90,6 +93,32 @@ export class EventsService {
     }
 
     return event;
+  }
+
+  async findVotingEventBydId(id: number): Promise<VotingEvent> {
+    const event: VotingEvent | null = await this.votingEventsRepository.findOne(
+      {
+        where: { id },
+        relations: ['proposedMedia'],
+      },
+    );
+
+    if (!event) {
+      throw new ResourceNotFoundException('Voting Event', 'ID', id.toString());
+    }
+
+    return event;
+  }
+
+  async findExpiredAndVoting(): Promise<VotingEvent[]> {
+    const events: VotingEvent[] = await this.votingEventsRepository.find({
+      where: {
+        status: EventStatus.VOTING,
+        votingEndDate: LessThanOrEqual(new Date()),
+      },
+    });
+
+    return events;
   }
 
   private async mapEventCommonValues(

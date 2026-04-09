@@ -11,6 +11,7 @@ import {
   Validate,
 } from 'class-validator';
 import { BaseEntity } from 'src/common/entities/base.entity';
+import { EventStatus } from 'src/common/enums/event.status.enum';
 import { EventType } from 'src/common/enums/event.type.enum';
 import { IsAfterDateConstraint } from 'src/common/validations/IsAfterDateConstraint';
 import { Media } from 'src/media/entities/media.entity';
@@ -19,6 +20,7 @@ import {
   Check,
   Column,
   Entity,
+  Index,
   JoinTable,
   ManyToMany,
   OneToMany,
@@ -54,7 +56,7 @@ export class Event extends BaseEntity {
   @IsNotEmpty()
   @Type(() => Date)
   @IsDate()
-  @MinDate(() => new Date(Date.now() + 60000))
+  @MinDate(() => new Date(Date.now() + 300000))
   eventDate: Date;
 
   @Column({ type: 'timestamp', nullable: true })
@@ -70,6 +72,11 @@ export class Event extends BaseEntity {
 
   @IsEnum(EventType)
   type: EventType;
+
+  @Index()
+  @Column()
+  @IsEnum(EventStatus)
+  status: EventStatus;
 
   @OneToMany(() => Member, (member) => member.event, {
     cascade: true,

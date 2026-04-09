@@ -24,9 +24,12 @@ import { RequestsModule } from './requests/requests.module';
 import { EventsModule } from './events/events.module';
 import { MembersModule } from './members/members.module';
 import { VotesModule } from './votes/votes.module';
+import { ResultsModule } from './results/results.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '../.env',
@@ -66,6 +69,7 @@ import { VotesModule } from './votes/votes.module';
     EventsModule,
     MembersModule,
     VotesModule,
+    ResultsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

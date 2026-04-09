@@ -3,6 +3,7 @@ import {
   Entity,
   JoinTable,
   ManyToMany,
+  OneToMany,
   TableInheritance,
   Unique,
 } from 'typeorm';
@@ -10,6 +11,8 @@ import { Genre } from 'src/genres/entities/genre.entity';
 import { ProductionCompany } from 'src/production-companies/entities/production-company.entity';
 import { TmdbEntity } from 'src/common/entities/tmdb.entity';
 import { MediaType } from 'src/common/enums/media.type.enum';
+import { VotingEvent } from 'src/events/entities/voting-event.entity';
+import { Vote } from 'src/votes/entities/vote.entity';
 
 @Entity('media')
 @TableInheritance({
@@ -69,4 +72,10 @@ export class Media extends TmdbEntity {
     },
   })
   productionCompanies: ProductionCompany[];
+
+  @OneToMany(() => Vote, (vote) => vote.media)
+  votes: Vote[];
+
+  @ManyToMany(() => VotingEvent, (event) => event.proposedMedia)
+  proposedInEvents: VotingEvent[];
 }

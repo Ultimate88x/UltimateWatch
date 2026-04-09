@@ -11,16 +11,18 @@ import { VotingEvent } from 'src/events/entities/voting-event.entity';
 import { DeleteVoteDto } from './dto/delete-vote.dto';
 import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
 import { VoteResultDto } from './dto/vote-result.dto';
+import { EventsService } from 'src/events/events.service';
 
 @Injectable()
 export class VotesService {
   constructor(
     @InjectRepository(Vote)
     private readonly votesRepository: Repository<Vote>,
-    @InjectRepository(VotingEvent)
-    private readonly votingEventsRepository: Repository<VotingEvent>,
+    @InjectRepository(Media)
+    private readonly mediaRepository: Repository<Media>,
     private readonly membersService: MembersService,
     private readonly mediaService: MediaService,
+    private readonly eventsService: EventsService,
   ) {}
 
   async save(vote: Vote): Promise<Vote> {
@@ -37,7 +39,8 @@ export class VotesService {
       userId,
       eventId,
     );
-    const event: VotingEvent = await this.findVotingEventBydId(eventId);
+    const event: VotingEvent =
+      await this.eventsService.findVotingEventBydId(eventId);
 
     if (new Date() > event.votingEndDate) {
       throw new BadRequestException('The voting period has ended');
@@ -102,7 +105,8 @@ export class VotesService {
       userId,
       eventId,
     );
-    const event: VotingEvent = await this.findVotingEventBydId(eventId);
+    const event: VotingEvent =
+      await this.eventsService.findVotingEventBydId(eventId);
 
     if (new Date() > event.votingEndDate) {
       throw new BadRequestException('The voting period has ended');
@@ -115,50 +119,54 @@ export class VotesService {
     await this.votesRepository.delete(vote.id);
   }
 
-  async getResultsByEvent(eventId: number): Promise<VoteResultDto[]> {
-    await this.findVotingEventBydId(eventId);
+  async getResultsByEvent(
+    eventId: number,
+    limited: boolean = true,
+  ): Promise<VoteResultDto[]> {
+    const event: VotingEvent =
+      await this.eventsService.findVotingEventBydId(eventId);
 
-    const results = await this.votesRepository
-      .createQueryBuilder('vote')
-      .innerJoin('vote.member', 'member')
-      .innerJoin('vote.media', 'media')
-      .select('media.tmdbId', 'mediaId')
-      .addSelect('media.title', 'title')
-      .addSelect('media.imagePath', 'imagePath')
-      .addSelect('COUNT(vote.id)', 'count')
-      .where('member.eventId = :eventId', { eventId })
-      .groupBy('media.tmdbId')
+    const query = this.mediaRepository
+      .createQueryBuilder('media')
+      .innerJoin('media.proposedInEvents', 'event')
+      .leftJoin('media.votes', 'vote')
+      .leftJoin('vote.member', 'member', 'member.event.id = :eventId', {
+        eventId: Number(eventId),
+      })
+      .select([
+        'media.tmdbId AS "mediaId"',
+        'media.title AS "title"',
+        'media.imagePath AS "imagePath"',
+        'COUNT(vote.id) AS "count"',
+        'MAX(vote.createdAt) AS "lastVoteDate"',
+      ])
+      .where('event.id = :eventId', { eventId: Number(eventId) })
+      .groupBy('media.id')
+      .addGroupBy('media.tmdbId')
       .addGroupBy('media.title')
+      .addGroupBy('media.imagePath')
       .orderBy('count', 'DESC')
-      .getRawMany();
+      .addOrderBy('MAX(vote.createdAt)', 'ASC')
+      .addOrderBy('media.tmdbId', 'ASC');
 
-    const voteResults: VoteResultDto[] = results.map(
+    if (limited) {
+      query.limit(event.maxMedia);
+    }
+
+    const results = await query.getRawMany();
+
+    return results.map(
       (row: {
         mediaId: number;
         title: string;
         imagePath: string;
         count: string;
       }) => ({
-        ...row,
+        mediaId: Number(row.mediaId),
+        title: row.title,
+        imagePath: row.imagePath,
         count: Number(row.count),
       }),
     );
-
-    return voteResults;
-  }
-
-  async findVotingEventBydId(id: number): Promise<VotingEvent> {
-    const event: VotingEvent | null = await this.votingEventsRepository.findOne(
-      {
-        where: { id },
-        relations: ['proposedMedia'],
-      },
-    );
-
-    if (!event) {
-      throw new ResourceNotFoundException('Voting Event', 'ID', id.toString());
-    }
-
-    return event;
   }
 }

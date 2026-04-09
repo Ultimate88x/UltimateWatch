@@ -5,15 +5,18 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Vote } from './entities/vote.entity';
 import { MembersModule } from 'src/members/members.module';
 import { MediaModule } from 'src/media/media.module';
-import { VotingEvent } from 'src/events/entities/voting-event.entity';
+import { EventsModule } from 'src/events/events.module';
+import { Media } from 'src/media/entities/media.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Vote, VotingEvent]),
+    TypeOrmModule.forFeature([Vote, Media]),
     MembersModule,
     MediaModule,
+    EventsModule,
   ],
   controllers: [VotesController],
   providers: [VotesService],
+  exports: [VotesService],
 })
 export class VotesModule {}

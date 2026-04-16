@@ -15,6 +15,7 @@ import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-fo
 import { EventStatus } from 'src/common/enums/event.status.enum';
 import { ListEventDto } from './dto/list-event-dto';
 import { ListEventResponseDto } from './dto/list-event-response-dto';
+import { MemberRole } from 'src/common/enums/member.role.enum';
 
 @Injectable()
 export class EventsService {
@@ -132,6 +133,7 @@ export class EventsService {
 
     const creator: Member = new Member();
     creator.user = user;
+    creator.role = MemberRole.OWNER;
 
     return { creator };
   }
@@ -147,8 +149,13 @@ export class EventsService {
 
     const query = this.eventsRepository
       .createQueryBuilder('event')
-      .leftJoinAndSelect('event.members', 'member')
-      .leftJoinAndSelect('member.user', 'user')
+      .leftJoinAndSelect(
+        'event.members',
+        'ownerMember',
+        'ownerMember.role = :ownerRole',
+        { ownerRole: MemberRole.OWNER },
+      )
+      .leftJoinAndSelect('ownerMember.user', 'ownerUser')
       .where((qb) => {
         const subQuery = qb
           .subQuery()
@@ -159,6 +166,7 @@ export class EventsService {
         return 'event.id NOT IN ' + subQuery;
       })
       .setParameter('userId', userId)
+      .setParameter('ownerRole', MemberRole.OWNER)
       .andWhere('event.status != :finishedStatus', {
         finishedStatus: EventStatus.FINISHED,
       })
@@ -197,8 +205,13 @@ export class EventsService {
         'memberFilter.userId = :userId',
         { userId },
       )
-      .leftJoinAndSelect('event.members', 'allMembers')
-      .leftJoinAndSelect('allMembers.user', 'allUsers')
+      .leftJoinAndSelect(
+        'event.members',
+        'ownerMember',
+        'ownerMember.role = :ownerRole',
+        { ownerRole: MemberRole.OWNER },
+      )
+      .leftJoinAndSelect('ownerMember.user', 'ownerUser')
       .addSelect(
         `(CASE WHEN event.status = :finished THEN 1 ELSE 0 END)`,
         'is_finished',
@@ -206,6 +219,57 @@ export class EventsService {
       .orderBy('is_finished', 'ASC')
       .addOrderBy('event.eventDate', 'DESC')
       .setParameter('userId', userId)
+      .setParameter('ownerRole', MemberRole.OWNER)
+      .setParameter('finished', EventStatus.FINISHED)
+      .skip(skip)
+      .take(limit);
+
+    const [events, total] = await query.getManyAndCount();
+
+    const listEventDtos: ListEventDto[] = events.map((event: Event) =>
+      this.createListEventDto(event),
+    );
+
+    return new ListEventResponseDto({
+      data: listEventDtos,
+      total,
+      page,
+      lastPage: Math.ceil(total / limit),
+    });
+  }
+
+  async getCreatedEventsByUser(
+    userId: number,
+    page: number,
+    limit: number,
+  ): Promise<ListEventResponseDto> {
+    await this.usersService.findById(userId);
+
+    const skip = (page - 1) * limit;
+
+    const query = this.eventsRepository
+      .createQueryBuilder('event')
+      .innerJoin(
+        'event.members',
+        'memberFilter',
+        'memberFilter.userId = :userId AND memberFilter.role = :role',
+        { userId, role: MemberRole.OWNER },
+      )
+      .leftJoinAndSelect(
+        'event.members',
+        'ownerMember',
+        'ownerMember.role = :ownerRole',
+        { ownerRole: MemberRole.OWNER },
+      )
+      .leftJoinAndSelect('ownerMember.user', 'ownerUser')
+      .addSelect(
+        `(CASE WHEN event.status = :finished THEN 1 ELSE 0 END)`,
+        'is_finished',
+      )
+      .orderBy('is_finished', 'ASC')
+      .addOrderBy('event.eventDate', 'DESC')
+      .setParameter('userId', userId)
+      .setParameter('ownerRole', MemberRole.OWNER)
       .setParameter('finished', EventStatus.FINISHED)
       .skip(skip)
       .take(limit);

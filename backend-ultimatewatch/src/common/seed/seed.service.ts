@@ -18,6 +18,7 @@ import { VotingEvent } from 'src/events/entities/voting-event.entity';
 import { Member } from 'src/members/entities/member.entity';
 import { MembersService } from 'src/members/members.service';
 import { SeriesDetailDto } from 'src/series/dto/series-detail-dto';
+import { MemberRole } from '../enums/member.role.enum';
 
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
@@ -127,6 +128,7 @@ export class SeedService implements OnApplicationBootstrap {
       await this.eventService.createVotingEvent(votingEvent, testAdmin.id);
 
     let userMember: Member = this.membersRepository.create({
+      role: MemberRole.MEMBER,
       user: testUser,
       event: testVotingEvent,
     });

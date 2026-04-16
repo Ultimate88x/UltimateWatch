@@ -51,4 +51,14 @@ export class EventsController {
   ): Promise<ListEventResponseDto> {
     return await this.eventsService.getJoinedEventsByUser(userId, page, limit);
   }
+
+  @Get('/created')
+  @UseGuards(AuthGuard)
+  async findCreatedEvents(
+    @GetUser('userId') userId: number,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 6,
+  ): Promise<ListEventResponseDto> {
+    return await this.eventsService.getCreatedEventsByUser(userId, page, limit);
+  }
 }

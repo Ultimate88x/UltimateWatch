@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { Event } from './entities/event.entity';
 import { LessThanOrEqual, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -16,6 +16,7 @@ import { EventStatus } from 'src/common/enums/event.status.enum';
 import { ListEventDto } from './dto/list-event-dto';
 import { ListEventResponseDto } from './dto/list-event-response-dto';
 import { MemberRole } from 'src/common/enums/member.role.enum';
+import { MembersService } from 'src/members/members.service';
 
 @Injectable()
 export class EventsService {
@@ -28,6 +29,7 @@ export class EventsService {
     private readonly votingEventsRepository: Repository<VotingEvent>,
     private readonly usersService: UsersService,
     private readonly mediaService: MediaService,
+    private readonly membersService: MembersService,
   ) {}
 
   async saveStandardEvent(
@@ -286,6 +288,25 @@ export class EventsService {
       page,
       lastPage: Math.ceil(total / limit),
     });
+  }
+
+  async joinEvent(userId: number, eventId: number): Promise<void> {
+    const existingMember: Member =
+      await this.membersService.findByUserIdAndEventId(userId, eventId);
+
+    if (existingMember) {
+      throw new BadRequestException('You have already joined this event');
+    }
+
+    const user: User = await this.usersService.findById(userId);
+    const event: Event = await this.findBydId(eventId);
+
+    if (event.status === EventStatus.FINISHED) {
+      throw new BadRequestException('You cannot join a finished event');
+    }
+
+    const member: Member = this.membersService.create(user, event);
+    await this.membersService.save(member);
   }
 
   private createListEventDto(event: Event): ListEventDto {

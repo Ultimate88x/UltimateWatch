@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { EventsService } from './events.service';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { GetUser } from 'src/common/decorators/get-user.decorator';
@@ -60,5 +68,16 @@ export class EventsController {
     @Query('limit') limit: number = 6,
   ): Promise<ListEventResponseDto> {
     return await this.eventsService.getCreatedEventsByUser(userId, page, limit);
+  }
+
+  @Post('/join/:id')
+  @UseGuards(AuthGuard)
+  async joinEvent(
+    @GetUser('userId') userId: number,
+    @Param('id') id: string,
+  ): Promise<{ message: string }> {
+    await this.eventsService.joinEvent(userId, +id);
+
+    return { message: 'Succesfully joined the event!' };
   }
 }

@@ -10,5 +10,6 @@ import { TmdbApiModule } from 'src/common/tmdbapi/tmdbapi.module';
   imports: [TypeOrmModule.forFeature([Episode]), SeasonModule, TmdbApiModule],
   controllers: [EpisodeController],
   providers: [EpisodeService],
+  exports: [EpisodeService],
 })
 export class EpisodeModule {}

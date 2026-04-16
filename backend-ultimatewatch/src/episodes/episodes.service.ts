@@ -10,6 +10,7 @@ import { TmdbApiService } from 'src/common/tmdbapi/tmdbapi.service';
 import { TmdbSeasonDto } from 'src/common/tmdbapi/dto/media/tmdb-season-dto';
 import { TmdbApiMapper } from 'src/common/tmdbapi/mapper/tmdbapi-mapper';
 import { Season } from 'src/seasons/entities/seasons.entity';
+import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
 
 @Injectable()
 export class EpisodeService {
@@ -19,6 +20,23 @@ export class EpisodeService {
     private readonly seasonService: SeasonService,
     private readonly tmdbApiService: TmdbApiService,
   ) {}
+
+  async findByTmdbId(tmdbId: number): Promise<Episode> {
+    const episode = await this.episodeRepository.findOne({
+      where: { tmdbId },
+      relations: ['season', 'season.series'],
+    });
+
+    if (!episode) {
+      throw new ResourceNotFoundException(
+        'Episode',
+        'TMDB_ID',
+        tmdbId.toString(),
+      );
+    }
+
+    return episode;
+  }
 
   async findFromSeasonByTmdbId(
     seasonTmdbId: number,

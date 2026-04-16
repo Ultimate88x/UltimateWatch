@@ -17,6 +17,11 @@ import { ListEventDto } from './dto/list-event-dto';
 import { ListEventResponseDto } from './dto/list-event-response-dto';
 import { MemberRole } from 'src/common/enums/member.role.enum';
 import { MembersService } from 'src/members/members.service';
+import { MediaType } from 'src/common/enums/media.type.enum';
+import { Season } from 'src/seasons/entities/seasons.entity';
+import { SeasonService } from 'src/seasons/seasons.service';
+import { EpisodeService } from 'src/episodes/episodes.service';
+import { Episode } from 'src/episodes/entities/episode.entity';
 
 @Injectable()
 export class EventsService {
@@ -30,6 +35,8 @@ export class EventsService {
     private readonly usersService: UsersService,
     private readonly mediaService: MediaService,
     private readonly membersService: MembersService,
+    private readonly seasonsService: SeasonService,
+    private readonly episodesService: EpisodeService,
   ) {}
 
   async saveStandardEvent(
@@ -158,6 +165,7 @@ export class EventsService {
         { ownerRole: MemberRole.OWNER },
       )
       .leftJoinAndSelect('ownerMember.user', 'ownerUser')
+      .leftJoinAndSelect('event.media', 'eventMedia')
       .where((qb) => {
         const subQuery = qb
           .subQuery()
@@ -178,8 +186,8 @@ export class EventsService {
 
     const [events, total] = await query.getManyAndCount();
 
-    const listEventDtos: ListEventDto[] = events.map((event: Event) =>
-      this.createListEventDto(event),
+    const listEventDtos: ListEventDto[] = await Promise.all(
+      events.map(async (event: Event) => this.createListEventDto(event)),
     );
 
     return new ListEventResponseDto({
@@ -214,6 +222,7 @@ export class EventsService {
         { ownerRole: MemberRole.OWNER },
       )
       .leftJoinAndSelect('ownerMember.user', 'ownerUser')
+      .leftJoinAndSelect('event.media', 'eventMedia')
       .addSelect(
         `(CASE WHEN event.status = :finished THEN 1 ELSE 0 END)`,
         'is_finished',
@@ -228,8 +237,8 @@ export class EventsService {
 
     const [events, total] = await query.getManyAndCount();
 
-    const listEventDtos: ListEventDto[] = events.map((event: Event) =>
-      this.createListEventDto(event),
+    const listEventDtos: ListEventDto[] = await Promise.all(
+      events.map(async (event: Event) => this.createListEventDto(event)),
     );
 
     return new ListEventResponseDto({
@@ -264,6 +273,7 @@ export class EventsService {
         { ownerRole: MemberRole.OWNER },
       )
       .leftJoinAndSelect('ownerMember.user', 'ownerUser')
+      .leftJoinAndSelect('event.media', 'eventMedia')
       .addSelect(
         `(CASE WHEN event.status = :finished THEN 1 ELSE 0 END)`,
         'is_finished',
@@ -278,8 +288,8 @@ export class EventsService {
 
     const [events, total] = await query.getManyAndCount();
 
-    const listEventDtos: ListEventDto[] = events.map((event: Event) =>
-      this.createListEventDto(event),
+    const listEventDtos: ListEventDto[] = await Promise.all(
+      events.map(async (event: Event) => this.createListEventDto(event)),
     );
 
     return new ListEventResponseDto({
@@ -322,17 +332,108 @@ export class EventsService {
     await this.membersService.delete(existingMember.id);
   }
 
-  private createListEventDto(event: Event): ListEventDto {
+  private async createListEventDto(event: Event): Promise<ListEventDto> {
     const creator: Member = event.members[0];
+    const mediaTitles: string | null = await this.formatMediaTitles(
+      event.media,
+    );
+    const mainImagePath: string | null = await this.formatMainImagePath(
+      event.media,
+    );
 
     return new ListEventDto({
       name: event.name,
-      description: event.description,
       eventDate: event.eventDate,
       type: event.type,
       status: event.status,
       creatorName: creator.user.username,
       creatorImagePath: creator.user.imagePath,
+      mediaTitles: mediaTitles,
+      mainImagePath: mainImagePath,
     });
+  }
+
+  private async formatMediaTitles(
+    mediaList: Media[] | null | undefined,
+  ): Promise<string | null> {
+    if (!mediaList) {
+      return null;
+    } else if (mediaList.length === 0) {
+      return null;
+    }
+
+    const detailedMedia = await Promise.all(
+      mediaList.map(async (media) => {
+        let formattedTitle = media.title;
+        let sortKey = media.title;
+
+        switch (media.type) {
+          case MediaType.SEASON: {
+            const season = await this.seasonsService.findByTmdbId(media.tmdbId);
+            formattedTitle = `${season.series.title} S${season.number}: ${season.title}`;
+            sortKey = `${season.series.title}-S${season.number.toString().padStart(2, '0')}`;
+            break;
+          }
+
+          case MediaType.EPISODE: {
+            const episode = await this.episodesService.findByTmdbId(
+              media.tmdbId,
+            );
+            formattedTitle = `${episode.season.series.title} S${episode.season.number}xE${episode.number}: ${episode.title}`;
+            sortKey = `${episode.season.series.title}-S${episode.season.number.toString().padStart(2, '0')}-E${episode.number.toString().padStart(3, '0')}`;
+            break;
+          }
+
+          case MediaType.SERIES:
+          case MediaType.MOVIE:
+            sortKey = media.title;
+            break;
+        }
+
+        return { formattedTitle, sortKey };
+      }),
+    );
+
+    detailedMedia.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+
+    return detailedMedia.map((m) => m.formattedTitle).join(', ');
+  }
+
+  private async formatMainImagePath(
+    mediaList: Media[] | null | undefined,
+  ): Promise<string | null> {
+    if (!mediaList) {
+      return null;
+    } else if (mediaList.length === 0) {
+      return null;
+    }
+
+    const mainMedia: Media = mediaList[0];
+    let imagePath: string;
+
+    switch (mainMedia.type) {
+      case MediaType.SEASON: {
+        const season: Season = await this.seasonsService.findByTmdbId(
+          mainMedia.tmdbId,
+        );
+        imagePath = season.series.imagePath;
+        break;
+      }
+
+      case MediaType.EPISODE: {
+        const episode: Episode = await this.episodesService.findByTmdbId(
+          mainMedia.tmdbId,
+        );
+        imagePath = episode.season.series.imagePath;
+        break;
+      }
+
+      case MediaType.SERIES:
+      case MediaType.MOVIE:
+        imagePath = mainMedia.imagePath;
+        break;
+    }
+
+    return imagePath;
   }
 }

@@ -8,6 +8,8 @@ import { MediaModule } from 'src/media/media.module';
 import { VotingEvent } from './entities/voting-event.entity';
 import { StandardEvent } from './entities/standard-event.entity';
 import { MembersModule } from 'src/members/members.module';
+import { SeasonModule } from 'src/seasons/seasons.module';
+import { EpisodeModule } from 'src/episodes/episodes.module';
 
 @Module({
   imports: [
@@ -15,6 +17,8 @@ import { MembersModule } from 'src/members/members.module';
     UsersModule,
     MediaModule,
     MembersModule,
+    SeasonModule,
+    EpisodeModule,
   ],
   controllers: [EventsController],
   providers: [EventsService],

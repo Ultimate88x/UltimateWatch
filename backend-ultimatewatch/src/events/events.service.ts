@@ -13,6 +13,8 @@ import { StandardEvent } from './entities/standard-event.entity';
 import { CreateStandardEventDto } from './dto/create-standard-event-dto';
 import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
 import { EventStatus } from 'src/common/enums/event.status.enum';
+import { ListEventDto } from './dto/list-event-dto';
+import { ListEventResponseDto } from './dto/list-event-response-dto';
 
 @Injectable()
 export class EventsService {
@@ -132,5 +134,62 @@ export class EventsService {
     creator.user = user;
 
     return { creator };
+  }
+
+  async getEventsWithoutUser(
+    userId: number,
+    page: number,
+    limit: number,
+  ): Promise<ListEventResponseDto> {
+    await this.usersService.findById(userId);
+
+    const skip = (page - 1) * limit;
+
+    const query = this.eventsRepository
+      .createQueryBuilder('event')
+      .leftJoinAndSelect('event.members', 'member')
+      .leftJoinAndSelect('member.user', 'user')
+
+      .where((qb) => {
+        const subQuery = qb
+          .subQuery()
+          .select('m.eventId')
+          .from('members', 'm')
+          .where('m.userId = :userId')
+          .getQuery();
+        return 'event.id NOT IN ' + subQuery;
+      })
+      .setParameter('userId', userId)
+
+      .orderBy('event.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit);
+
+    const [events, total] = await query.getManyAndCount();
+
+    const listEventDtos: ListEventDto[] = events.map((event: Event) =>
+      this.createListEventDto(event),
+    );
+
+    return new ListEventResponseDto({
+      data: listEventDtos,
+      total,
+      page,
+      lastPage: Math.ceil(total / limit),
+    });
+  }
+
+  private createListEventDto(event: Event): ListEventDto {
+    const creator: Member = event.members[0];
+
+    return new ListEventDto({
+      name: event.name,
+      description: event.description,
+      eventDate: event.eventDate,
+      type: event.type,
+      status: event.status,
+      creatorName: creator.user.username,
+      creatorImagePath: creator.user.imagePath,
+    });
   }
 }

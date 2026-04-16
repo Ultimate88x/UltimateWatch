@@ -70,6 +70,10 @@ export class Event extends BaseEntity {
   @IsInt()
   timer: number;
 
+  @Column({
+    type: 'enum',
+    enum: EventType,
+  })
   @IsEnum(EventType)
   type: EventType;
 

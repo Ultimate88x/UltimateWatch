@@ -149,7 +149,6 @@ export class EventsService {
       .createQueryBuilder('event')
       .leftJoinAndSelect('event.members', 'member')
       .leftJoinAndSelect('member.user', 'user')
-
       .where((qb) => {
         const subQuery = qb
           .subQuery()
@@ -160,8 +159,54 @@ export class EventsService {
         return 'event.id NOT IN ' + subQuery;
       })
       .setParameter('userId', userId)
-
+      .andWhere('event.status != :finishedStatus', {
+        finishedStatus: EventStatus.FINISHED,
+      })
       .orderBy('event.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit);
+
+    const [events, total] = await query.getManyAndCount();
+
+    const listEventDtos: ListEventDto[] = events.map((event: Event) =>
+      this.createListEventDto(event),
+    );
+
+    return new ListEventResponseDto({
+      data: listEventDtos,
+      total,
+      page,
+      lastPage: Math.ceil(total / limit),
+    });
+  }
+
+  async getJoinedEventsByUser(
+    userId: number,
+    page: number,
+    limit: number,
+  ): Promise<ListEventResponseDto> {
+    await this.usersService.findById(userId);
+
+    const skip = (page - 1) * limit;
+
+    const query = this.eventsRepository
+      .createQueryBuilder('event')
+      .innerJoin(
+        'event.members',
+        'memberFilter',
+        'memberFilter.userId = :userId',
+        { userId },
+      )
+      .leftJoinAndSelect('event.members', 'allMembers')
+      .leftJoinAndSelect('allMembers.user', 'allUsers')
+      .addSelect(
+        `(CASE WHEN event.status = :finished THEN 1 ELSE 0 END)`,
+        'is_finished',
+      )
+      .orderBy('is_finished', 'ASC')
+      .addOrderBy('event.eventDate', 'DESC')
+      .setParameter('userId', userId)
+      .setParameter('finished', EventStatus.FINISHED)
       .skip(skip)
       .take(limit);
 

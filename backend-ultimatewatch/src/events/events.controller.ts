@@ -41,4 +41,14 @@ export class EventsController {
   ): Promise<ListEventResponseDto> {
     return await this.eventsService.getEventsWithoutUser(userId, page, limit);
   }
+
+  @Get('/joined')
+  @UseGuards(AuthGuard)
+  async findJoinedEvents(
+    @GetUser('userId') userId: number,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 6,
+  ): Promise<ListEventResponseDto> {
+    return await this.eventsService.getJoinedEventsByUser(userId, page, limit);
+  }
 }

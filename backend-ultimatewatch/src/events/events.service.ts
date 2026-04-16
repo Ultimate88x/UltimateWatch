@@ -291,7 +291,7 @@ export class EventsService {
   }
 
   async joinEvent(userId: number, eventId: number): Promise<void> {
-    const existingMember: Member =
+    const existingMember: Member | null =
       await this.membersService.findByUserIdAndEventId(userId, eventId);
 
     if (existingMember) {
@@ -307,6 +307,19 @@ export class EventsService {
 
     const member: Member = this.membersService.create(user, event);
     await this.membersService.save(member);
+  }
+
+  async leaveEvent(userId: number, eventId: number): Promise<void> {
+    const existingMember: Member =
+      await this.membersService.getByUserIdAndEventId(userId, eventId);
+
+    if (existingMember.role === MemberRole.OWNER) {
+      throw new BadRequestException(
+        'As owner, you cannot leave the event. Either delete it or delegate it',
+      );
+    }
+
+    await this.membersService.delete(existingMember.id);
   }
 
   private createListEventDto(event: Event): ListEventDto {

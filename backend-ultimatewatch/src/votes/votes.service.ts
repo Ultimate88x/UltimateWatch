@@ -35,7 +35,7 @@ export class VotesService {
   ): Promise<void> {
     const { eventId, mediaId }: { eventId: number; mediaId: number } =
       createVoteDto;
-    const member: Member = await this.membersService.findByUserIdAndEventId(
+    const member: Member = await this.membersService.getByUserIdAndEventId(
       userId,
       eventId,
     );
@@ -101,7 +101,7 @@ export class VotesService {
   ): Promise<void> {
     const { eventId, mediaId }: { eventId: number; mediaId: number } =
       deleteVoteDto;
-    const member: Member = await this.membersService.findByUserIdAndEventId(
+    const member: Member = await this.membersService.getByUserIdAndEventId(
       userId,
       eventId,
     );

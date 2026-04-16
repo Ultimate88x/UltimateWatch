@@ -80,4 +80,15 @@ export class EventsController {
 
     return { message: 'Succesfully joined the event!' };
   }
+
+  @Post('/leave/:id')
+  @UseGuards(AuthGuard)
+  async leaveEvent(
+    @GetUser('userId') userId: number,
+    @Param('id') id: string,
+  ): Promise<{ message: string }> {
+    await this.eventsService.leaveEvent(userId, +id);
+
+    return { message: 'Succesfully left the event!' };
+  }
 }

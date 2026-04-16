@@ -26,10 +26,14 @@ export class MembersService {
     return await this.membersRepository.save(member);
   }
 
+  async delete(id: number): Promise<void> {
+    await this.membersRepository.delete(id);
+  }
+
   async findByUserIdAndEventId(
     userId: number,
     eventId: number,
-  ): Promise<Member> {
+  ): Promise<Member | null> {
     const member: Member | null = await this.membersRepository.findOne({
       where: {
         user: { id: userId },
@@ -37,6 +41,18 @@ export class MembersService {
       },
       relations: ['votes'],
     });
+
+    return member;
+  }
+
+  async getByUserIdAndEventId(
+    userId: number,
+    eventId: number,
+  ): Promise<Member> {
+    const member: Member | null = await this.findByUserIdAndEventId(
+      userId,
+      eventId,
+    );
 
     if (!member) {
       throw new ResourceNotFoundException(

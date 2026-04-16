@@ -133,7 +133,7 @@ export class SeedService implements OnApplicationBootstrap {
       event: testVotingEvent,
     });
 
-    const adminMember: Member = await this.memberService.findByUserIdAndEventId(
+    const adminMember: Member = await this.memberService.getByUserIdAndEventId(
       testAdmin.id,
       testVotingEvent.id,
     );

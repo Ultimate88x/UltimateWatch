@@ -156,8 +156,7 @@ export class SeedService implements OnApplicationBootstrap {
     await this.voteService.createVote(aoTVote, userMember.id);
 
     const standardEvent: CreateStandardEventDto = new CreateStandardEventDto({
-      name: 'Votación: Mejor Anime',
-      description: 'Elige qué serie veremos en el maratón del sábado.',
+      name: 'A disfrutar de los mejores animes!',
       eventDate: new Date(Date.now() + 600000),
       maxMembers: 5,
       mediaIds: [1429, 105248, 114410],

@@ -61,19 +61,14 @@ export default function FriendsList() {
 
   const deleteFriend = async (username: string) => {
     setIsLoading(true);
-    const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
     try {
-      const [response] = await Promise.all([
-        fetch(`http://localhost:3000/requests/friend/${username}`, {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "Content-Type": "application/json",
-          },
-        }),
-        wait(600),
-      ]);
+      const response = await fetch(`http://localhost:3000/requests/friend/${username}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+      });
 
       const data = await response.json();
 
@@ -90,7 +85,7 @@ export default function FriendsList() {
       const message = error instanceof Error ? error.message : "An unexpected error occurred";
       toast.error(message);
     } finally {
-      setIsLoading(false);
+      setTimeout(() => setIsLoading(false), 500);
     }
   };
 
@@ -121,7 +116,7 @@ export default function FriendsList() {
 
   return (
     <div className="relative w-full bg-blue-background flex flex-col justify-start items-center overflow-x-hidden">
-      <div className="relative w-full max-w-6xl px-20 flex flex-col gap-10">
+      <div className="relative w-full max-w-6xl flex flex-col gap-10">
         
         <div id="friends-header" className="flex flex-col gap-2 w-full">
           <div className="flex justify-between items-end">

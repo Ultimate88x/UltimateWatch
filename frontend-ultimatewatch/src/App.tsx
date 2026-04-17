@@ -19,6 +19,7 @@ import UserDetail from "./user/detail";
 import UserSearchResultsList from "./user/search";
 import FriendRequests from "./request/list";
 import FriendsList from "./request/friend-list";
+import EventList from "./event/list";
 
 function App() {
   return (
@@ -69,6 +70,7 @@ function App() {
             <Route path="/users-search" element={<UserSearchResultsList />} />
             <Route path="/friend-requests" element={<FriendRequests />} />
             <Route path="/friends" element={<FriendsList />} />
+            <Route path="/events" element={<EventList />} />
           </Route>
 
           <Route path="/" element={<Home />} />

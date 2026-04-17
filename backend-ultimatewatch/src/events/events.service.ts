@@ -364,6 +364,7 @@ export class EventsService {
     const event: Event = await this.findBydId(eventId);
 
     return new EventDetailedInfoDto({
+      id: event.id,
       name: event.name,
       description: event.description,
       eventDate: event.eventDate,
@@ -387,6 +388,7 @@ export class EventsService {
     );
 
     return new ListEventDto({
+      id: event.id,
       name: event.name,
       eventDate: event.eventDate,
       type: event.type,

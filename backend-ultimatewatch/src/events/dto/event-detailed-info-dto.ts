@@ -3,6 +3,7 @@ import { EventType } from 'src/common/enums/event.type.enum';
 import { MediaEventDto } from './media-event-dto';
 
 export class EventDetailedInfoDto {
+  id: number;
   name: string;
   description?: string | null;
   eventDate: Date;

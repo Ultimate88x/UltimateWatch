@@ -92,19 +92,14 @@ export default function FriendRequests() {
 
   const deleteFriend = async (username: string) => {
     setIsLoading(true);
-    const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
     try {
-      const [response] = await Promise.all([
-        fetch(`http://localhost:3000/requests/friend/${username}`, {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "Content-Type": "application/json",
-          },
-        }),
-        wait(600),
-      ]);
+      const response = await fetch(`http://localhost:3000/requests/friend/${username}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+      });
 
       const data = await response.json();
 
@@ -120,25 +115,37 @@ export default function FriendRequests() {
       const message = error instanceof Error ? error.message : "An unexpected error occurred";
       toast.error(message);
     } finally {
-      setIsLoading(false);
+      setTimeout(() => setIsLoading(false), 500);
     }
   };
 
-  if (isLoading && totalPages === 0) {
+  if (isLoading) {
     return (
-      <div className="w-full h-64 flex flex-col items-center justify-center">
+      <div className="fixed inset-0 bg-blue-background flex flex-col items-center justify-center">
         <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          className="w-10 h-10 border-2 border-purple-main/20 border-t-purple-main rounded-full"
-        />
-        <p className="mt-4 text-purple-200/50 font-bold uppercase tracking-widest text-[10px]">Loading Requests...</p>
+          animate={{ rotate: [0, 360] }}
+          transition={{
+            duration: 1.5,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="relative"
+        >
+          <div className="w-20 h-20 border-4 border-purple-main/20 border-t-purple-main rounded-full" />
+        </motion.div>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="mt-6 text-white font-inter font-bold tracking-widest uppercase text-sm"
+        >
+          Loading Friend Requests
+        </motion.p>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto flex flex-col gap-8">
+    <div className="w-full max-w-6xl mx-auto flex flex-col gap-8">
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">

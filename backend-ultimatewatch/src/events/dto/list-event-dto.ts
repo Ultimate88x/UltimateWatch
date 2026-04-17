@@ -2,6 +2,7 @@ import { EventStatus } from 'src/common/enums/event.status.enum';
 import { EventType } from 'src/common/enums/event.type.enum';
 
 export class ListEventDto {
+  id: number;
   name: string;
   eventDate: Date;
   type: EventType;

@@ -8,7 +8,8 @@ import {
   Tv, 
   MonitorPlay, 
   UserPlus,
-  Users, 
+  Users,
+  Ticket, 
 } from "lucide-react";
 import type { MenuItem } from "../types/menu-item";
 import { useOutsideClick } from "./utilities/UseOutsideClick";
@@ -24,6 +25,9 @@ const ALL_MENUS: MenuConfig = {
   social: [
     { label: 'Friends', path: '/friends', icon: <Users size={16}/>, requiresAuth: true },
     { label: 'Friend Requests', path: '/friend-requests', icon: <UserPlus size={16}/>, requiresAuth: true },
+  ],
+  events: [
+    { label: 'Event List', path: '/events', icon: <Ticket size={16}/>, requiresAuth: true },
   ]
 };
 

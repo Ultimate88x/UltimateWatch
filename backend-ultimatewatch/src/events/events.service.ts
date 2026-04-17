@@ -476,6 +476,7 @@ export class EventsService {
             id,
             title,
             imagePath,
+            type: media.type,
             subMediaEvent: subMediaEvent ? [subMediaEvent] : null,
           }),
         );

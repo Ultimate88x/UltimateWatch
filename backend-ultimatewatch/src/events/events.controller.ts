@@ -14,15 +14,10 @@ import { CreateVotingEventDto } from './dto/create-voting-event-dto';
 import { CreateStandardEventDto } from './dto/create-standard-event-dto';
 import { ListEventResponseDto } from './dto/list-event-response-dto';
 import { EventDetailedInfoDto } from './dto/event-detailed-info-dto';
-import { MembersService } from 'src/members/members.service';
-import { MemberListResponseDto } from 'src/members/dto/member-list-response-dto';
 
 @Controller('events')
 export class EventsController {
-  constructor(
-    private readonly eventsService: EventsService,
-    private readonly membersService: MembersService,
-  ) {}
+  constructor(private readonly eventsService: EventsService) {}
 
   @Get('/available')
   @UseGuards(AuthGuard)
@@ -56,17 +51,11 @@ export class EventsController {
 
   @Get(':id')
   @UseGuards(AuthGuard)
-  async findEvent(
-    @Param('id') id: string,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 6,
-  ): Promise<{ event: EventDetailedInfoDto; members: MemberListResponseDto }> {
+  async findEvent(@Param('id') id: string): Promise<EventDetailedInfoDto> {
     const event: EventDetailedInfoDto =
       await this.eventsService.getEventDetailedInformation(+id);
-    const members: MemberListResponseDto =
-      await this.membersService.getFromEvent(+id, page, limit);
 
-    return { event, members };
+    return event;
   }
 
   @Post('/standard')

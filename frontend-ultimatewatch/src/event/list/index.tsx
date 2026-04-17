@@ -213,7 +213,7 @@ export default function EventList() {
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-3 mb-2">
                           <span className="bg-purple-main/10 text-purple-main border border-purple-main/20 px-2 py-1.5 rounded text-[10px] font-black uppercase tracking-widest">
-                            {event.type}
+                            {event.type.replace('_', ' ')}
                           </span>
                           <div className={`h-px w-4 ${ui.bar}`} />
                           <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${ui.color}`}>{ui.label}</span>

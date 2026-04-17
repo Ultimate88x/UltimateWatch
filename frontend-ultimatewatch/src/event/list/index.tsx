@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Clock, ChevronLeft, ChevronRight, ArrowRight, Users, HelpCircle, Eye } from 'lucide-react';
+import { Clock, ChevronLeft, ChevronRight, ArrowRight, Users, HelpCircle, Eye, RotateCw } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { EmptyState } from '../../components/EmptyState';
@@ -11,7 +11,7 @@ import type { EventItem } from '../../types/event-item';
 export default function EventList() {
   const { smartNavigate } = useAdvancedNavigation();
   const [events, setEvents] = useState<EventItem[]>([]);
-  const [activeTab, setActiveTab] = useState<'available'>('available');
+  const [activeTab, setActiveTab] = useState<'available' | 'joined'>('available');
   
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
@@ -44,6 +44,7 @@ export default function EventList() {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error';
       toast.error(message);
+      setIsLoading(false);
     } finally {
       setTimeout(() => setIsLoading(false), 400);
     }
@@ -64,6 +65,24 @@ export default function EventList() {
       case 'waiting':
       default:
         return { label: 'Waiting for Start Date', color: 'text-purple-main', bar: 'bg-purple-main/50', btn: 'Join Binge', dot: false };
+    }
+  };
+
+  const getTabConfig = (tab: 'available' | 'joined') => {
+    switch (tab) {
+      case 'joined':
+        return {
+          title: "My",
+          accent: "Marathons",
+          description: "Manage and track your binge sessions"
+        };
+      case 'available':
+      default:
+        return {
+          title: "Binge",
+          accent: "Discovery",
+          description: "Join synchronized marathons and community sessions"
+        };
     }
   };
 
@@ -92,15 +111,56 @@ export default function EventList() {
     );
   }
 
-return (
+  const tabUI = getTabConfig(activeTab);
+
+  return (
     <div className="w-full max-w-7xl mx-auto flex flex-col gap-10 pb-20">
-      <div className="flex flex-col gap-2 border-l-4 border-purple-main pl-6">
-        <h2 className="text-4xl font-black text-white tracking-tighter uppercase italic leading-none">
-          Binge <span className="text-purple-main/50">Discovery</span>
-        </h2>
-        <p className="text-white/30 text-[10px] font-bold uppercase tracking-[0.4em]">
-          Join synchronized marathons and community sessions
-        </p>
+      <div className="flex flex-row justify-between items-end gap-6 border-l-4 border-purple-main pl-6">
+        <div className="flex flex-col gap-2">
+          <h2 className="text-4xl font-black text-white tracking-tighter uppercase italic leading-none transition-all duration-300">
+            {tabUI.title} <span className="text-purple-main/50">{tabUI.accent}</span>
+          </h2>
+          <p className="text-white/30 text-[10px] font-bold uppercase tracking-[0.4em] transition-all duration-300">
+            {tabUI.description}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={fetchEvents}
+            disabled={isLoading}
+            className="p-2.5 rounded-xl bg-white/5 border border-white/5 text-white/40 cursor-pointer hover:text-purple-main hover:bg-white/10 transition-all active:scale-95 disabled:opacity-50"
+            title="Refresh events"
+          >
+            <RotateCw 
+              size={18} 
+              className={`${isLoading ? 'animate-spin text-purple-main' : ''} transition-colors`} 
+            />
+          </button>
+
+          <div className="flex bg-white/5 p-1 rounded-xl border border-white/5 self-start md:self-auto">
+            <button 
+              onClick={() => { 
+                setIsLoading(true);
+                setActiveTab('available');
+                setPage(1); 
+              }}
+              className={`px-6 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all ${activeTab === 'available' ? 'bg-purple-main text-white shadow-lg' : 'text-white/40 hover:text-white'}`}
+            >
+              Available
+            </button>
+            <button 
+              onClick={() => { 
+                setIsLoading(true);
+                setActiveTab('joined');
+                setPage(1); 
+              }}
+              className={`px-6 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all ${activeTab === 'joined' ? 'bg-purple-main text-white shadow-lg' : 'text-white/40 hover:text-white'}`}
+            >
+              Joined
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-col gap-5">
@@ -116,7 +176,9 @@ return (
                 const isFinished = event.status === 'finished';
 
                 return (
-                  <div key={idx} className={`group relative flex flex-col md:flex-row border border-white/5 rounded-3xl overflow-hidden transition-all duration-500 shadow-xl ${isFinished ? 'bg-white/1 opacity-60' : 'bg-white/2 hover:bg-white/4 hover:border-purple-main/30'}`}>
+                  <div key={idx} className={`group relative flex flex-col md:flex-row border border-white/5 rounded-3xl overflow-hidden transition-all duration-500 shadow-xl ${isFinished ? 
+                    'bg-white/1 opacity-60' : 
+                    'bg-white/2 hover:bg-white/4 hover:border-purple-main/30'}`}>
                     <div className="md:w-36 h-36 md:h-auto relative shrink-0 overflow-hidden bg-[#111] border-r border-white/5">
                       {event.mainImagePath ? (
                         <img 
@@ -125,7 +187,7 @@ return (
                         />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <HelpCircle size={48} className="text-purple-main/20" />
+                          <HelpCircle size={88} className="text-purple-main/50 group-hover:text-purple-main/75 transition-all duration-250 ease-in-out" />
                         </div>
                       )}
                       <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent z-10" />
@@ -141,7 +203,7 @@ return (
                           <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${ui.color}`}>{ui.label}</span>
                         </div>
 
-                        <h4 className={`text-2xl font-black uppercase italic truncate ${isFinished ? 'text-white/40' : 'text-white group-hover:text-purple-300'}`}>
+                        <h4 className={`text-2xl font-black uppercase italic truncate ${isFinished ? 'text-white/40' : 'text-white group-hover:text-purple-300 transition-all duration-250 ease-in-out'}`}>
                           {event.name}
                         </h4>
                         <p className="text-white/30 text-xs italic truncate">{event.mediaTitles || "Binge Session"}</p>

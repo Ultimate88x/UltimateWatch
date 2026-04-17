@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Clock, ChevronLeft, ChevronRight, UserPlus, UserCheck, UserX, Trash2 } from 'lucide-react';
+import { Clock, ChevronLeft, ChevronRight, UserPlus, UserCheck, UserX, Trash2, RotateCw } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { EmptyState } from '../../components/EmptyState';
@@ -145,7 +145,7 @@ export default function FriendRequests() {
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto flex flex-col gap-8">
+    <div className="w-full max-w-7xl mx-auto flex flex-col gap-8">
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -157,20 +157,34 @@ export default function FriendRequests() {
               <p className="text-white/40 text-xs font-medium uppercase tracking-widest">Manage your connections</p>
             </div>
           </div>
-          
-          <div className="flex bg-white/5 p-1 rounded-xl border border-white/5">
+
+          <div className="flex items-center gap-3">
             <button 
-              onClick={() => { setActiveTab('received'); setPage(1); }}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === 'received' ? 'bg-purple-main text-white shadow-lg' : 'text-white/40 hover:text-white'}`}
+              onClick={fetchRequests}
+              disabled={isLoading}
+              className="p-2.5 rounded-xl bg-white/5 border border-white/5 text-white/40 cursor-pointer hover:text-purple-main hover:bg-white/10 transition-all active:scale-95 disabled:opacity-50"
+              title="Refresh events"
             >
-              Received
+              <RotateCw 
+                size={18} 
+                className={`${isLoading ? 'animate-spin text-purple-main' : ''} transition-colors`} 
+              />
             </button>
-            <button 
-              onClick={() => { setActiveTab('sent'); setPage(1); }}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === 'sent' ? 'bg-purple-main text-white shadow-lg' : 'text-white/40 hover:text-white'}`}
-            >
-              Sent
-            </button>
+            
+            <div className="flex bg-white/5 p-1 rounded-xl border border-white/5">
+              <button 
+                onClick={() => { setActiveTab('received'); setPage(1); }}
+                className={`px-4 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all ${activeTab === 'received' ? 'bg-purple-main text-white shadow-lg' : 'text-white/40 hover:text-white'}`}
+              >
+                Received
+              </button>
+              <button 
+                onClick={() => { setActiveTab('sent'); setPage(1); }}
+                className={`px-4 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all ${activeTab === 'sent' ? 'bg-purple-main text-white shadow-lg' : 'text-white/40 hover:text-white'}`}
+              >
+                Sent
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -182,7 +196,7 @@ export default function FriendRequests() {
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="flex-1 flex items-center justify-center border border-white/5 border-dashed rounded-3xl"
             >
-              <EmptyState title={`No ${activeTab} requests found`} fullPage={false} showBackButton={false} />
+              <EmptyState title={`No requests found`} fullPage={false} showBackButton={false} />
             </motion.div>
           ) : (
             <motion.div

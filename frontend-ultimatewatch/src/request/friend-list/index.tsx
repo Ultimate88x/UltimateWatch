@@ -116,7 +116,7 @@ export default function FriendsList() {
 
   return (
     <div className="relative w-full bg-blue-background flex flex-col justify-start items-center overflow-x-hidden">
-      <div className="relative w-full max-w-6xl flex flex-col gap-10">
+      <div className="relative w-full max-w-7xl flex flex-col gap-10">
         
         <div id="friends-header" className="flex flex-col gap-2 w-full">
           <div className="flex justify-between items-end">

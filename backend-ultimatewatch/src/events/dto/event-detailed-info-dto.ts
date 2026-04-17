@@ -1,19 +1,17 @@
 import { EventStatus } from 'src/common/enums/event.status.enum';
 import { EventType } from 'src/common/enums/event.type.enum';
+import { MediaEventDto } from './media-event-dto';
 
-export class ListEventDto {
+export class EventDetailedInfoDto {
   name: string;
+  description?: string | null;
   eventDate: Date;
   type: EventType;
   status: EventStatus;
-  creatorName: string;
-  creatorImagePath: string;
-  mediaTitles?: string | null;
-  mainImagePath?: string | null;
-  currentMembers: number;
+  media: MediaEventDto[] | null;
   maxMembers: number;
 
-  constructor(init?: Partial<ListEventDto>) {
+  constructor(init?: Partial<EventDetailedInfoDto>) {
     Object.assign(this, init);
   }
 }

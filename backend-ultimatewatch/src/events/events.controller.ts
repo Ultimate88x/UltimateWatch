@@ -13,10 +13,61 @@ import { GetUser } from 'src/common/decorators/get-user.decorator';
 import { CreateVotingEventDto } from './dto/create-voting-event-dto';
 import { CreateStandardEventDto } from './dto/create-standard-event-dto';
 import { ListEventResponseDto } from './dto/list-event-response-dto';
+import { EventDetailedInfoDto } from './dto/event-detailed-info-dto';
+import { MembersService } from 'src/members/members.service';
+import { MemberListResponseDto } from 'src/members/dto/member-list-response-dto';
 
 @Controller('events')
 export class EventsController {
-  constructor(private readonly eventsService: EventsService) {}
+  constructor(
+    private readonly eventsService: EventsService,
+    private readonly membersService: MembersService,
+  ) {}
+
+  @Get('/available')
+  @UseGuards(AuthGuard)
+  async findAvailableEvents(
+    @GetUser('userId') userId: number,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 12,
+  ): Promise<ListEventResponseDto> {
+    return await this.eventsService.getEventsWithoutUser(userId, page, limit);
+  }
+
+  @Get('/joined')
+  @UseGuards(AuthGuard)
+  async findJoinedEvents(
+    @GetUser('userId') userId: number,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 12,
+  ): Promise<ListEventResponseDto> {
+    return await this.eventsService.getJoinedEventsByUser(userId, page, limit);
+  }
+
+  @Get('/created')
+  @UseGuards(AuthGuard)
+  async findCreatedEvents(
+    @GetUser('userId') userId: number,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 12,
+  ): Promise<ListEventResponseDto> {
+    return await this.eventsService.getCreatedEventsByUser(userId, page, limit);
+  }
+
+  @Get(':id')
+  @UseGuards(AuthGuard)
+  async findEvent(
+    @Param('id') id: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 6,
+  ): Promise<{ event: EventDetailedInfoDto; members: MemberListResponseDto }> {
+    const event: EventDetailedInfoDto =
+      await this.eventsService.getEventDetailedInformation(+id);
+    const members: MemberListResponseDto =
+      await this.membersService.getFromEvent(+id, page, limit);
+
+    return { event, members };
+  }
 
   @Post('/standard')
   @UseGuards(AuthGuard)
@@ -38,36 +89,6 @@ export class EventsController {
     await this.eventsService.createVotingEvent(createVotingEvent, userId);
 
     return { message: 'Event succesfully created!' };
-  }
-
-  @Get('/available')
-  @UseGuards(AuthGuard)
-  async findAvailableEvents(
-    @GetUser('userId') userId: number,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 6,
-  ): Promise<ListEventResponseDto> {
-    return await this.eventsService.getEventsWithoutUser(userId, page, limit);
-  }
-
-  @Get('/joined')
-  @UseGuards(AuthGuard)
-  async findJoinedEvents(
-    @GetUser('userId') userId: number,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 6,
-  ): Promise<ListEventResponseDto> {
-    return await this.eventsService.getJoinedEventsByUser(userId, page, limit);
-  }
-
-  @Get('/created')
-  @UseGuards(AuthGuard)
-  async findCreatedEvents(
-    @GetUser('userId') userId: number,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 6,
-  ): Promise<ListEventResponseDto> {
-    return await this.eventsService.getCreatedEventsByUser(userId, page, limit);
   }
 
   @Post('/join/:id')

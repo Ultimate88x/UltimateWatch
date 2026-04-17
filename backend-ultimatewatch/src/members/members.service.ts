@@ -6,6 +6,8 @@ import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-fo
 import { User } from 'src/users/entities/user.entity';
 import { Event } from 'src/events/entities/event.entity';
 import { MemberRole } from 'src/common/enums/member.role.enum';
+import { MemberDetailDto } from './dto/member-detail-dto';
+import { MemberListResponseDto } from './dto/member-list-response-dto';
 
 @Injectable()
 export class MembersService {
@@ -63,5 +65,59 @@ export class MembersService {
     }
 
     return member;
+  }
+
+  async getFromEvent(
+    eventId: number,
+    page: number,
+    limit: number,
+  ): Promise<MemberListResponseDto> {
+    const skip = (page - 1) * limit;
+
+    const query = this.membersRepository
+      .createQueryBuilder('member')
+      .leftJoinAndSelect('member.user', 'user')
+      .where('member.eventId = :eventId', { eventId })
+      .addSelect(
+        `(CASE 
+        WHEN member.role = :owner THEN 1 
+        WHEN member.role = :moderator THEN 2 
+        ELSE 3 
+      END)`,
+        'role_priority',
+      )
+      .orderBy('role_priority', 'ASC')
+      .addOrderBy('member.createdAt', 'ASC')
+      .setParameters({
+        owner: MemberRole.OWNER,
+        moderator: MemberRole.MODERATOR,
+      })
+      .skip(skip)
+      .take(limit);
+
+    const [data, total] = await query.getManyAndCount();
+
+    return new MemberListResponseDto({
+      data: data.map((member: Member) => this.createMemberDetailDto(member)),
+      total,
+      page,
+      lastPage: Math.ceil(total / limit),
+    });
+  }
+
+  async countFromEvent(eventId: number): Promise<number> {
+    const currentMembers: number = await this.membersRepository.count({
+      where: { event: { id: eventId } },
+    });
+
+    return currentMembers;
+  }
+
+  private createMemberDetailDto(member: Member): MemberDetailDto {
+    return new MemberDetailDto({
+      name: member.user.username,
+      imagePath: member.user.imagePath,
+      role: member.role,
+    });
   }
 }

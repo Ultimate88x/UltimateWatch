@@ -6,6 +6,8 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  Max,
+  Min,
   MinDate,
   MinLength,
   Validate,
@@ -76,6 +78,16 @@ export class Event extends BaseEntity {
   })
   @IsEnum(EventType)
   type: EventType;
+
+  @Column({
+    type: 'int',
+    default: 10,
+  })
+  @IsNotEmpty()
+  @IsInt()
+  @Min(2)
+  @Max(50)
+  maxMembers: number;
 
   @Index()
   @Column()

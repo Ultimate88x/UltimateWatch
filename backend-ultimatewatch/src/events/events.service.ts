@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 import { Event } from './entities/event.entity';
 import { LessThanOrEqual, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -22,6 +26,13 @@ import { Season } from 'src/seasons/entities/seasons.entity';
 import { SeasonService } from 'src/seasons/seasons.service';
 import { EpisodeService } from 'src/episodes/episodes.service';
 import { Episode } from 'src/episodes/entities/episode.entity';
+import { EventDetailedInfoDto } from './dto/event-detailed-info-dto';
+import { MediaEventDto } from './dto/media-event-dto';
+import { SubMediaEventDto } from './dto/sub-media-event-dto';
+
+interface SubMediaEventWithSort extends SubMediaEventDto {
+  sortKey: string;
+}
 
 @Injectable()
 export class EventsService {
@@ -100,6 +111,12 @@ export class EventsService {
   async findBydId(id: number): Promise<Event> {
     const event: Event | null = await this.eventsRepository.findOne({
       where: { id },
+      relations: {
+        members: {
+          user: true,
+        },
+        media: true,
+      },
     });
 
     if (!event) {
@@ -149,8 +166,8 @@ export class EventsService {
 
   async getEventsWithoutUser(
     userId: number,
-    page: number,
-    limit: number,
+    page: number = 1,
+    limit: number = 12,
   ): Promise<ListEventResponseDto> {
     await this.usersService.findById(userId);
 
@@ -200,8 +217,8 @@ export class EventsService {
 
   async getJoinedEventsByUser(
     userId: number,
-    page: number,
-    limit: number,
+    page: number = 1,
+    limit: number = 12,
   ): Promise<ListEventResponseDto> {
     await this.usersService.findById(userId);
 
@@ -251,8 +268,8 @@ export class EventsService {
 
   async getCreatedEventsByUser(
     userId: number,
-    page: number,
-    limit: number,
+    page: number = 1,
+    limit: number = 12,
   ): Promise<ListEventResponseDto> {
     await this.usersService.findById(userId);
 
@@ -315,6 +332,15 @@ export class EventsService {
       throw new BadRequestException('You cannot join a finished event');
     }
 
+    const currentMembers: number =
+      await this.membersService.countFromEvent(eventId);
+
+    if (currentMembers >= event.maxMembers) {
+      throw new ForbiddenException(
+        'This events has reached its limit of members',
+      );
+    }
+
     const member: Member = this.membersService.create(user, event);
     await this.membersService.save(member);
   }
@@ -332,6 +358,22 @@ export class EventsService {
     await this.membersService.delete(existingMember.id);
   }
 
+  async getEventDetailedInformation(
+    eventId: number,
+  ): Promise<EventDetailedInfoDto> {
+    const event: Event = await this.findBydId(eventId);
+
+    return new EventDetailedInfoDto({
+      name: event.name,
+      description: event.description,
+      eventDate: event.eventDate,
+      type: event.type,
+      status: event.status,
+      media: await this.createMediaEventDtoListForMediaList(event.media),
+      maxMembers: event.maxMembers,
+    });
+  }
+
   private async createListEventDto(event: Event): Promise<ListEventDto> {
     const creator: Member = event.members[0];
     const mediaTitles: string | null = await this.formatMediaTitles(
@@ -339,6 +381,9 @@ export class EventsService {
     );
     const mainImagePath: string | null = await this.formatMainImagePath(
       event.media,
+    );
+    const currentMembers: number = await this.membersService.countFromEvent(
+      event.id,
     );
 
     return new ListEventDto({
@@ -350,7 +395,102 @@ export class EventsService {
       creatorImagePath: creator.user.imagePath,
       mediaTitles: mediaTitles,
       mainImagePath: mainImagePath,
+      currentMembers: currentMembers,
+      maxMembers: event.maxMembers,
     });
+  }
+
+  private async createMediaEventDtoListForMediaList(
+    mediaList: Media[] | null | undefined,
+  ): Promise<MediaEventDto[] | null | undefined> {
+    if (!mediaList) {
+      return null;
+    } else if (mediaList.length === 0) {
+      return null;
+    }
+
+    const mediaEventDtoList: MediaEventDto[] = [];
+
+    for (const media of mediaList) {
+      let id: number;
+      let title: string;
+      let imagePath: string;
+      let subMediaEvent: (SubMediaEventDto & { sortKey: string }) | null = null;
+
+      switch (media.type) {
+        case MediaType.SEASON: {
+          const season = await this.seasonsService.findByTmdbId(media.tmdbId);
+          id = season.series.tmdbId;
+          title = season.series.title;
+          imagePath = season.series.imagePath;
+          subMediaEvent = Object.assign(
+            new SubMediaEventDto({
+              title: `S${season.number}: ${season.title}`,
+              imagePath: season.imagePath,
+            }),
+            {
+              sortKey: `S${season.number.toString().padStart(2, '0')}`,
+            },
+          );
+          break;
+        }
+
+        case MediaType.EPISODE: {
+          const episode = await this.episodesService.findByTmdbId(media.tmdbId);
+          id = episode.season.series.tmdbId;
+          title = episode.season.series.title;
+          imagePath = episode.season.series.imagePath;
+          subMediaEvent = Object.assign(
+            new SubMediaEventDto({
+              title: `S${episode.season.number}xE${episode.number}: ${episode.title}`,
+              imagePath: media.imagePath,
+            }),
+            {
+              sortKey: `S${episode.season.number.toString().padStart(2, '0')}xE${episode.number.toString().padStart(3, '0')}`,
+            },
+          );
+          break;
+        }
+
+        case MediaType.SERIES:
+        case MediaType.MOVIE:
+          id = media.tmdbId;
+          title = media.title;
+          imagePath = media.imagePath;
+          subMediaEvent = null;
+          break;
+      }
+
+      const mediaEventDto = mediaEventDtoList.find((me) => me.id === id);
+
+      if (mediaEventDto) {
+        if (subMediaEvent) {
+          if (!mediaEventDto.subMediaEvent) mediaEventDto.subMediaEvent = [];
+          mediaEventDto.subMediaEvent.push(subMediaEvent);
+        }
+      } else {
+        mediaEventDtoList.push(
+          new MediaEventDto({
+            id,
+            title,
+            imagePath,
+            subMediaEvent: subMediaEvent ? [subMediaEvent] : null,
+          }),
+        );
+      }
+    }
+
+    mediaEventDtoList.forEach((event) => {
+      if (event.subMediaEvent && event.subMediaEvent.length > 1) {
+        event.subMediaEvent.sort((a, b) => {
+          const sortA = (a as SubMediaEventWithSort).sortKey;
+          const sortB = (b as SubMediaEventWithSort).sortKey;
+          return sortA.localeCompare(sortB);
+        });
+      }
+    });
+
+    return mediaEventDtoList;
   }
 
   private async formatMediaTitles(

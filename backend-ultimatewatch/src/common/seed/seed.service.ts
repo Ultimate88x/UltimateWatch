@@ -19,6 +19,7 @@ import { Member } from 'src/members/entities/member.entity';
 import { MembersService } from 'src/members/members.service';
 import { SeriesDetailDto } from 'src/series/dto/series-detail-dto';
 import { MemberRole } from '../enums/member.role.enum';
+import { CreateStandardEventDto } from 'src/events/dto/create-standard-event-dto';
 
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
@@ -118,6 +119,7 @@ export class SeedService implements OnApplicationBootstrap {
       name: 'Votación: Mejor Anime',
       description: 'Elige qué serie veremos en el maratón del sábado.',
       eventDate: new Date(Date.now() + 600000),
+      maxMembers: 50,
       maxMedia: 1,
       maxVotesPerMember: 1,
       votingEndDate: new Date(Date.now() + 300000),
@@ -152,6 +154,16 @@ export class SeedService implements OnApplicationBootstrap {
 
     await this.voteService.createVote(edgerunnersVote, adminMember.id);
     await this.voteService.createVote(aoTVote, userMember.id);
+
+    const standardEvent: CreateStandardEventDto = new CreateStandardEventDto({
+      name: 'Votación: Mejor Anime',
+      description: 'Elige qué serie veremos en el maratón del sábado.',
+      eventDate: new Date(Date.now() + 600000),
+      maxMembers: 5,
+      mediaIds: [1429, 105248, 114410],
+    });
+
+    await this.eventService.createStandardEvent(standardEvent, testAdmin.id);
 
     this.logger.log('Database seeded successfully!');
   }

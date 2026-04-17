@@ -6,6 +6,9 @@ import {
   MinLength,
   IsDate,
   MinDate,
+  IsInt,
+  Max,
+  Min,
 } from 'class-validator';
 
 export class CreateEventDto {
@@ -27,6 +30,12 @@ export class CreateEventDto {
     message: 'Event date must be at least five minutes after creation',
   })
   eventDate: Date;
+
+  @IsNotEmpty()
+  @IsInt()
+  @Min(2, { message: 'An event requires a minimum of 2 members' })
+  @Max(50, { message: 'An event can have up to 50 members' })
+  maxMembers: number;
 
   constructor(init?: Partial<CreateEventDto>) {
     Object.assign(this, init);

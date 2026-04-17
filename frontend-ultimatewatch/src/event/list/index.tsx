@@ -11,7 +11,7 @@ import type { EventItem } from '../../types/event-item';
 export default function EventList() {
   const { smartNavigate } = useAdvancedNavigation();
   const [events, setEvents] = useState<EventItem[]>([]);
-  const [activeTab, setActiveTab] = useState<'available' | 'joined'>('available');
+  const [activeTab, setActiveTab] = useState<'available' | 'joined' | 'created'>('available');
   
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
@@ -68,7 +68,7 @@ export default function EventList() {
     }
   };
 
-  const getTabConfig = (tab: 'available' | 'joined') => {
+  const getTabConfig = (tab: 'available' | 'joined' | 'created') => {
     switch (tab) {
       case 'joined':
         return {
@@ -76,6 +76,12 @@ export default function EventList() {
           accent: "Marathons",
           description: "Manage and track your binge sessions"
         };
+        case 'created':
+          return {
+            title: "Host",
+            accent: "Control",
+            description: "Manage, edit and oversee the marathons you've organized"
+          };
       case 'available':
       default:
         return {
@@ -159,6 +165,16 @@ export default function EventList() {
             >
               Joined
             </button>
+            <button 
+              onClick={() => { 
+                setIsLoading(true);
+                setActiveTab('created');
+                setPage(1); 
+              }}
+              className={`px-6 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all ${activeTab === 'created' ? 'bg-purple-main text-white shadow-lg' : 'text-white/40 hover:text-white'}`}
+            >
+              Created
+            </button>
           </div>
         </div>
       </div>
@@ -167,7 +183,7 @@ export default function EventList() {
         <AnimatePresence mode="wait">
           {events.length === 0 ? (
             <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <EmptyState title="No available events found" fullPage={false} showBackButton={false} />
+              <EmptyState title="No events found" fullPage={false} showBackButton={false} />
             </motion.div>
           ) : (
             <motion.div key={activeTab + page} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6">
@@ -224,8 +240,8 @@ export default function EventList() {
                             <span className={isFinished ? 'text-white/20' : ''}>{getRelativeDate(event.eventDate)}</span>
                           </div>
                         </div>
-                        <div className="hidden md:flex flex-col items-start min-w-30 italic">
-                          <span className="text-[8px] font-black text-white/20 uppercase tracking-widest mb-1.5 font-sans not-italic">Host</span>
+                        <div className="relative -bottom-1.5 flex flex-col items-start min-w-30 italic">
+                          <span className="text-[8px] font-black text-white/20 uppercase tracking-widest font-sans not-italic">Host</span>
                           <div className="flex items-center gap-2.5">
                             <img src={event.creatorImagePath} className="w-6 h-6 rounded-md border border-white/10" alt="host" />
                             <span className={`text-[11px] font-bold truncate max-w-25 ${isFinished ? 'text-white/20' : 'text-white'}`}>{event.creatorName}</span>

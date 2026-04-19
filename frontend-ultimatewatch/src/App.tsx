@@ -21,6 +21,7 @@ import FriendRequests from "./request/list";
 import FriendsList from "./request/friend-list";
 import EventList from "./event/list";
 import EventDetail from "./event/detail";
+import CreateEvent from "./event/create";
 
 function App() {
   return (
@@ -73,6 +74,7 @@ function App() {
             <Route path="/friends" element={<FriendsList />} />
             <Route path="/events" element={<EventList />} />
             <Route path="/events/:id" element={<EventDetail />} />
+            <Route path="/events/create" element={<CreateEvent />} />
           </Route>
 
           <Route path="/" element={<Home />} />

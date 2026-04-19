@@ -9,7 +9,8 @@ import {
   MonitorPlay, 
   UserPlus,
   Users,
-  Ticket, 
+  Ticket,
+  PlusSquare, 
 } from "lucide-react";
 import type { MenuItem } from "../types/menu-item";
 import { useOutsideClick } from "./utilities/UseOutsideClick";
@@ -28,6 +29,7 @@ const ALL_MENUS: MenuConfig = {
   ],
   events: [
     { label: 'Event List', path: '/events', icon: <Ticket size={16}/>, requiresAuth: true },
+    { label: 'Create Event', path: '/events/create', icon: <PlusSquare size={16}/>, requiresAuth: true },
   ]
 };
 
@@ -133,7 +135,6 @@ export default function Navbar() {
               onChange={(e) => setSearchMedia(e.target.value)}
               value={searchMedia}
             >
-              {/* Iteramos sobre las opciones filtradas */}
               {visibleSearchOptions.map((opt) => (
                 <option key={opt.value} value={opt.value} className="bg-white text-black">
                   {opt.label}

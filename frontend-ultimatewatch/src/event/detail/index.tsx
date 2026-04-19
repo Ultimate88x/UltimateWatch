@@ -47,7 +47,6 @@ export default function EventDetail() {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error';
       toast.error(message);
-      setIsLoading(false);
     } finally {
       setTimeout(() => setIsLoading(false), 400);
     }

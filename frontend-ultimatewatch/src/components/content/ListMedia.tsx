@@ -2,7 +2,7 @@ import type { Media } from "../../types/media-item";
 import { motion } from "framer-motion";
 
 interface ListMediaProps {
-  title: string;
+  title?: string;
   mediaItems: Media[];
   columns?: number;
   onClick: (id: number, event?: React.MouseEvent) => void;
@@ -13,12 +13,12 @@ const ListMedia = ({ title, mediaItems, columns = 9, onClick }: ListMediaProps) 
 
   return (
     <div className="relative h-fit flex flex-col justify-start items-start gap-8 w-full">
-      <div className="flex flex-col gap-2">
+      {title && (<div className="flex flex-col gap-2">
         <h2 className="relative text-4xl text-white font-bold font-inter uppercase tracking-tight">
           {title}
         </h2>
         <div className="h-1 w-20 bg-purple-main shadow-[0_0_12px_#A855F7] rounded-full" />
-      </div>
+      </div>)}
 
       <div 
         className="relative w-full h-fit grid gap-6"

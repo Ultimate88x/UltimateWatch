@@ -107,6 +107,10 @@ export default function SignUp() {
         else if (message.toLowerCase().includes('email')) field = 'email';
         else if (message.toLowerCase().includes('password')) field = 'password';
 
+        if (field === 'general') {
+          toast.error(message);
+        }
+
         setError({ field, message: message });
         return;
       }

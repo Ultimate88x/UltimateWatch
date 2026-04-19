@@ -34,7 +34,7 @@ export default function SearchResultsList() {
               'Content-Type': 'application/json'
             },
           }),
-          wait(1000)
+          wait(750),
         ]);
 
         const data = await response.json();

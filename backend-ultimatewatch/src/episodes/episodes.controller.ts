@@ -10,9 +10,10 @@ export class EpisodeController {
   async getEpisodesBySeasonTmdbId(
     @Param('id') id: string,
     @Query('page') page: string = '1',
+    @Query('limit') limit: string = '10',
   ): Promise<EpisodeResponseDto> {
     const episodeResponse: EpisodeResponseDto =
-      await this.episodeService.findOrCreate(+id, +page);
+      await this.episodeService.findOrCreate(+id, +page, +limit);
 
     return episodeResponse;
   }

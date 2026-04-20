@@ -192,10 +192,11 @@ export default function EventList() {
                 const isFinished = event.status === 'finished';
 
                 return (
-                  <div key={idx} className={`group relative flex flex-col md:flex-row border border-white/5 rounded-3xl overflow-hidden transition-all duration-500 shadow-xl ${isFinished ? 
+                  <div key={idx} className={`group relative flex flex-row border border-white/5 rounded-3xl overflow-hidden transition-all duration-500 shadow-xl ${isFinished ? 
                     'bg-white/1 opacity-60' : 
                     'bg-white/2 hover:bg-white/4 hover:border-purple-main/30'}`}>
-                    <div className="md:w-36 h-36 md:h-auto relative shrink-0 overflow-hidden bg-[#111] border-r border-white/5">
+                    
+                    <div className="w-36 h-auto relative shrink-0 overflow-hidden bg-[#111] border-r border-white/5">
                       {event.mainImagePath ? (
                         <img 
                           src={event.mainImagePath} className="w-full h-full object-cover transition-all duration-700 saturate-[0.6] brightness-[0.9] group-hover:saturate-100 group-hover:brightness-110" 
@@ -209,48 +210,55 @@ export default function EventList() {
                       <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent z-10" />
                     </div>
 
-                    <div className="flex-1 p-6 flex flex-col justify-between gap-4 z-10 w-full">
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className="bg-purple-main/10 text-purple-main border border-purple-main/20 px-2 py-1.5 rounded text-[10px] font-black uppercase tracking-widest">
-                            {event.type.replace('_', ' ')}
-                          </span>
-                          <div className={`h-px w-4 ${ui.bar}`} />
-                          <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${ui.color}`}>{ui.label}</span>
+                    <div className="flex-1 p-6 flex flex-col justify-between gap-4 z-10 min-w-0">
+                      <div className="max-w-4xl w-full flex flex-col justify-between h-full gap-4">
+                        
+                        <div className="flex flex-col gap-1 min-w-0"> 
+                          <div className="flex items-center gap-3 mb-2 shrink-0">
+                            <span className="bg-purple-main/10 text-purple-main border border-purple-main/20 px-2 py-1.5 rounded text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
+                              {event.type.replace('_', ' ')}
+                            </span>
+                            <div className={`h-px w-4 shrink-0 ${ui.bar}`} />
+                            <span className={`text-[9px] font-black uppercase tracking-[0.2em] whitespace-nowrap ${ui.color}`}>{ui.label}</span>
+                          </div>
+
+                          <h4 className={`text-2xl font-black uppercase italic truncate w-full ${isFinished ? 'text-white/40' : 'text-white group-hover:text-purple-300 transition-all duration-250 ease-in-out'}`}>
+                            {event.name}
+                          </h4>
+                          <p className="text-white/30 text-xs italic truncate w-full">
+                            {event.mediaTitles || "Binge Session"}
+                          </p>
                         </div>
 
-                        <h4 className={`text-2xl font-black uppercase italic truncate ${isFinished ? 'text-white/40' : 'text-white group-hover:text-purple-300 transition-all duration-250 ease-in-out'}`}>
-                          {event.name}
-                        </h4>
-                        <p className="text-white/30 text-xs italic truncate">{event.mediaTitles || "Binge Session"}</p>
-                      </div>
-
-                      <div className="grid grid-cols-2 md:grid-cols-3 items-end gap-6 pt-4 border-t border-white/5 w-full">
-                        <div className="flex flex-col">
-                          <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">Members</span>
-                          <div className="flex items-center gap-2 text-white font-black text-sm">
-                            <Users size={14} className={isFinished ? 'text-white/10' : 'text-purple-main'} />
-                            <span className={isFinished ? 'text-white/20' : ''}>{event.currentMembers}/{event.maxMembers}</span>
+                        <div className="grid grid-cols-2 md:grid-cols-3 items-end gap-6 pt-4 border-t border-white/5 w-full">
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">Members</span>
+                            <div className="flex items-center gap-2 text-white font-black text-sm">
+                              <Users size={14} className={isFinished ? 'text-white/10' : 'text-purple-main shrink-0'} />
+                              <span className={isFinished ? 'text-white/20' : ''}>{event.currentMembers}/{event.maxMembers}</span>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">Timing</span>
-                          <div className="flex items-center gap-2 text-white/70 font-bold text-xs truncate">
-                            <Clock size={14} className={isFinished ? 'text-white/10' : 'text-purple-main'} />
-                            <span className={isFinished ? 'text-white/20' : ''}>{getRelativeDate(event.eventDate)}</span>
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">Timing</span>
+                            <div className="flex items-center gap-2 text-white/70 font-bold text-xs">
+                              <Clock size={14} className={isFinished ? 'text-white/10' : 'text-purple-main shrink-0'} />
+                              <span className={`truncate ${isFinished ? 'text-white/20' : ''}`}>{getRelativeDate(event.eventDate)}</span>
+                            </div>
                           </div>
-                        </div>
-                        <div className="relative -bottom-1.5 flex flex-col items-start min-w-30 italic">
-                          <span className="text-[8px] font-black text-white/20 uppercase tracking-widest font-sans not-italic">Host</span>
-                          <div className="flex items-center gap-2.5">
-                            <img src={event.creatorImagePath} className="w-6 h-6 rounded-md border border-white/10" alt="host" />
-                            <span className={`text-[11px] font-bold truncate max-w-25 ${isFinished ? 'text-white/20' : 'text-white'}`}>{event.creatorName}</span>
+                          <div className="relative -bottom-1.5 flex flex-col items-start min-w-0 italic">
+                            <span className="text-[8px] font-black text-white/20 uppercase tracking-widest font-sans not-italic">Host</span>
+                            <div className="flex items-center gap-2.5 min-w-0 w-full">
+                              <img src={event.creatorImagePath} className="w-6 h-6 rounded-md border border-white/10 shrink-0" alt="host" />
+                              <span className={`text-[11px] font-bold truncate ${isFinished ? 'text-white/20' : 'text-white'}`}>
+                                {event.creatorName}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className={`md:w-56 border-t md:border-t-0 md:border-l border-white/5 p-6 flex flex-col items-center justify-center gap-3 ${isFinished ? 'bg-white/1' : 'bg-white/2'}`}>
+                    <div className={`md:w-56 shrink-0 border-t md:border-t-0 md:border-l border-white/5 p-6 flex flex-col items-center justify-center gap-3 ${isFinished ? 'bg-white/1' : 'bg-white/2'}`}>
                       <Button 
                         variant="ghost"
                         icon={Eye}

@@ -16,11 +16,17 @@ export class SeasonService {
     return this.seasonRepository.save(season);
   }
 
-  async findByTmdbId(tmdbId: number): Promise<Season> {
-    const season = await this.seasonRepository.findOne({
+  async findByTmdbId(tmdbId: number): Promise<Season | null> {
+    const season: Season | null = await this.seasonRepository.findOne({
       where: { tmdbId },
       relations: ['series'],
     });
+
+    return season;
+  }
+
+  async getByTmdbId(tmdbId: number): Promise<Season> {
+    const season: Season | null = await this.findByTmdbId(tmdbId);
 
     if (!season) {
       throw new ResourceNotFoundException(
@@ -55,7 +61,7 @@ export class SeasonService {
   async upsert(season: Season): Promise<Season> {
     await this.seasonRepository.upsert(season, ['tmdbId']);
 
-    return await this.findByTmdbId(season.tmdbId);
+    return await this.getByTmdbId(season.tmdbId);
   }
 
   private createSeasonDetailDto(season: Season): SeasonDetailDto {

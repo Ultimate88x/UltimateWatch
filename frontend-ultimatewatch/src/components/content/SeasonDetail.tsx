@@ -45,7 +45,6 @@ const SeasonDetail: React.FC<SeasonDetailProps> = ({ seriesTmdbId, activeSeason 
       } catch (error) {
         const message = error instanceof Error ? error.message : 'An unexpected error occurred';
         toast.error(message);
-        setIsLoading(false);
       } finally {
         setTimeout(() => setIsLoading(false), 600);
       }

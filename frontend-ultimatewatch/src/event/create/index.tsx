@@ -11,6 +11,8 @@ import type { Media } from "../../types/media-item";
 import { Search, SearchX, ChevronDown } from "lucide-react";
 import ListMedia from "../../components/content/ListMedia";
 import { EmptyState } from "../../components/EmptyState";
+import { MediaActionModal } from "../../components/content/MediaActionModal";
+import type { AddMedia } from "../../types/add-media-item";
 
 export default function CreateEvent() {
   const navigate = useNavigate();
@@ -24,6 +26,7 @@ export default function CreateEvent() {
   const [searchText, setSearchText] = useState<string>("");
 
   const [selectedMediaId, setSelectedMediaId] = useState<number | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<AddMedia[]>([]);
 
   const [type, setType] = useState<EventType>(EventTypeEnum.STANDARD);
   const [error, setError] = useState<{ field: string; message: string } | null>(null);
@@ -145,88 +148,85 @@ export default function CreateEvent() {
     setPage(1);
   }, [query, mediaType]);
 
-  const toggleMediaSelection = (id: number) => {
-    setSelectedMediaId(selectedMediaId === id ? null : id);
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      mediaIds: selectedMedia
+        .map(m => m.id) as never[]
+    }));
+  }, [selectedMedia]);
+
+  const handleAddMediaState = (item: AddMedia) => {
+    if (selectedMedia.some(m => m.id === item.id)) {
+      toast.error("Already in your lineup");
+      return false;
+    }
+    setSelectedMedia(prev => [...prev, item]);
+    return true;
   };
 
-  const addMediaToLineup = async (media: Media) => {
-    if (formData.mediaIds.includes(media.id as never)) {
+  const addMediaToLineup = async (media: AddMedia) => {
+    if (selectedMedia.some(m => m.id === media.id)) {
       toast.error("Already in your lineup");
-      setSelectedMediaId(null);
       return;
     }
 
     setIsLoadingMedia(true);
-
     try {
-      const response = await fetch(`http://localhost:3000/${mediaType}/${media.id}`);
+      const response = await fetch(`http://localhost:3000/${mediaType}/${media.id}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const data = await response.json();
 
       if (!response.ok) {
-        toast.error("Failed to add media to lineup");
+        toast.error(data.message || "Failed to add media");
+        return;
       }
 
-      setFormData(prev => ({
-        ...prev,
-        mediaIds: [...prev.mediaIds, media.id as never]
-      }));
+      media.type = mediaType === "movies" ? "movie" : "series";
+
+      handleAddMediaState(media);
       toast.success(`${media.title} added to lineup`);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Error';
+      const message = error instanceof Error ? error.message : 'An unexpected error occurred';
       toast.error(message);
     } finally {
+      setIsLoadingMedia(false);
       setSelectedMediaId(null);
     }
   };
 
-  const renderMediaOverlay = () => {
-    if (!selectedMediaId) return null;
+  const onAddLocal = (id: number, title: string, posterPath: string, type: string, parentId: number) => {
+    const parentMedia = mediaList.find(m => m.id === parentId);
 
-    const currentMedia = mediaList.find((m) => m.id === selectedMediaId);
-    const title = currentMedia?.title || "Unknown Title";
+    if (parentId && !selectedMedia.some(m => m.id === parentId)) {
+      const virtualParent: AddMedia = {
+        id: parentId,
+        title: parentMedia?.title || "Series",
+        posterPath: parentMedia?.posterPath || posterPath,
+        type: 'series',
+      } as AddMedia;
+      
+      setSelectedMedia(prev => [...prev, virtualParent]);
+    }
 
-    return (
-      <div 
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" 
-        onClick={() => setSelectedMediaId(null)}
-      >
-        <motion.div 
-          initial={{ scale: 0.9, opacity: 0, y: 10 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          className="bg-blue-background border border-white/10 p-8 rounded-[2.5rem] shadow-2xl flex flex-col gap-4 min-w-70 max-w-100"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="flex flex-col items-center mb-2">
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-purple-main mb-1">
-              Selected Content
-            </span>
-            <h4 className="text-sm font-black uppercase italic text-white text-center leading-tight">
-              {title}
-            </h4>
-          </div>
-          
-          <div className="h-px w-full bg-white/5 my-2" />
+      const customMedia: AddMedia = {
+        id: id,
+        title: title,
+        posterPath: posterPath || parentMedia?.posterPath,
+        type: type,
+        parentId: parentId
+      } as AddMedia;
+    
+    if (handleAddMediaState(customMedia)) {
+      toast.success(`Added: ${title}`);
+    }
+  };
 
-          <Button 
-            variant="primary" 
-            fullWidth 
-            className="font-black italic uppercase text-xs py-4"
-            onClick={() => currentMedia && addMediaToLineup(currentMedia)}
-            isLoading={isLoadingMedia}
-          >
-            Add to Lineup
-          </Button>
-
-          <Button 
-            variant="ghost" 
-            fullWidth 
-            className="text-white/40 hover:text-white uppercase text-[10px] font-black tracking-widest"
-            onClick={(e) => smartNavigate(`/${mediaType}/${selectedMediaId}`, e)}
-          >
-            View Details
-          </Button>
-        </motion.div>
-      </div>
-    );
+  const toggleMediaSelection = (id: number) => {
+    setSelectedMediaId(selectedMediaId === id ? null : id);
   };
 
   return (
@@ -310,72 +310,81 @@ export default function CreateEvent() {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
           className="col-span-3 h-full"
         >
-          <div className="bg-white/2 border border-white/5 p-8 rounded-[2.5rem] backdrop-blur-md min-h-150 h-full">
+          <div className="bg-white/2 border border-white/5 p-8 rounded-[2.5rem] backdrop-blur-md min-h-150 h-full flex flex-col">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/30">Selected Lineup</h3>
-              <span className="text-purple-main font-mono text-xs">{formData.mediaIds.length}</span>
+              <span className="text-purple-main font-mono text-xs">{selectedMedia.length}</span>
             </div>
             
-            <div className="flex flex-col gap-3">
-              {formData.mediaIds.length === 0 ? (
-                <div className="text-center py-10 border-2 border-dashed border-white/5 rounded-3xl">
-                  <p className="text-[10px] text-white/10 font-black uppercase italic">No media selected yet</p>
+            <div className="flex flex-col gap-4 overflow-y-auto pr-2 media-scrollbar h-full">
+              {selectedMedia.length === 0 ? (
+                <div className="flex-1 flex items-center justify-center border-2 border-dashed border-white/5 rounded-3xl">
+                  <p className="text-[10px] text-white/10 font-black uppercase italic">No media selected</p>
                 </div>
               ) : (
-                <div className="flex flex-col gap-2 max-h-125 overflow-y-auto pr-2 media-scrollbar">
-                  {formData.mediaIds.map((id) => {
-                    const item = mediaList.find(m => m.id === id);
-                    if (!item) return null;
+                selectedMedia.filter(m => !m.parentId).map((parentItem) => (
+                  <div key={parentItem.id} className="flex flex-col gap-2">
+                    <motion.div 
+                      layout
+                      className="group relative flex items-center gap-4 border p-3 rounded-2xl transition-all bg-white/5 border-white/5 hover:bg-white/10"
+                    >
+                      <div className="relative shrink-0 w-10 h-14 overflow-hidden rounded-lg border border-white/10">
+                        <img src={parentItem.posterPath} className="w-full h-full object-cover" alt="" />
+                      </div>
 
-                    return (
-                      <motion.div 
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        key={id}
-                        className="group relative flex items-center gap-4 bg-white/5 border border-white/5 p-3 rounded-2xl hover:bg-white/10 hover:border-purple-main/30 transition-all"
-                      >
-                        <div className="relative shrink-0 w-10 h-14 overflow-hidden rounded-lg border border-white/10 bg-white/5">
-                          {item.posterPath ? (
-                            <img 
-                              src={item.posterPath} 
-                              alt={item.title}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-white/5">
-                              <Search size={12} className="text-white/10" />
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex-1 flex flex-col min-w-0">
-                          <span className="text-[7px] font-black uppercase tracking-[0.2em] text-purple-main/60 mb-0.5">
-                            {mediaType === 'movies' ? 'Movie' : 'Series'}
+                      <div className="flex-1 flex flex-col min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="text-[7px] font-black uppercase tracking-[0.2em] text-purple-main">
+                            {parentItem.type}
                           </span>
-                          <p className="text-[10px] font-black text-white/90 uppercase italic truncate leading-tight">
-                            {item.title}
-                          </p>
                         </div>
+                        <p className="text-[10px] font-black text-white uppercase italic truncate leading-tight">
+                          {parentItem.title}
+                        </p>
+                      </div>
 
-                        <button 
-                          type="button"
-                          onClick={() => {
-                            setFormData(prev => ({
-                              ...prev,
-                              mediaIds: prev.mediaIds.filter(mediaId => mediaId !== id)
-                            }));
-                          }}
-                          className="p-2 text-white/10 hover:text-red-500 transition-all cursor-pointer"
-                        >
-                          <SearchX size={14} className="group-hover:scale-110 transition-transform" /> 
-                        </button>
-                      </motion.div>
-                    );
-                  })}
-                </div>
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setSelectedMedia(prev => prev.filter(m => m.id !== parentItem.id && m.parentId !== parentItem.id));
+                        }}
+                        className="p-2 text-white/10 hover:text-red-500 transition-all cursor-pointer"
+                      >
+                        <SearchX size={14} /> 
+                      </button>
+                    </motion.div>
+
+                    <div className="ml-6 flex flex-col gap-2 border-l border-white/5 pl-4 mb-2">
+                      {selectedMedia
+                        .filter(child => child.parentId === parentItem.id)
+                        .map((childItem) => (
+                          <motion.div 
+                            key={childItem.id}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="flex items-center gap-3 bg-white/2 border border-white/5 p-2 rounded-xl group/child"
+                          >
+                            <div className="w-1 h-1 rounded-full bg-purple-main/40 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[9px] font-bold text-white/60 group-hover/child:text-white/90 uppercase truncate transition-colors">
+                                {childItem.title}
+                              </p>
+                            </div>
+                            <button 
+                              type="button"
+                              onClick={() => setSelectedMedia(prev => prev.filter(m => m.id !== childItem.id))}
+                              className="p-1 text-white/5 hover:text-red-400 transition-colors"
+                            >
+                              <SearchX size={10} />
+                            </button>
+                          </motion.div>
+                        ))
+                      }
+                    </div>
+                  </div>
+                ))
               )}
             </div>
           </div>
@@ -475,7 +484,15 @@ export default function CreateEvent() {
                         columns={4} 
                       />
 
-                      {renderMediaOverlay()}
+                      <MediaActionModal 
+                        media={mediaList.find(m => m.id === selectedMediaId) || null}
+                        mediaType={mediaType}
+                        onClose={() => setSelectedMediaId(null)}
+                        onAddFull={addMediaToLineup}
+                        onAddLocal={onAddLocal}
+                        isLoadingMedia={isLoadingMedia}
+                        smartNavigate={smartNavigate}
+                      />
                     </div>
                   </div>
                 )}

@@ -67,10 +67,8 @@ export class EventsService {
     const { creator }: { creator: Member } =
       await this.mapEventCommonValues(userId);
 
-    const mediaList: Media[] = await Promise.all(
-      createEventDto.mediaIds.map(async (id: number) =>
-        this.mediaService.findByTmdbId(id),
-      ),
+    const mediaList: Media[] = await this.deleteMediaDuplicates(
+      createEventDto.mediaIds,
     );
 
     const event: StandardEvent = this.standardEventsRepository.create({
@@ -402,6 +400,39 @@ export class EventsService {
     });
   }
 
+  private async deleteMediaDuplicates(mediaList: number[]): Promise<Media[]> {
+    const idSet = new Set(mediaList);
+    const idsToDelete = new Set<number>();
+
+    await Promise.all(
+      mediaList.map(async (mediaId) => {
+        const episode = await this.episodesService.findByTmdbId(mediaId);
+        if (episode) {
+          const seriesId = episode.season.series.tmdbId;
+          if (idSet.has(seriesId)) {
+            idsToDelete.add(seriesId);
+          }
+          return;
+        }
+
+        const season = await this.seasonsService.findByTmdbId(mediaId);
+        if (season) {
+          const seriesId = season.series.tmdbId;
+          if (idSet.has(seriesId)) {
+            idsToDelete.add(seriesId);
+          }
+          return;
+        }
+      }),
+    );
+
+    const cleanIds = mediaList.filter((id) => !idsToDelete.has(id));
+
+    return Promise.all(
+      cleanIds.map((id) => this.mediaService.findByTmdbId(id)),
+    );
+  }
+
   private async createMediaEventDtoListForMediaList(
     mediaList: Media[] | null | undefined,
   ): Promise<MediaEventDto[] | null | undefined> {
@@ -421,7 +452,7 @@ export class EventsService {
 
       switch (media.type) {
         case MediaType.SEASON: {
-          const season = await this.seasonsService.findByTmdbId(media.tmdbId);
+          const season = await this.seasonsService.getByTmdbId(media.tmdbId);
           id = season.series.tmdbId;
           title = season.series.title;
           imagePath = season.series.imagePath;
@@ -438,7 +469,7 @@ export class EventsService {
         }
 
         case MediaType.EPISODE: {
-          const episode = await this.episodesService.findByTmdbId(media.tmdbId);
+          const episode = await this.episodesService.getByTmdbId(media.tmdbId);
           id = episode.season.series.tmdbId;
           title = episode.season.series.title;
           imagePath = episode.season.series.imagePath;
@@ -512,14 +543,14 @@ export class EventsService {
 
         switch (media.type) {
           case MediaType.SEASON: {
-            const season = await this.seasonsService.findByTmdbId(media.tmdbId);
+            const season = await this.seasonsService.getByTmdbId(media.tmdbId);
             formattedTitle = `${season.series.title} S${season.number}: ${season.title}`;
             sortKey = `${season.series.title}-S${season.number.toString().padStart(2, '0')}`;
             break;
           }
 
           case MediaType.EPISODE: {
-            const episode = await this.episodesService.findByTmdbId(
+            const episode = await this.episodesService.getByTmdbId(
               media.tmdbId,
             );
             formattedTitle = `${episode.season.series.title} S${episode.season.number}xE${episode.number}: ${episode.title}`;
@@ -556,7 +587,7 @@ export class EventsService {
 
     switch (mainMedia.type) {
       case MediaType.SEASON: {
-        const season: Season = await this.seasonsService.findByTmdbId(
+        const season: Season = await this.seasonsService.getByTmdbId(
           mainMedia.tmdbId,
         );
         imagePath = season.series.imagePath;
@@ -564,7 +595,7 @@ export class EventsService {
       }
 
       case MediaType.EPISODE: {
-        const episode: Episode = await this.episodesService.findByTmdbId(
+        const episode: Episode = await this.episodesService.getByTmdbId(
           mainMedia.tmdbId,
         );
         imagePath = episode.season.series.imagePath;

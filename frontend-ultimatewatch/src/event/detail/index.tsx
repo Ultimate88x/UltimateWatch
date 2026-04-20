@@ -5,7 +5,7 @@ import { useParams } from 'react-router-dom';
 import type { Event } from '../../types/event';
 import type { Member } from '../../types/member';
 import { EmptyState } from '../../components/EmptyState';
-import { Film, Calendar, Users, Info, Tv, PlayCircle, Shield, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Film, Calendar, Users, Info, Tv, Shield, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '../../components/Button';
 import { getRelativeDate } from '../../components/utilities/RelativeDate';
 import { useAdvancedNavigation } from '../../components/utilities/SmartNavigate';
@@ -43,6 +43,7 @@ export default function EventDetail() {
         return;
       }
 
+      console.log(data)
       setEvent(data);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error';
@@ -206,58 +207,64 @@ export default function EventDetail() {
               
               <div className="flex flex-col gap-3">
                 {event.media?.map((m, idx) => (
-                  <motion.button 
+                  <motion.div 
                     key={m.id}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: idx * 0.1 }}
-                    className="flex group bg-[#0c0c0c] border border-white/5 rounded-2xl overflow-hidden hover:border-purple-main/30 transition-all shadow-xl cursor-pointer"
-                    onClick={(e) => smartNavigate(`/${m.type === 'tv' ? 'series' : 'movies'}/${m.id}`, e)}
+                    className="flex flex-col bg-[#0c0c0c] border border-white/5 rounded-2xl overflow-hidden hover:border-purple-main/30 transition-all shadow-xl"
                   >
-                    <div className="flex items-center p-3 gap-6">
+                    <button 
+                      className="flex items-center p-3 gap-6 cursor-pointer"
+                      onClick={(e) => smartNavigate(`/${m.type === "movies" ? m.type : "series"}/${m.id}`, e)}
+                    >
                       <img src={m.imagePath} className="w-23 h-31 object-cover rounded-lg shadow-lg" alt={m.title} />
                       <div className="flex-1">
-                        <h4 className="text-xl font-black uppercase italic group-hover:text-purple-main transition-colors leading-tight">
+                        <h4 className="text-xl font-black uppercase italic group-hover:text-purple-main transition-colors leading-tight flex">
                           {m.title}
                         </h4>
-                        {m.subMediaEvent && m.subMediaEvent?.length > 0 && (<p className="text-white/20 text-[10px] font-bold uppercase tracking-widest mt-1">
-                          {m.subMediaEvent?.length || 0} Segments
+                        {m.subMediaEvent && m.subMediaEvent?.length > 0 && (<p className="text-white/20 text-[10px] font-bold uppercase tracking-widest mt-1 flex">
+                          {m.subMediaEvent?.length || 0} Segment(s)
                         </p>)}
                       </div>
-                    </div>
+                    </button>
 
                     {m.subMediaEvent && m.subMediaEvent.length > 0 && (
-                      <div className="p-4 grid grid-cols-2 gap-4 bg-black/40 border-t border-white/5">
-                        {m.subMediaEvent.map((sub, sIdx) => (
-                          <div 
-                            key={sIdx} 
-                            className="group relative h-24 flex items-center overflow-hidden bg-white/5 border border-white/10 rounded-lg hover:border-purple-main/50 transition-all -skew-x-2 hover:skew-x-0"
-                          >
-                            <div className="absolute left-0 top-0 w-24 h-full overflow-hidden skew-x-2 group-hover:skew-x-0 transition-all">
-                              <img src={sub.imagePath} className="w-full h-full object-cover scale-125" />
-                              <div className="absolute inset-0 bg-purple-main/40 mix-blend-overlay" />
-                            </div>
+                      <div className="p-4 grid grid-cols-2 gap-4 bg-black/40 border-t border-white/5 cursor-auto">
+                        {m.subMediaEvent.map((sub, sIdx) => {
+                          const isSeason = m.type === 'season';
+                          const containerHeight = isSeason ? "h-32" : "h-24";
+                          const imgWidth = isSeason ? "w-24" : "w-44"; 
+                          const textMargin = isSeason ? "ml-28" : "ml-48";
 
-                            <div className="ml-28 flex flex-col skew-x-2 group-hover:skew-x-0 transition-all">
-                              <span className="text-[7px] font-black text-purple-main uppercase tracking-[0.3em]">Sequence_{sIdx + 1}</span>
-                              <h5 className="text-[11px] font-black text-white uppercase italic leading-tight">
-                                {sub.title}
-                              </h5>
-                              <div className="mt-2 flex gap-1">
-                                {[1,2,3].map(i => (
-                                  <div key={i} className={`h-0.5 w-3 rounded-full ${i === 1 ? 'bg-purple-main' : 'bg-white/10'}`} />
-                                ))}
+                          return (
+                            <div 
+                              key={sIdx} 
+                              className={`group relative ${containerHeight} flex items-center overflow-hidden bg-white/5 border border-white/10 rounded-lg hover:border-purple-main/50 transition-all -skew-x-2 hover:skew-x-0`}
+                            >
+                              <div className={`absolute left-0 top-0 ${imgWidth} h-full overflow-hidden skew-x-2 group-hover:skew-x-0 transition-all`}>
+                                <img 
+                                  src={sub.imagePath} 
+                                  className="w-full h-full object-cover transition-transform duration-500" 
+                                />
+                                <div className="absolute inset-0 bg-linear-to-r from-purple-main/30 to-transparent mix-blend-overlay" />
+                                <div className="absolute inset-0 bg-black/20" />
+                              </div>
+
+                              <div className={`${textMargin} flex flex-col justify-start skew-x-2 group-hover:skew-x-0 transition-all pr-10`}>
+                                <span className={`flex text-[7px] font-black uppercase tracking-[0.2em] mb-1 ${isSeason ? 'text-purple-main' : 'text-white/30'}`}>
+                                  {isSeason ? 'Full Season' : 'Episode'}
+                                </span>
+                                <h5 className={`${isSeason ? 'text-[13px]' : 'text-[11px]'} font-black text-white uppercase italic leading-tight group-hover:text-purple-main transition-colors`}>
+                                  {sub.title}
+                                </h5>
                               </div>
                             </div>
-                            
-                            <div className="absolute right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <PlayCircle size={20} className="text-purple-main" />
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
-                  </motion.button>
+                  </motion.div>
                 ))}
               </div>
             </div>

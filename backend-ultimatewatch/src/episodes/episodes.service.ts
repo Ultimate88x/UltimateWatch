@@ -21,11 +21,17 @@ export class EpisodeService {
     private readonly tmdbApiService: TmdbApiService,
   ) {}
 
-  async findByTmdbId(tmdbId: number): Promise<Episode> {
-    const episode = await this.episodeRepository.findOne({
+  async findByTmdbId(tmdbId: number): Promise<Episode | null> {
+    const episode: Episode | null = await this.episodeRepository.findOne({
       where: { tmdbId },
       relations: ['season', 'season.series'],
     });
+
+    return episode;
+  }
+
+  async getByTmdbId(tmdbId: number): Promise<Episode> {
+    const episode = await this.findByTmdbId(tmdbId);
 
     if (!episode) {
       throw new ResourceNotFoundException(
@@ -79,7 +85,7 @@ export class EpisodeService {
     limit: number = 10,
   ): Promise<EpisodeResponseDto> {
     const existingSeason: Season =
-      await this.seasonService.findByTmdbId(seasonTmdbId);
+      await this.seasonService.getByTmdbId(seasonTmdbId);
 
     const ONE_HOUR = 1 / 24;
     const needsUpdate: boolean =

@@ -216,7 +216,7 @@ export default function EventDetail() {
                   >
                     <button 
                       className="flex items-center p-3 gap-6 cursor-pointer"
-                      onClick={(e) => smartNavigate(`/${m.type === "movies" ? m.type : "series"}/${m.id}`, e)}
+                      onClick={(e) => smartNavigate(`/${m.type}/${m.id}`, e)}
                     >
                       <img src={m.imagePath} className="w-23 h-31 object-cover rounded-lg shadow-lg" alt={m.title} />
                       <div className="flex-1">
@@ -232,15 +232,14 @@ export default function EventDetail() {
                     {m.subMediaEvent && m.subMediaEvent.length > 0 && (
                       <div className="p-4 grid grid-cols-2 gap-4 bg-black/40 border-t border-white/5 cursor-auto">
                         {m.subMediaEvent.map((sub, sIdx) => {
-                          const isSeason = m.type === 'season';
-                          const containerHeight = isSeason ? "h-32" : "h-24";
+                          const isSeason = sub.type === 'season';
                           const imgWidth = isSeason ? "w-24" : "w-44"; 
                           const textMargin = isSeason ? "ml-28" : "ml-48";
 
                           return (
                             <div 
                               key={sIdx} 
-                              className={`group relative ${containerHeight} flex items-center overflow-hidden bg-white/5 border border-white/10 rounded-lg hover:border-purple-main/50 transition-all -skew-x-2 hover:skew-x-0`}
+                              className={`group relative h-32 flex items-center overflow-hidden bg-white/5 border border-white/10 rounded-lg hover:border-purple-main/50 transition-all -skew-x-2 hover:skew-x-0`}
                             >
                               <div className={`absolute left-0 top-0 ${imgWidth} h-full overflow-hidden skew-x-2 group-hover:skew-x-0 transition-all`}>
                                 <img 

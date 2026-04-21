@@ -408,8 +408,11 @@ export class EventsService {
       mediaList.map(async (mediaId) => {
         const episode = await this.episodesService.findByTmdbId(mediaId);
         if (episode) {
+          const seasonId = episode.season.tmdbId;
           const seriesId = episode.season.series.tmdbId;
-          if (idSet.has(seriesId)) {
+          if (idSet.has(seasonId)) {
+            idsToDelete.add(seasonId);
+          } else if (idSet.has(seriesId)) {
             idsToDelete.add(seriesId);
           }
           return;
@@ -460,6 +463,7 @@ export class EventsService {
             new SubMediaEventDto({
               title: `S${season.number}: ${season.title}`,
               imagePath: season.imagePath,
+              type: media.type,
             }),
             {
               sortKey: `S${season.number.toString().padStart(2, '0')}`,
@@ -477,6 +481,7 @@ export class EventsService {
             new SubMediaEventDto({
               title: `S${episode.season.number}xE${episode.number}: ${episode.title}`,
               imagePath: media.imagePath,
+              type: media.type,
             }),
             {
               sortKey: `S${episode.season.number.toString().padStart(2, '0')}xE${episode.number.toString().padStart(3, '0')}`,
@@ -507,7 +512,10 @@ export class EventsService {
             id,
             title,
             imagePath,
-            type: media.type,
+            type:
+              media.type === MediaType.MOVIE
+                ? MediaType.MOVIE
+                : MediaType.SERIES,
             subMediaEvent: subMediaEvent ? [subMediaEvent] : null,
           }),
         );

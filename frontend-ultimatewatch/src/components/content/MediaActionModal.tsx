@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, Plus, Loader2, Clock, ChevronRight, PlayCircle } from "lucide-react";
+import { ChevronLeft, Plus, Loader2, Clock, ChevronRight, PlayCircle, X } from "lucide-react";
 import { Button } from "../Button";
 import { formatDate } from "../utilities/FormatDate";
 import toast from "react-hot-toast";
@@ -15,7 +15,7 @@ interface MediaActionModalProps {
   mediaType: 'movies' | 'series';
   onClose: () => void;
   onAddFull: (media: AddMedia) => void;
-  onAddLocal: (id: number, title: string, posterPath: string, type: string, parentId: number) => void;
+  onAddLocal: (id: number, title: string, posterPath: string, type: string, parentId: number, isSilent: boolean) => void;
   isLoadingMedia: boolean;
   smartNavigate: (path: string, e: React.MouseEvent) => void;
 }
@@ -129,7 +129,7 @@ export function MediaActionModal({
   if (!media) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md border border-white/5 p-8 rounded-[2.5rem]" onClick={onClose}>
       <motion.div 
         layout
         initial={{ opacity: 0, scale: 0.9 }}
@@ -139,10 +139,16 @@ export function MediaActionModal({
           maxWidth: view === 'main' ? '400px' : '700px' 
         }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="bg-blue-background border border-white/10 rounded-[2.5rem] shadow-2xl w-full mx-4 max-h-[85vh] overflow-hidden flex flex-col"
+        className="bg-blue-background border border-white/10 rounded-[2.5rem] shadow-2xl w-full mx-4 max-h-[75vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-6 border-b border-white/5 flex flex-col items-center shrink-0">
+        <div className="relative p-6 border-b border-white/5 flex flex-col items-center shrink-0">
+          <button 
+            onClick={onClose}
+            className="absolute top-3 right-3 p-2 text-white/20 hover:text-white hover:bg-white/5 rounded-full transition-all cursor-pointer z-20"
+          >
+            <X size={20} />
+          </button>
           <span className="text-[10px] font-black uppercase tracking-[0.4em] text-purple-main mb-1">
             {view === 'main' ? 'Selection' : view === 'seasons' ? 'Seasons' : `Season ${selectedSeason?.number}`}
           </span>
@@ -266,13 +272,17 @@ export function MediaActionModal({
                           </div>
                           
                           <button 
-                            onClick={() => onAddLocal(
-                              selectedSeason.tmdbId, 
-                              `${media.title} - Season ${selectedSeason.number}`, 
-                              selectedSeason.imagePath,
-                              "season",
-                              media.id
-                            )}
+                            onClick={() => {
+                              onAddLocal(media.id, media.title, media.posterPath, "series", 0, true);
+                              onAddLocal(
+                                selectedSeason.tmdbId, 
+                                `Season ${selectedSeason.number}`, 
+                                selectedSeason.imagePath,
+                                "season",
+                                media.id,
+                                false
+                              );
+                            }}
                             className="flex items-center gap-2 px-3 py-1 bg-purple-main/10 border border-purple-main/20 rounded-full hover:bg-purple-main transition-all group cursor-pointer"
                           >
                             <Plus size={10} className="text-purple-400 group-hover:text-white" />
@@ -299,9 +309,9 @@ export function MediaActionModal({
                         episodes.map((ep) => (
                           <div 
                             key={ep.tmdbId} 
-                            className="group flex flex-col sm:flex-row gap-4 p-4 rounded-2xl bg-white/2 border border-white/5 hover:bg-white/4 hover:border-purple-main/20 transition-all duration-300"
+                            className="group flex flex-row gap-4 p-4 rounded-2xl bg-white/2 border border-white/5 hover:bg-white/4 hover:border-purple-main/20 transition-all duration-300"
                           >
-                            <div className="relative w-full sm:w-32 aspect-video shrink-0 rounded-xl overflow-hidden border border-white/10 bg-black/20">
+                            <div className="relative w-32 aspect-video shrink-0 rounded-xl overflow-hidden border border-white/10 bg-black/20">
                               <img 
                                 src={ep.imagePath} 
                                 className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-all duration-500" 
@@ -336,7 +346,25 @@ export function MediaActionModal({
 
                             <button 
                               className="self-center w-8 h-8 flex items-center justify-center bg-white/5 text-white/20 rounded-xl hover:bg-purple-main hover:text-white transition-all active:scale-90 cursor-pointer"
-                              onClick={() => onAddLocal(ep.tmdbId, `${media.title} - S${selectedSeason.number}xE${ep.number}: ${ep.title}`, ep.imagePath, "episode", media.id)}
+                              onClick={() => {
+                                onAddLocal(media.id, media.title, media.posterPath, "series", 0, true);
+                                onAddLocal(
+                                  selectedSeason.tmdbId, 
+                                  `Season ${selectedSeason.number}`, 
+                                  selectedSeason.imagePath,
+                                  "season",
+                                  media.id,
+                                  true
+                                );
+                                onAddLocal(
+                                  ep.tmdbId, 
+                                  `EPISODE ${ep.number}: ${ep.title}`, 
+                                  ep.imagePath, 
+                                  "episode", 
+                                  selectedSeason.tmdbId,
+                                  false
+                                );
+                              }}
                             >
                               <Plus size={14} />
                             </button>

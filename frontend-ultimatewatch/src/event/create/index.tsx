@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createEventSchema } from "./schemas/createEventSchema";
+import { createStandardEventSchema } from "./schemas/createStandardEventSchema";
+import { createVotingEventSchema } from "./schemas/createVotingEventSchema";
 import toast from "react-hot-toast";
 import { Button } from "../../components/Button";
 import { Input } from "../../components/Input";
@@ -13,6 +14,25 @@ import ListMedia from "../../components/content/ListMedia";
 import { EmptyState } from "../../components/EmptyState";
 import { MediaActionModal } from "../../components/content/MediaActionModal";
 import type { AddMedia } from "../../types/add-media-item";
+
+const INITIAL_STANDARD = {
+  name: '',
+  description: '' as string | null,
+  eventDate: new Date(Date.now() + 6000000),
+  maxMembers: 10,
+  mediaIds: [] as number[],
+};
+
+const INITIAL_VOTING = {
+  name: '',
+  description: '' as string | null,
+  eventDate: new Date(Date.now() + 6000000),
+  maxMembers: 10,
+  maxMedia: 3,
+  maxVotesPerMember: 1,
+  votingEndDate: new Date(Date.now() + 3000000),
+  proposedMediaIds: [] as number[],
+};
 
 export default function CreateEvent() {
   const navigate = useNavigate();
@@ -34,61 +54,88 @@ export default function CreateEvent() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMedia, setIsLoadingMedia] = useState(false);
 
-  const [formData, setFormData] = useState(() => ({
-    name: '',
-    description: null as string | null,
-    eventDate: new Date(Date.now() + 6000000),
-    maxMembers: 10,
-		mediaIds: [],
-  }));
+  const [formData, setFormData] = useState(INITIAL_STANDARD);
+  const [votingData, setVotingData] = useState(INITIAL_VOTING);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type: inputType } = e.target;
+    const finalValue = inputType === 'number' ? Number(value) : value;
 
-    if (error?.field === name) {
-      setError(null);
+    const commonFields = ['name', 'description', 'eventDate', 'maxMembers'];
+
+    if (commonFields.includes(name)) {
+      setFormData(prev => ({ ...prev, [name]: finalValue }));
+      setVotingData(prev => ({ ...prev, [name]: finalValue }));
+    } else {
+      if (type === EventTypeEnum.VOTING) {
+        setVotingData(prev => ({ ...prev, [name]: finalValue }));
+      } else {
+        setFormData(prev => ({ ...prev, [name]: finalValue }));
+      }
     }
+
+    if (error?.field === name) setError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+
+    const isVoting = type === EventTypeEnum.VOTING;
     
-    const result = createEventSchema.safeParse(formData);
+    const schema = isVoting ? createVotingEventSchema : createStandardEventSchema;
+    const dataToValidate = isVoting ? votingData : formData;
+
+    const result = schema.safeParse(dataToValidate);
+
     if (!result.success) {
-      const error = result.error.issues[0];
+      const firstError = result.error.issues[0];
       setError({ 
-        field: error.path[0] as string, 
-        message: error.message 
+        field: firstError.path[0] as string, 
+        message: firstError.message 
       });
+
+      if (firstError.path[0] as string === "mediaIds" || firstError.path[0] as string === "proposedMediaIds") {
+        toast.error(firstError.message);
+      }
       return;
     }
+
+    const endpoint = isVoting ? 'voting' : 'standard';
+
+    console.log(formData)
     
     try {
-			const response = await fetch('http://localhost:3000/events/standard', {
-				method: 'POST',
+      const response = await fetch(`http://localhost:3000/events/${endpoint}`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
-				body: JSON.stringify(formData),
-			});
+        body: JSON.stringify(result.data), 
+      });
 
       const data = await response.json();
 
       if (!response.ok) {
         const message = Array.isArray(data.message) ? data.message[0] : data.message;
-        
-        let field = 'general';
-        if (message.toLowerCase().includes('name')) field = 'name';
-        else if (message.toLowerCase().includes('date')) field = 'eventDate';
-        else if (message.toLowerCase().includes('member')) field = 'maxMembers';
+        const lowerMessage = message.toLowerCase();
 
-        if (field === 'general') {
+        let field = 'general';
+
+        if (lowerMessage.includes('name')) {
+          field = 'name';
+        } else if (lowerMessage.includes('voting end') || lowerMessage.includes('votingend')) {
+          field = 'votingEndDate';
+        } else if (lowerMessage.includes('date')) {
+          field = 'eventDate';
+        } else if (lowerMessage.includes('member')) {
+          field = 'maxMembers';
+        } else if (lowerMessage.includes('votes')) {
+          field = 'maxVotesPerMember';
+        } else if (lowerMessage.includes('max media') || lowerMessage.includes('maxmedia')) {
+          field = 'maxMedia';
+        } else {
           toast.error(message);
         }
 
@@ -151,17 +198,40 @@ export default function CreateEvent() {
   useEffect(() => {
     setFormData(prev => ({
       ...prev,
-      mediaIds: selectedMedia
-        .map(m => m.id) as never[]
+      mediaIds: selectedMedia.map(m => m.id) as never[],
+      proposedMediaIds: selectedMedia.map(m => m.id) as never[]
     }));
   }, [selectedMedia]);
 
-  const handleAddMediaState = (item: AddMedia) => {
-    if (selectedMedia.some(m => m.id === item.id)) {
-      toast.error("Already in your lineup");
-      return false;
+  useEffect(() => {
+    const activeParentIds = new Set(
+      selectedMedia
+        .map(m => m.parentId)
+        .filter((id): id is number => id !== undefined && id !== null)
+    );
+
+    const ids = selectedMedia
+      .filter(m => !activeParentIds.has(m.id))
+      .map(m => m.id);
+    
+    if (type === EventTypeEnum.VOTING) {
+      setVotingData(prev => ({ ...prev, proposedMediaIds: ids }));
+    } else {
+      setFormData(prev => ({ ...prev, mediaIds: ids }));
     }
-    setSelectedMedia(prev => [...prev, item]);
+  }, [selectedMedia, type]);
+
+  const handleAddMediaState = (newItem: AddMedia, isSilent: boolean = false) => {
+    const exists = selectedMedia.some(m => m.id === newItem.id);
+    
+    if (exists) {
+      if (!isSilent) {
+        toast.error("Already in your lineup");
+      }
+      return false; 
+    }
+
+    setSelectedMedia(prev => [...prev, newItem]);
     return true;
   };
 
@@ -198,36 +268,28 @@ export default function CreateEvent() {
     }
   };
 
-  const onAddLocal = (id: number, title: string, posterPath: string, type: string, parentId: number) => {
-    const parentMedia = mediaList.find(m => m.id === parentId);
+  const onAddLocal = (id: number, title: string, posterPath: string, type: string, parentId: number, isSilent: boolean = false) => {
+    const customMedia: AddMedia = {
+      id: id,
+      title: title,
+      posterPath: posterPath,
+      type: type as string,
+      parentId: parentId !== 0 ? parentId : undefined,
+    } as AddMedia;
 
-    if (parentId && !selectedMedia.some(m => m.id === parentId)) {
-      const virtualParent: AddMedia = {
-        id: parentId,
-        title: parentMedia?.title || "Series",
-        posterPath: parentMedia?.posterPath || posterPath,
-        type: 'series',
-      } as AddMedia;
-      
-      setSelectedMedia(prev => [...prev, virtualParent]);
-    }
-
-      const customMedia: AddMedia = {
-        id: id,
-        title: title,
-        posterPath: posterPath || parentMedia?.posterPath,
-        type: type,
-        parentId: parentId
-      } as AddMedia;
-    
-    if (handleAddMediaState(customMedia)) {
-      toast.success(`Added: ${title}`);
+    if (handleAddMediaState(customMedia, isSilent)) {
+      if (type === 'episode' || (type === 'season' && !selectedMedia.some(m => m.id === id))) {
+        toast.success(`Añadido: ${title}`);
+      }
     }
   };
 
   const toggleMediaSelection = (id: number) => {
     setSelectedMediaId(selectedMediaId === id ? null : id);
   };
+
+  const isVoting = type === EventTypeEnum.VOTING;
+  const data = isVoting ? votingData : formData;
 
   return (
     <div className="relative w-full bg-blue-background overflow-x-hidden px-8">
@@ -251,7 +313,7 @@ export default function CreateEvent() {
               <Input
                 label="Event Name"
                 name="name"
-                value={formData.name}
+                value={data.name}
                 onChange={handleChange}
                 placeholder="Enter event name"
                 error={error}
@@ -274,34 +336,72 @@ export default function CreateEvent() {
               <Input
                 label="Description"
                 name="description"
-                value={formData.description || ''}
+                value={data.description || ''}
                 onChange={handleChange}
                 placeholder="Optional description..."
                 error={error}
               />
 
               <div className="grid grid-cols-1 gap-4">
-                  <Input
+                {type === EventTypeEnum.VOTING && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }} 
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="flex flex-col gap-5 border-l-2 border-purple-main/30 pl-4 py-2 my-2"
+                  >
+                    <h4 className="text-[9px] font-black uppercase text-purple-main tracking-widest">Voting Settings</h4>
+                    
+                    <Input
+                      label="Voting End Date"
+                      name="votingEndDate"
+                      type="datetime-local"
+                      value={votingData.votingEndDate instanceof Date ? votingData.votingEndDate.toISOString().slice(0, 16) : votingData.votingEndDate}
+                      onChange={handleChange}
+                      error={error}
+                    />
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <Input
+                        label="Max Media"
+                        name="maxMedia"
+                        type="number"
+                        value={votingData.maxMedia.toString()}
+                        onChange={handleChange}
+                        error={error}
+                      />
+                      <Input
+                        label="Votes Per Member"
+                        name="maxVotesPerMember"
+                        type="number"
+                        value={votingData.maxVotesPerMember.toString()}
+                        onChange={handleChange}
+                        error={error}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+
+                <Input
                   label="Event Date"
                   name="eventDate"
                   type="datetime-local"
-                  value={formData.eventDate instanceof Date ? formData.eventDate.toISOString().slice(0, 16) : formData.eventDate}
+                  value={data.eventDate instanceof Date ? data.eventDate.toISOString().slice(0, 16) : data.eventDate}
                   onChange={handleChange}
                   error={error}
-                  />
+                />
 
-                  <Input
+                <Input
                   label="Max Members"
                   name="maxMembers"
                   type="number"
-                  value={formData.maxMembers.toString()}
+                  value={data.maxMembers.toString()}
                   onChange={handleChange}
                   error={error}
-                  />
+                />
               </div>
 
               <Button type="submit" variant="primary" size="lg" fullWidth className="mt-4 font-black italic uppercase">
-                Create Event
+                {isLoading ? "Creating..." : "Create Event"}
               </Button>
             </form>
           </div>
@@ -315,77 +415,88 @@ export default function CreateEvent() {
           <div className="bg-white/2 border border-white/5 p-8 rounded-[2.5rem] backdrop-blur-md min-h-150 h-full flex flex-col">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/30">Selected Lineup</h3>
-              <span className="text-purple-main font-mono text-xs">{selectedMedia.length}</span>
+              <span className="text-purple-main font-mono text-xs">
+                {(() => {
+                  const activeParentIds = new Set(
+                    selectedMedia
+                      .map(m => m.parentId)
+                      .filter((id): id is number => id !== undefined && id !== null)
+                  );
+                  return selectedMedia.filter(m => !activeParentIds.has(m.id)).length;
+                })()}
+              </span>
             </div>
             
-            <div className="flex flex-col gap-4 overflow-y-auto pr-2 media-scrollbar h-full">
-              {selectedMedia.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center border-2 border-dashed border-white/5 rounded-3xl">
-                  <p className="text-[10px] text-white/10 font-black uppercase italic">No media selected</p>
-                </div>
-              ) : (
-                selectedMedia.filter(m => !m.parentId).map((parentItem) => (
-                  <div key={parentItem.id} className="flex flex-col gap-2">
-                    <motion.div 
-                      layout
-                      className="group relative flex items-center gap-4 border p-3 rounded-2xl transition-all bg-white/5 border-white/5 hover:bg-white/10"
-                    >
-                      <div className="relative shrink-0 w-10 h-14 overflow-hidden rounded-lg border border-white/10">
-                        <img src={parentItem.posterPath} className="w-full h-full object-cover" alt="" />
-                      </div>
-
-                      <div className="flex-1 flex flex-col min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span className="text-[7px] font-black uppercase tracking-[0.2em] text-purple-main">
-                            {parentItem.type}
-                          </span>
-                        </div>
-                        <p className="text-[10px] font-black text-white uppercase italic truncate leading-tight">
-                          {parentItem.title}
-                        </p>
-                      </div>
-
-                      <button 
-                        type="button"
-                        onClick={() => {
-                          setSelectedMedia(prev => prev.filter(m => m.id !== parentItem.id && m.parentId !== parentItem.id));
-                        }}
-                        className="p-2 text-white/10 hover:text-red-500 transition-all cursor-pointer"
-                      >
-                        <SearchX size={14} /> 
-                      </button>
-                    </motion.div>
-
-                    <div className="ml-6 flex flex-col gap-2 border-l border-white/5 pl-4 mb-2">
-                      {selectedMedia
-                        .filter(child => child.parentId === parentItem.id)
-                        .map((childItem) => (
-                          <motion.div 
-                            key={childItem.id}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className="flex items-center gap-3 bg-white/2 border border-white/5 p-2 rounded-xl group/child"
-                          >
-                            <div className="w-1 h-1 rounded-full bg-purple-main/40 shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-[9px] font-bold text-white/60 group-hover/child:text-white/90 uppercase truncate transition-colors">
-                                {childItem.title}
-                              </p>
-                            </div>
-                            <button 
-                              type="button"
-                              onClick={() => setSelectedMedia(prev => prev.filter(m => m.id !== childItem.id))}
-                              className="p-1 text-white/5 hover:text-red-400 transition-colors"
-                            >
-                              <SearchX size={10} />
-                            </button>
-                          </motion.div>
-                        ))
-                      }
+            <div className="flex flex-col gap-4 overflow-y-auto pr-1 media-scrollbar h-full">
+              {selectedMedia.filter(m => !m.parentId).map((series) => (
+                <div key={series.id} className="flex flex-col bg-white/3 border border-white/10 rounded-xl overflow-hidden shadow-2xl">
+                  
+                  <div className="flex items-center gap-3 p-2.5 bg-linear-to-r from-purple-main/20 to-transparent">
+                    <img src={series.posterPath} className="w-10 h-14 object-cover rounded-md border border-white/10 shadow-lg" alt="" />
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-[13px] font-black text-white uppercase italic truncate leading-none">
+                        {series.title}
+                      </h3>
+                      <p className="text-[8px] font-bold text-purple-400 uppercase tracking-widest mt-1 opacity-70">
+                        Current Lineup
+                      </p>
                     </div>
+                    <button 
+                      onClick={() => setSelectedMedia(prev => prev.filter(m => m.id !== series.id && m.parentId !== series.id))}
+                      className="p-2 text-white/10 hover:text-red-500 transition-all hover:bg-red-500/10 rounded-lg cursor-pointer"
+                    >
+                      <SearchX size={16} />
+                    </button>
                   </div>
-                ))
-              )}
+
+                  <div className="flex flex-col">
+                    {selectedMedia
+                      .filter(item => item.parentId === series.id && item.type === 'season')
+                      .map((season) => {
+                        const episodes = selectedMedia.filter(item => item.parentId === season.id && item.type === 'episode');
+                        const hasEpisodes = episodes.length > 0;
+
+                        return (
+                          <div key={season.id} className="flex flex-col">
+                            <div className="flex justify-between items-center px-3 py-1.5 bg-white/5 border-y border-white/5">
+                              <span className="text-[11px] font-bold text-white/40 uppercase tracking-tighter">
+                                {season.title}
+                              </span>
+                              <button 
+                                onClick={() => setSelectedMedia(prev => prev.filter(m => m.id !== season.id && m.parentId !== season.id))}
+                                className="text-white/10 hover:text-red-400 transition-colors cursor-pointer"
+                              >
+                                <SearchX size={12} />
+                              </button>
+                            </div>
+
+                            {hasEpisodes && (
+                              <div className="flex flex-col py-0.5">
+                                {episodes.map((episode) => (
+                                  <div 
+                                    key={episode.id} 
+                                    className="group flex items-center gap-3 py-1.5 px-4 hover:bg-purple-main/5 transition-all border-b border-white/2 last:border-0"
+                                  >
+                                    <div className="w-1 h-1 rounded-full bg-white/20 group-hover:bg-purple-main transition-colors shadow-[0_0_5px_rgba(168,85,247,0)] group-hover:shadow-[0_0_5px_rgba(168,85,247,0.8)]" />
+                                    <p className="text-[10px] text-white/60 group-hover:text-white/90 flex-1 truncate font-medium tracking-tight">
+                                      {episode.title}
+                                    </p>
+                                    <button 
+                                      onClick={() => setSelectedMedia(prev => prev.filter(m => m.id !== episode.id))}
+                                      className="relative left-1 text-white/20 hover:text-red-400 transition-opacity cursor-pointer"
+                                    >
+                                      <SearchX size={11} />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </motion.div>

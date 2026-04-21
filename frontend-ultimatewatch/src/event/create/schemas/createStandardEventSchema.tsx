@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const createEventSchema = z.object({
+export const createStandardEventSchema = z.object({
   name: z
     .string()
     .min(3, "Event name must be at least 3 characters long"),
@@ -23,4 +23,12 @@ export const createEventSchema = z.object({
     .int("Must be an integer")
     .min(2, "An event requires a minimum of 2 members")
     .max(50, "An event can have up to 50 members"),
+
+  mediaIds: z
+    .array(z.number({ error: "Each media ID must be a number" }))
+    .min(1, "A standard event must have at least one media")
+    .max(20, "An event must have less or equal to 20 different media")
+    .refine((items) => new Set(items).size === items.length, {
+      message: "Media List must contain unique IDs",
+    }),
 });

@@ -10,10 +10,11 @@ import { StandardEvent } from './entities/standard-event.entity';
 import { MembersModule } from 'src/members/members.module';
 import { SeasonModule } from 'src/seasons/seasons.module';
 import { EpisodeModule } from 'src/episodes/episodes.module';
+import { Media } from 'src/media/entities/media.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Event, StandardEvent, VotingEvent]),
+    TypeOrmModule.forFeature([Event, StandardEvent, VotingEvent, Media]),
     UsersModule,
     MediaModule,
     MembersModule,

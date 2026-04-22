@@ -39,14 +39,14 @@ export class ResultsService {
 
   async processVotingClosure(eventId: number): Promise<void> {
     const votingResults: VoteResultDto[] =
-      await this.votesService.getResultsByEvent(eventId);
+      await this.eventsService.getResultsByEvent(eventId);
 
     const event: VotingEvent =
       await this.eventsService.findVotingEventBydId(eventId);
 
     const mediaList: Media[] = await Promise.all(
       votingResults.map(async (result: VoteResultDto) =>
-        this.mediaService.findByTmdbId(result.mediaId),
+        this.mediaService.findByTmdbId(result.id),
       ),
     );
 

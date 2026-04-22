@@ -14,6 +14,7 @@ import { CreateVotingEventDto } from './dto/create-voting-event-dto';
 import { CreateStandardEventDto } from './dto/create-standard-event-dto';
 import { ListEventResponseDto } from './dto/list-event-response-dto';
 import { EventDetailedInfoDto } from './dto/event-detailed-info-dto';
+import { VoteResultDto } from 'src/votes/dto/vote-result.dto';
 
 @Controller('events')
 export class EventsController {
@@ -47,6 +48,17 @@ export class EventsController {
     @Query('limit') limit: number = 12,
   ): Promise<ListEventResponseDto> {
     return await this.eventsService.getCreatedEventsByUser(userId, page, limit);
+  }
+
+  @Get('/results/:eventId')
+  @UseGuards(AuthGuard)
+  async getEventVotingResults(
+    @Param('eventId') eventId: number,
+  ): Promise<VoteResultDto[]> {
+    const voteResults: VoteResultDto[] =
+      await this.eventsService.getResultsByEvent(eventId, false);
+
+    return voteResults;
   }
 
   @Get(':id')

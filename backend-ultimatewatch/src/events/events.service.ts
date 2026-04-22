@@ -29,8 +29,17 @@ import { Episode } from 'src/episodes/entities/episode.entity';
 import { EventDetailedInfoDto } from './dto/event-detailed-info-dto';
 import { MediaEventDto } from './dto/media-event-dto';
 import { SubMediaEventDto } from './dto/sub-media-event-dto';
+import { VoteResultDto } from 'src/votes/dto/vote-result.dto';
+import { VotingMediaEventDto } from './dto/voting-media-event-dto';
+import { VotingSubMediaEventDto } from './dto/voting-sub-media-event-dto';
+import { EventType } from 'src/common/enums/event.type.enum';
+import { VotingEventDetailedInfoDto } from './dto/voting-event-detailed-info-dto';
 
 interface SubMediaEventWithSort extends SubMediaEventDto {
+  sortKey: string;
+}
+
+interface VotingSubMediaEventWithSort extends VotingSubMediaEventDto {
   sortKey: string;
 }
 
@@ -43,6 +52,8 @@ export class EventsService {
     private readonly standardEventsRepository: Repository<StandardEvent>,
     @InjectRepository(VotingEvent)
     private readonly votingEventsRepository: Repository<VotingEvent>,
+    @InjectRepository(Media)
+    private readonly mediaRepository: Repository<Media>,
     private readonly usersService: UsersService,
     private readonly mediaService: MediaService,
     private readonly membersService: MembersService,
@@ -358,19 +369,42 @@ export class EventsService {
 
   async getEventDetailedInformation(
     eventId: number,
-  ): Promise<EventDetailedInfoDto> {
+  ): Promise<EventDetailedInfoDto | VotingEventDetailedInfoDto> {
     const event: Event = await this.findBydId(eventId);
 
-    return new EventDetailedInfoDto({
-      id: event.id,
-      name: event.name,
-      description: event.description,
-      eventDate: event.eventDate,
-      type: event.type,
-      status: event.status,
-      media: await this.createMediaEventDtoListForMediaList(event.media),
-      maxMembers: event.maxMembers,
-    });
+    if (event.type === EventType.STANDARD) {
+      return new EventDetailedInfoDto({
+        id: event.id,
+        name: event.name,
+        description: event.description,
+        eventDate: event.eventDate,
+        type: event.type,
+        status: event.status,
+        media: await this.createMediaEventDtoListForMediaList(event.media),
+        maxMembers: event.maxMembers,
+      });
+    } else {
+      const votingResults: VoteResultDto[] = await this.getResultsByEvent(
+        eventId,
+        event.status !== EventStatus.VOTING,
+      );
+
+      return new VotingEventDetailedInfoDto({
+        id: event.id,
+        name: event.name,
+        description: event.description,
+        eventDate: event.eventDate,
+        type: event.type,
+        status: event.status,
+        media:
+          event.status === EventStatus.VOTING
+            ? await this.createVotingMediaEventDtoListForProposedMediaList(
+                votingResults,
+              )
+            : await this.createMediaEventDtoListForMediaList(event.media),
+        maxMembers: event.maxMembers,
+      });
+    }
   }
 
   private async createListEventDto(event: Event): Promise<ListEventDto> {
@@ -398,6 +432,52 @@ export class EventsService {
       currentMembers: currentMembers,
       maxMembers: event.maxMembers,
     });
+  }
+
+  async getResultsByEvent(
+    eventId: number,
+    limited: boolean = true,
+  ): Promise<VoteResultDto[]> {
+    const event: VotingEvent = await this.findVotingEventBydId(eventId);
+
+    const query = this.mediaRepository
+      .createQueryBuilder('media')
+      .innerJoin('media.proposedInEvents', 'event')
+      .leftJoin('media.votes', 'vote')
+      .leftJoin('vote.member', 'member', 'member.event.id = :eventId', {
+        eventId: Number(eventId),
+      })
+      .select([
+        'media.tmdbId AS "id"',
+        'media.title AS "title"',
+        'media.imagePath AS "imagePath"',
+        'media.type AS "type"',
+        'COUNT(vote.id) AS "count"',
+        'MAX(vote.createdAt) AS "lastVoteDate"',
+      ])
+      .where('event.id = :eventId', { eventId: Number(eventId) })
+      .groupBy('media.id')
+      .addGroupBy('media.tmdbId')
+      .addGroupBy('media.title')
+      .addGroupBy('media.imagePath')
+      .addGroupBy('media.type')
+      .orderBy('count', 'DESC')
+      .addOrderBy('MAX(vote.createdAt)', 'ASC')
+      .addOrderBy('media.tmdbId', 'ASC');
+
+    if (limited) {
+      query.limit(event.maxMedia);
+    }
+
+    const results = await query.getRawMany();
+
+    return results.map((row: VoteResultDto) => ({
+      id: Number(row.id),
+      title: row.title,
+      imagePath: row.imagePath,
+      type: row.type,
+      count: Number(row.count),
+    }));
   }
 
   private async deleteMediaDuplicates(mediaList: number[]): Promise<Media[]> {
@@ -527,6 +607,105 @@ export class EventsService {
         event.subMediaEvent.sort((a, b) => {
           const sortA = (a as SubMediaEventWithSort).sortKey;
           const sortB = (b as SubMediaEventWithSort).sortKey;
+          return sortA.localeCompare(sortB);
+        });
+      }
+    });
+
+    return mediaEventDtoList;
+  }
+
+  private async createVotingMediaEventDtoListForProposedMediaList(
+    voteResults: VoteResultDto[],
+  ): Promise<VotingMediaEventDto[]> {
+    const mediaEventDtoList: VotingMediaEventDto[] = [];
+
+    for (const voteResult of voteResults) {
+      let id: number;
+      let title: string;
+      let imagePath: string;
+      let subMediaEvent: (VotingSubMediaEventDto & { sortKey: string }) | null =
+        null;
+      let count: number | null | undefined;
+
+      switch (voteResult.type) {
+        case MediaType.SEASON: {
+          const season = await this.seasonsService.getByTmdbId(voteResult.id);
+          id = season.series.tmdbId;
+          title = season.series.title;
+          imagePath = season.series.imagePath;
+          subMediaEvent = Object.assign(
+            new VotingSubMediaEventDto({
+              title: `S${season.number}: ${season.title}`,
+              imagePath: season.imagePath,
+              type: voteResult.type,
+              count: voteResult.count,
+            }),
+            {
+              sortKey: `S${season.number.toString().padStart(2, '0')}`,
+            },
+          );
+          break;
+        }
+
+        case MediaType.EPISODE: {
+          const episode = await this.episodesService.getByTmdbId(voteResult.id);
+          id = episode.season.series.tmdbId;
+          title = episode.season.series.title;
+          imagePath = episode.season.series.imagePath;
+          subMediaEvent = Object.assign(
+            new VotingSubMediaEventDto({
+              title: `S${episode.season.number}xE${episode.number}: ${episode.title}`,
+              imagePath: voteResult.imagePath,
+              type: voteResult.type,
+              count: voteResult.count,
+            }),
+            {
+              sortKey: `S${episode.season.number.toString().padStart(2, '0')}xE${episode.number.toString().padStart(3, '0')}`,
+            },
+          );
+          break;
+        }
+
+        case MediaType.SERIES:
+        case MediaType.MOVIE:
+          id = voteResult.id;
+          title = voteResult.title;
+          imagePath = voteResult.imagePath;
+          subMediaEvent = null;
+          count = voteResult.count;
+          break;
+      }
+
+      const mediaEventDto = mediaEventDtoList.find((me) => me.id === id);
+
+      if (mediaEventDto) {
+        if (subMediaEvent) {
+          if (!mediaEventDto.subMediaEvent) mediaEventDto.subMediaEvent = [];
+          mediaEventDto.subMediaEvent.push(subMediaEvent);
+        }
+      } else {
+        mediaEventDtoList.push(
+          new VotingMediaEventDto({
+            id,
+            title,
+            imagePath,
+            type:
+              voteResult.type === MediaType.MOVIE
+                ? MediaType.MOVIE
+                : MediaType.SERIES,
+            subMediaEvent: subMediaEvent ? [subMediaEvent] : null,
+            count,
+          }),
+        );
+      }
+    }
+
+    mediaEventDtoList.forEach((event) => {
+      if (event.subMediaEvent && event.subMediaEvent.length > 1) {
+        event.subMediaEvent.sort((a, b) => {
+          const sortA = (a as VotingSubMediaEventWithSort).sortKey;
+          const sortB = (b as VotingSubMediaEventWithSort).sortKey;
           return sortA.localeCompare(sortB);
         });
       }

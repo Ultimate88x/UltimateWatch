@@ -10,7 +10,6 @@ import { Media } from 'src/media/entities/media.entity';
 import { VotingEvent } from 'src/events/entities/voting-event.entity';
 import { DeleteVoteDto } from './dto/delete-vote.dto';
 import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
-import { VoteResultDto } from './dto/vote-result.dto';
 import { EventsService } from 'src/events/events.service';
 
 @Injectable()
@@ -18,8 +17,6 @@ export class VotesService {
   constructor(
     @InjectRepository(Vote)
     private readonly votesRepository: Repository<Vote>,
-    @InjectRepository(Media)
-    private readonly mediaRepository: Repository<Media>,
     private readonly membersService: MembersService,
     private readonly mediaService: MediaService,
     private readonly eventsService: EventsService,
@@ -117,56 +114,5 @@ export class VotesService {
     const vote: Vote = await this.findByMemberIdAndMediaId(member.id, mediaId);
 
     await this.votesRepository.delete(vote.id);
-  }
-
-  async getResultsByEvent(
-    eventId: number,
-    limited: boolean = true,
-  ): Promise<VoteResultDto[]> {
-    const event: VotingEvent =
-      await this.eventsService.findVotingEventBydId(eventId);
-
-    const query = this.mediaRepository
-      .createQueryBuilder('media')
-      .innerJoin('media.proposedInEvents', 'event')
-      .leftJoin('media.votes', 'vote')
-      .leftJoin('vote.member', 'member', 'member.event.id = :eventId', {
-        eventId: Number(eventId),
-      })
-      .select([
-        'media.tmdbId AS "mediaId"',
-        'media.title AS "title"',
-        'media.imagePath AS "imagePath"',
-        'COUNT(vote.id) AS "count"',
-        'MAX(vote.createdAt) AS "lastVoteDate"',
-      ])
-      .where('event.id = :eventId', { eventId: Number(eventId) })
-      .groupBy('media.id')
-      .addGroupBy('media.tmdbId')
-      .addGroupBy('media.title')
-      .addGroupBy('media.imagePath')
-      .orderBy('count', 'DESC')
-      .addOrderBy('MAX(vote.createdAt)', 'ASC')
-      .addOrderBy('media.tmdbId', 'ASC');
-
-    if (limited) {
-      query.limit(event.maxMedia);
-    }
-
-    const results = await query.getRawMany();
-
-    return results.map(
-      (row: {
-        mediaId: number;
-        title: string;
-        imagePath: string;
-        count: string;
-      }) => ({
-        mediaId: Number(row.mediaId),
-        title: row.title,
-        imagePath: row.imagePath,
-        count: Number(row.count),
-      }),
-    );
   }
 }

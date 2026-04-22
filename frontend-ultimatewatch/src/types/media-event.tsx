@@ -6,6 +6,7 @@ type MediaEvent = {
   imagePath: string;
   type: string;
   subMediaEvent?: SubMediaEvent[] | null | undefined;
+  count?: number | null | undefined;
 }
 
 export type {MediaEvent}

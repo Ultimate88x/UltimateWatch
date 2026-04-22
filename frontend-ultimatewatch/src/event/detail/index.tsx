@@ -5,7 +5,7 @@ import { useParams } from 'react-router-dom';
 import type { Event } from '../../types/event';
 import type { Member } from '../../types/member';
 import { EmptyState } from '../../components/EmptyState';
-import { Film, Calendar, Users, Info, Tv, Shield, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Film, Calendar, Users, Info, Shield, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '../../components/Button';
 import { getRelativeDate } from '../../components/utilities/RelativeDate';
 import { useAdvancedNavigation } from '../../components/utilities/SmartNavigate';
@@ -200,71 +200,122 @@ export default function EventDetail() {
               </p>
             </div>
 
-            <div className="flex flex-col gap-4">
-              <h3 className="flex items-center gap-3 text-xs font-black uppercase tracking-[0.3em] pl-2 text-white/30">
-                <Tv size={14} /> Lineup Schedule
-              </h3>
-              
-              <div className="flex flex-col gap-3">
-                {event.media?.map((m, idx) => (
-                  <motion.div 
-                    key={m.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: idx * 0.1 }}
-                    className="flex flex-col bg-[#0c0c0c] border border-white/5 rounded-2xl overflow-hidden hover:border-purple-main/30 transition-all shadow-xl"
-                  >
-                    <button 
-                      className="flex items-center p-3 gap-6 cursor-pointer"
-                      onClick={(e) => smartNavigate(`/${m.type}/${m.id}`, e)}
+            <div className="flex flex-col gap-8">
+              <div className={`flex items-center gap-4 border-l-4 pl-4 py-1 ${event.status === 'voting' ? 'border-amber-400' : 'border-purple-main'}`}>
+                <div className="flex flex-col">
+                  <h3 className="text-sm font-black uppercase italic tracking-tighter text-white">
+                    {event.status === 'voting' ? 'VOTE' : 'LINEUP'}
+                  </h3>
+                  <p className="text-[9px] font-bold text-white/30 uppercase tracking-[0.3em]">
+                    {event.status === 'voting' ? 'Select a media to vote for it!' : 'Planned marathon lineup'}
+                  </p>
+                </div>
+              </div>
+
+              <div className={`flex flex-col gap-4 ${event.status === 'voting' ? 'max-w-4xl' : ''}`}>
+                {event.media?.map((m) => {
+                  const isVoting = event.status === 'voting';
+                  const hasSubMedia = m.subMediaEvent && m.subMediaEvent.length > 0;
+
+                  return (
+                    <motion.div
+                      key={m.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="relative flex flex-col bg-white/2 border border-white/5 rounded-sm shadow-2xl overflow-hidden"
                     >
-                      <img src={m.imagePath} className="w-23 h-31 object-cover rounded-lg shadow-lg" alt={m.title} />
-                      <div className="flex-1">
-                        <h4 className="text-xl font-black uppercase italic group-hover:text-purple-main transition-colors leading-tight flex">
-                          {m.title}
-                        </h4>
-                        {m.subMediaEvent && m.subMediaEvent?.length > 0 && (<p className="text-white/20 text-[10px] font-bold uppercase tracking-widest mt-1 flex">
-                          {m.subMediaEvent?.length || 0} Segment(s)
-                        </p>)}
-                      </div>
-                    </button>
+                      <button 
+                        className="flex items-stretch bg-white/3 border border-white/5 cursor-pointer hover:border-purple-main/50"
+                        onClick={(e) => smartNavigate(`/${m.type === "movie" ? "movies" : "series"}/${m.id}`, e)}
+                      >
+                        <div className="relative w-20 h-32 shrink-0 bg-black">
+                          <img src={m.imagePath} className="w-full h-full object-cover" />
+                        </div>
 
-                    {m.subMediaEvent && m.subMediaEvent.length > 0 && (
-                      <div className="p-4 grid grid-cols-2 gap-4 bg-black/40 border-t border-white/5 cursor-auto">
-                        {m.subMediaEvent.map((sub, sIdx) => {
-                          const isSeason = sub.type === 'season';
-                          const imgWidth = isSeason ? "w-24" : "w-44"; 
-                          const textMargin = isSeason ? "ml-28" : "ml-48";
+                        <div className="flex flex-1 flex-col justify-center px-6 relative">
+                          <div className="flex items-center gap-4 mb-1">
+                            <span className={`text-[8px] font-black px-1.5 py-0.5 uppercase rounded-sm ${isVoting ? 'bg-amber-400 text-black' : 'bg-purple-main text-white'}`}>
+                              {m.type === "tv" ? "SERIES" : m.type?.toUpperCase()}
+                            </span>
+                            
+                            {isVoting && (
+                              <span className="text-amber-400 font-mono text-[9px] font-black tracking-widest">
+                                {m.count === 0 ? 0 : m.count?.toLocaleString()} VOTES
+                              </span>
+                            )}
+                          </div>
+                          
+                          <h4 className="flex text-lg font-black uppercase tracking-tighter text-white leading-none truncate">
+                            {m.title}
+                          </h4>
 
-                          return (
-                            <div 
-                              key={sIdx} 
-                              className={`group relative h-32 flex items-center overflow-hidden bg-white/5 border border-white/10 rounded-lg hover:border-purple-main/50 transition-all -skew-x-2 hover:skew-x-0`}
-                            >
-                              <div className={`absolute left-0 top-0 ${imgWidth} h-full overflow-hidden skew-x-2 group-hover:skew-x-0 transition-all`}>
-                                <img 
-                                  src={sub.imagePath} 
-                                  className="w-full h-full object-cover transition-transform duration-500" 
-                                />
-                                <div className="absolute inset-0 bg-linear-to-r from-purple-main/30 to-transparent mix-blend-overlay" />
-                                <div className="absolute inset-0 bg-black/20" />
-                              </div>
-
-                              <div className={`${textMargin} flex flex-col justify-start skew-x-2 group-hover:skew-x-0 transition-all pr-10`}>
-                                <span className={`flex text-[7px] font-black uppercase tracking-[0.2em] mb-1 ${isSeason ? 'text-purple-main' : 'text-white/30'}`}>
-                                  {isSeason ? 'Full Season' : 'Episode'}
-                                </span>
-                                <h5 className={`${isSeason ? 'text-[13px]' : 'text-[11px]'} font-black text-white uppercase italic leading-tight group-hover:text-purple-main transition-colors`}>
-                                  {sub.title}
-                                </h5>
-                              </div>
+                          {isVoting && !hasSubMedia && (
+                            <div className="absolute right-6 top-1/2 -translate-y-1/2">
+                              <Button 
+                                variant="secondary"
+                                className="w-auto! h-10 px-8 bg-white/5 border-white/10 hover:bg-amber-400! hover:text-black! text-[10px] font-black uppercase transition-all flex items-center justify-center group/vote active:translate-y-0.5 rounded-lg!"
+                              >
+                                <span className="hidden group-hover/vote:block">CONFIRM VOTE</span>
+                                <span className="block group-hover/vote:hidden tracking-widest">SELECT</span>
+                              </Button>
                             </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </motion.div>
-                ))}
+                          )}
+                        </div>
+                      </button>
+
+                      {hasSubMedia && (
+                        <div className={`flex flex-col p-3 gap-2 bg-black/60 ${isVoting ? 'border-t-2 border-amber-400/30' : ''}`}>
+                          {m.subMediaEvent!.map((sub, sIdx) => {
+                            const isSeason = sub.type === 'season';
+                            const imgContainerClass = isSeason ? "w-20 h-32" : "w-48 h-24";
+
+                            return (
+                              <div
+                                key={sIdx}
+                                className={`group relative flex items-stretch bg-white/3 hover:bg-white/8 transition-all border border-transparent overflow-hidden ${
+                                  isVoting ? 'hover:border-amber-400/50' : 'hover:border-purple-main/30'
+                                }`}
+                              >
+                                <div className={`${imgContainerClass} overflow-hidden shrink-0 border-r border-white/10 relative`}>
+                                  <img src={sub.imagePath} className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-all" />
+                                </div>
+
+                                <div className="flex flex-1 items-center justify-between px-6 py-4">
+                                  <div className="flex flex-col min-w-0 pr-4">
+                                    <div className="flex items-center gap-3 mb-1">
+                                      <p className={`text-[7px] font-black uppercase tracking-widest ${isVoting ? 'text-amber-400' : 'text-purple-main'}`}>
+                                        {sub.type?.toUpperCase()}
+                                      </p>
+                                      
+                                      {isVoting && sub.count && (
+                                        <span className="text-[9px] font-mono font-bold text-white/40 tracking-tighter">
+                                          {sub.count === 0 ? 0 : sub.count?.toLocaleString()} VOTES
+                                        </span>
+                                      )}
+                                    </div>
+                                    <h5 className={`font-black text-white/90 uppercase leading-none truncate ${isSeason ? 'text-sm' : 'text-xs'}`}>
+                                      {sub.title}
+                                    </h5>
+                                  </div>
+
+                                  {isVoting && (
+                                    <Button 
+                                      variant="secondary"
+                                      className="w-auto! h-10 px-8 bg-white/5 border-white/10 hover:bg-amber-400! hover:text-black! text-[10px] font-black uppercase transition-all flex items-center justify-center group/vote active:translate-y-0.5 rounded-lg!"
+                                    >
+                                      <span className="hidden group-hover/vote:block">CONFIRM VOTE</span>
+                                      <span className="block group-hover/vote:hidden tracking-widest">SELECT</span>
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </motion.div>
+                  );
+                })}
               </div>
             </div>
           </div>

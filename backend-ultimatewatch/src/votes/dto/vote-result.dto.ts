@@ -1,6 +1,9 @@
+import { MediaType } from 'src/common/enums/media.type.enum';
+
 export class VoteResultDto {
-  mediaId: number;
+  id: number;
   title: string;
   imagePath: string;
+  type: MediaType;
   count: number;
 }

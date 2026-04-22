@@ -14,23 +14,24 @@ import ListMedia from "../../components/content/ListMedia";
 import { EmptyState } from "../../components/EmptyState";
 import { MediaActionModal } from "../../components/content/MediaActionModal";
 import type { AddMedia } from "../../types/add-media-item";
+import { formatDateForInput } from "../../components/utilities/FormatDateForInput";
 
 const INITIAL_STANDARD = {
   name: '',
   description: '' as string | null,
-  eventDate: new Date(Date.now() + 6000000),
-  maxMembers: 10,
+  eventDate: new Date(new Date(Date.now() + 600000 * 6).setSeconds(0, 0)),
+  maxMembers: 5,
   mediaIds: [] as number[],
 };
 
 const INITIAL_VOTING = {
   name: '',
   description: '' as string | null,
-  eventDate: new Date(Date.now() + 6000000),
-  maxMembers: 10,
-  maxMedia: 3,
+  eventDate: new Date(new Date(Date.now() + 600000 * 6).setSeconds(0, 0)),
+  maxMembers: 5,
+  maxMedia: 1,
   maxVotesPerMember: 1,
-  votingEndDate: new Date(Date.now() + 3000000),
+  votingEndDate: new Date(new Date(Date.now() + 300000 * 6).setSeconds(0, 0)),
   proposedMediaIds: [] as number[],
 };
 
@@ -59,7 +60,13 @@ export default function CreateEvent() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type: inputType } = e.target;
-    const finalValue = inputType === 'number' ? Number(value) : value;
+    let finalValue: any = inputType === 'number' ? Number(value) : value;
+
+    if (inputType === 'datetime-local' && value) {
+      const dateValue = new Date(value);
+      dateValue.setSeconds(0, 0);
+      finalValue = dateValue;
+    }
 
     const commonFields = ['name', 'description', 'eventDate', 'maxMembers'];
 
@@ -102,8 +109,6 @@ export default function CreateEvent() {
     }
 
     const endpoint = isVoting ? 'voting' : 'standard';
-
-    console.log(formData)
     
     try {
       const response = await fetch(`http://localhost:3000/events/${endpoint}`, {
@@ -127,7 +132,9 @@ export default function CreateEvent() {
           field = 'name';
         } else if (lowerMessage.includes('voting end') || lowerMessage.includes('votingend')) {
           field = 'votingEndDate';
-        } else if (lowerMessage.includes('date')) {
+        } else if (lowerMessage.includes('vote')) {
+          field = 'maxVotesPerMember';
+        }else if (lowerMessage.includes('date')) {
           field = 'eventDate';
         } else if (lowerMessage.includes('member')) {
           field = 'maxMembers';
@@ -355,7 +362,7 @@ export default function CreateEvent() {
                       label="Voting End Date"
                       name="votingEndDate"
                       type="datetime-local"
-                      value={votingData.votingEndDate instanceof Date ? votingData.votingEndDate.toISOString().slice(0, 16) : votingData.votingEndDate}
+                      value={formatDateForInput(votingData.votingEndDate)}
                       onChange={handleChange}
                       error={error}
                     />
@@ -382,10 +389,10 @@ export default function CreateEvent() {
                 )}
 
                 <Input
-                  label="Event Date"
+                  label="Event Start Date"
                   name="eventDate"
                   type="datetime-local"
-                  value={data.eventDate instanceof Date ? data.eventDate.toISOString().slice(0, 16) : data.eventDate}
+                  value={formatDateForInput(data.eventDate)}
                   onChange={handleChange}
                   error={error}
                 />

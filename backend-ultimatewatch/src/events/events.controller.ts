@@ -15,6 +15,8 @@ import { CreateStandardEventDto } from './dto/create-standard-event-dto';
 import { ListEventResponseDto } from './dto/list-event-response-dto';
 import { EventDetailedInfoDto } from './dto/event-detailed-info-dto';
 import { VoteResultDto } from 'src/votes/dto/vote-result.dto';
+import { MediaEventDto } from './dto/media-event-dto';
+import { VotingMediaEventDto } from './dto/voting-media-event-dto';
 
 @Controller('events')
 export class EventsController {
@@ -68,6 +70,17 @@ export class EventsController {
       await this.eventsService.getEventDetailedInformation(+id);
 
     return event;
+  }
+
+  @Get('/media/:id')
+  @UseGuards(AuthGuard)
+  async findMediaEventsFromEvent(
+    @Param('id') id: string,
+  ): Promise<MediaEventDto[] | VotingMediaEventDto[] | null> {
+    const mediasEvent: MediaEventDto[] | VotingMediaEventDto[] | null =
+      await this.eventsService.getMediasEventFromEvent(+id);
+
+    return mediasEvent;
   }
 
   @Post('/standard')

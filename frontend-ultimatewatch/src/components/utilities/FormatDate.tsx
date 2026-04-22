@@ -8,6 +8,6 @@ export const formatDate = (dateString: string | null | undefined): string => {
       day: 'numeric',
     });
   } catch {
-    return dateString;
+    return dateString.toLocaleString();
   }
 };

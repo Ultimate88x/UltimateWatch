@@ -11,6 +11,7 @@ import { Genre } from 'src/genres/entities/genre.entity';
 import { ProductionCompany } from 'src/production-companies/entities/production-company.entity';
 import { TmdbEntity } from 'src/common/entities/tmdb.entity';
 import { MediaType } from 'src/common/enums/media.type.enum';
+import { Event } from 'src/events/entities/event.entity';
 import { VotingEvent } from 'src/events/entities/voting-event.entity';
 import { Vote } from 'src/votes/entities/vote.entity';
 
@@ -75,6 +76,9 @@ export class Media extends TmdbEntity {
 
   @OneToMany(() => Vote, (vote) => vote.media)
   votes: Vote[];
+
+  @ManyToMany(() => Event, (event) => event.media)
+  includedInEvents: Event[];
 
   @ManyToMany(() => VotingEvent, (event) => event.proposedMedia)
   proposedInEvents: VotingEvent[];

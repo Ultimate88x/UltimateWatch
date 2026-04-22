@@ -1,5 +1,3 @@
-import type { MediaEvent } from "./media-event";
-
 type Event = {
   id: number;
   name: string;
@@ -7,7 +5,6 @@ type Event = {
   eventDate: string;
   type: string;
   status: string;
-  media: MediaEvent[] | null;
   maxMembers: number;
 }
 

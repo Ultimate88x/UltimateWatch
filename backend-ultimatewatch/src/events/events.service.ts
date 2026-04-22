@@ -380,15 +380,9 @@ export class EventsService {
         eventDate: event.eventDate,
         type: event.type,
         status: event.status,
-        media: await this.createMediaEventDtoListForMediaList(event.media),
         maxMembers: event.maxMembers,
       });
     } else {
-      const votingResults: VoteResultDto[] = await this.getResultsByEvent(
-        eventId,
-        event.status !== EventStatus.VOTING,
-      );
-
       return new VotingEventDetailedInfoDto({
         id: event.id,
         name: event.name,
@@ -396,14 +390,29 @@ export class EventsService {
         eventDate: event.eventDate,
         type: event.type,
         status: event.status,
-        media:
-          event.status === EventStatus.VOTING
-            ? await this.createVotingMediaEventDtoListForProposedMediaList(
-                votingResults,
-              )
-            : await this.createMediaEventDtoListForMediaList(event.media),
         maxMembers: event.maxMembers,
       });
+    }
+  }
+
+  async getMediasEventFromEvent(
+    eventId: number,
+  ): Promise<MediaEventDto[] | VotingMediaEventDto[] | null> {
+    const event: Event = await this.findBydId(eventId);
+
+    if (event.type === EventType.STANDARD) {
+      return await this.createMediaEventDtoListForMediaList(event.media);
+    } else {
+      const votingResults: VoteResultDto[] = await this.getResultsByEvent(
+        eventId,
+        event.status !== EventStatus.VOTING,
+      );
+
+      return event.status === EventStatus.VOTING
+        ? await this.createVotingMediaEventDtoListForProposedMediaList(
+            votingResults,
+          )
+        : await this.createMediaEventDtoListForMediaList(event.media);
     }
   }
 
@@ -517,8 +526,8 @@ export class EventsService {
   }
 
   private async createMediaEventDtoListForMediaList(
-    mediaList: Media[] | null | undefined,
-  ): Promise<MediaEventDto[] | null | undefined> {
+    mediaList: Media[] | undefined,
+  ): Promise<MediaEventDto[] | null> {
     if (!mediaList) {
       return null;
     } else if (mediaList.length === 0) {

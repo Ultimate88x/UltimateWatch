@@ -12,6 +12,7 @@ import {
 import { CreateEventDto } from './create-event-dto';
 import { IsUniqueArrayConstraint } from 'src/common/validations/IsUniqueArrayConstraint';
 import { IsBeforeDateConstraint } from 'src/common/validations/IsBeforeDateConstraint';
+import { IsLessOrEqualThanArrayLengthConstraint } from 'src/common/validations/IsLessOrEqualThanArrayLengthConstraint';
 
 export class CreateVotingEventDto extends CreateEventDto {
   @IsNotEmpty()
@@ -27,6 +28,11 @@ export class CreateVotingEventDto extends CreateEventDto {
   @Type(() => Number)
   @IsInt()
   @Min(1, { message: 'Event member should each get at least one vote' })
+  @Validate(IsLessOrEqualThanArrayLengthConstraint, [
+    'proposedMediaIds',
+    'Proposed Media',
+    'Votes per Member',
+  ])
   maxVotesPerMember: number;
 
   @IsNotEmpty()

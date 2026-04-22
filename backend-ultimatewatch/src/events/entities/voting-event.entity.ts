@@ -14,7 +14,6 @@ import { Media } from 'src/media/entities/media.entity';
 
 @ChildEntity(EventType.VOTING)
 @Check(`"eventDate" >= "votingEndDate"`)
-@Check(`"maxMedia" >= "maxVotesPerMember"`)
 export class VotingEvent extends Event {
   @Column()
   @IsNotEmpty()

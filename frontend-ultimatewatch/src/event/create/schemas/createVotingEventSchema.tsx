@@ -46,4 +46,8 @@ export const createVotingEventSchema = z.object({
 
 }).refine((data) => data.votingEndDate < data.eventDate, {
   message: "Voting must end before the event starts",
+  path: ["votingEndDate"],
+}).refine((data) => data.maxVotesPerMember <= data.proposedMediaIds.length, {
+  message: "Votes per member cannot exceed the number of proposed media items",
+  path: ["maxVotesPerMember"],
 });

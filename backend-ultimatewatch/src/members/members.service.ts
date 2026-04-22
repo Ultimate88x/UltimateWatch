@@ -41,7 +41,7 @@ export class MembersService {
         user: { id: userId },
         event: { id: eventId },
       },
-      relations: ['votes'],
+      relations: ['votes', 'votes.media'],
     });
 
     return member;

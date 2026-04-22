@@ -11,7 +11,7 @@ export const getRelativeDate = (dateString: string): string => {
     return formatDate(dateString);
   }
 
-  return formatDistanceToNow(date, { 
+  return formatDistanceToNow(date.toLocaleString(), { 
     addSuffix: true, 
     locale: enUS 
   });

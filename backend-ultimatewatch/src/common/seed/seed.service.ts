@@ -118,11 +118,11 @@ export class SeedService implements OnApplicationBootstrap {
     const votingEvent: CreateVotingEventDto = new CreateVotingEventDto({
       name: 'Votación: Mejor Anime',
       description: 'Elige qué serie veremos en el maratón del sábado.',
-      eventDate: new Date(Date.now() + 600000),
+      eventDate: new Date(new Date(Date.now() + 600000).setSeconds(0, 0)),
       maxMembers: 50,
       maxMedia: 1,
       maxVotesPerMember: 1,
-      votingEndDate: new Date(Date.now() + 300000),
+      votingEndDate: new Date(new Date(Date.now() + 300000).setSeconds(0, 0)),
       proposedMediaIds: [1429, 105248, 114410],
     });
 
@@ -157,7 +157,7 @@ export class SeedService implements OnApplicationBootstrap {
 
     const standardEvent: CreateStandardEventDto = new CreateStandardEventDto({
       name: 'A disfrutar de los mejores animes!',
-      eventDate: new Date(Date.now() + 600000),
+      eventDate: new Date(new Date(Date.now() + 600000).setSeconds(0, 0)),
       maxMembers: 5,
       mediaIds: [1429, 105248, 114410],
     });

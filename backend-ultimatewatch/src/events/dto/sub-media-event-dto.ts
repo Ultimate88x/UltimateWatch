@@ -1,4 +1,5 @@
 export class SubMediaEventDto {
+  id: number;
   title: string;
   imagePath: string;
   type: string;

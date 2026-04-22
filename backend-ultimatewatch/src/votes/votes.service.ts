@@ -92,6 +92,27 @@ export class VotesService {
     return vote;
   }
 
+  async findVotedMediaIdsByUserIdAndEventId(
+    userId: number,
+    eventId: number,
+  ): Promise<number[]> {
+    const votes = await this.votesRepository.find({
+      where: {
+        member: {
+          user: { id: userId },
+          event: { id: eventId },
+        },
+      },
+      relations: ['media'],
+      select: {
+        id: true,
+        media: { tmdbId: true },
+      },
+    });
+
+    return votes.map((vote) => vote.media.tmdbId);
+  }
+
   async deleteVote(
     deleteVoteDto: DeleteVoteDto,
     userId: number,

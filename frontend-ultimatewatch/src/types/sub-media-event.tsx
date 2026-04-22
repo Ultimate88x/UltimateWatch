@@ -1,4 +1,5 @@
 type SubMediaEvent = {
+  id: number;
   title: string;
   imagePath: string;
   type: string;

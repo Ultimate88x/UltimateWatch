@@ -541,6 +541,7 @@ export class EventsService {
           imagePath = season.series.imagePath;
           subMediaEvent = Object.assign(
             new SubMediaEventDto({
+              id: season.tmdbId,
               title: `S${season.number}: ${season.title}`,
               imagePath: season.imagePath,
               type: media.type,
@@ -559,6 +560,7 @@ export class EventsService {
           imagePath = episode.season.series.imagePath;
           subMediaEvent = Object.assign(
             new SubMediaEventDto({
+              id: episode.tmdbId,
               title: `S${episode.season.number}xE${episode.number}: ${episode.title}`,
               imagePath: media.imagePath,
               type: media.type,
@@ -636,6 +638,7 @@ export class EventsService {
           imagePath = season.series.imagePath;
           subMediaEvent = Object.assign(
             new VotingSubMediaEventDto({
+              id: season.tmdbId,
               title: `S${season.number}: ${season.title}`,
               imagePath: season.imagePath,
               type: voteResult.type,
@@ -655,6 +658,7 @@ export class EventsService {
           imagePath = episode.season.series.imagePath;
           subMediaEvent = Object.assign(
             new VotingSubMediaEventDto({
+              id: episode.tmdbId,
               title: `S${episode.season.number}xE${episode.number}: ${episode.title}`,
               imagePath: voteResult.imagePath,
               type: voteResult.type,

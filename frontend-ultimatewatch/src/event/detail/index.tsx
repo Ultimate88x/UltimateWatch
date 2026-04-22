@@ -19,6 +19,9 @@ export default function EventDetail() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [isMembersLoading, setIsMembersLoading] = useState(true);
+
+  const [votedMediaIds, setVotedMediaIds] = useState<number[]>([]);
+  const [isVoteLoading, setIsVoteLoading] = useState(false);
   
   const [isLoading, setIsLoading] = useState(true);
 
@@ -82,6 +85,73 @@ export default function EventDetail() {
       setTimeout(() => setIsMembersLoading(false), 250);
     }
   }, [id, page]);
+  
+  const handleVote = async (mediaId: number, eventId: number) => {
+    setIsVoteLoading(true);
+    const method = votedMediaIds.includes(mediaId) ? 'DELETE' : 'POST';
+
+    try {
+      const response = await fetch(`http://localhost:3000/votes`, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({
+          eventId: eventId,
+          mediaId: mediaId
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.message || "Failed to process vote request");
+        return;
+      }
+
+      toast.success(data.message);
+      
+      await fetchEvent(); 
+
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Connection Error';
+      toast.error(message);
+    } finally {
+      setTimeout(() => setIsVoteLoading(false), 250);
+    }
+  };
+
+  useEffect(() => {
+    const fetchVotes = async () => {
+      try {
+        const response = await fetch(
+          `http://localhost:3000/votes/event/${event?.id}`,
+            {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${localStorage.getItem('token')}`,
+              },
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          toast.error(data.message || "Failed to fetch user votes");
+          return;
+        }
+
+        setVotedMediaIds(data);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Error';
+        toast.error(message);
+      };
+    }
+
+    if (event) fetchVotes();
+  }, [event]);
 
   useEffect(() => {
     fetchEvent();
@@ -212,7 +282,7 @@ export default function EventDetail() {
                 </div>
               </div>
 
-              <div className={`flex flex-col gap-4 ${event.status === 'voting' ? 'max-w-4xl' : ''}`}>
+              <div className="flex flex-col gap-4">
                 {event.media?.map((m) => {
                   const isVoting = event.status === 'voting';
                   const hasSubMedia = m.subMediaEvent && m.subMediaEvent.length > 0;
@@ -251,13 +321,36 @@ export default function EventDetail() {
 
                           {isVoting && !hasSubMedia && (
                             <div className="absolute right-6 top-1/2 -translate-y-1/2">
-                              <Button 
-                                variant="secondary"
-                                className="w-auto! h-10 px-8 bg-white/5 border-white/10 hover:bg-amber-400! hover:text-black! text-[10px] font-black uppercase transition-all flex items-center justify-center group/vote active:translate-y-0.5 rounded-lg!"
+                              <div 
+                                onClick={(e) => e.stopPropagation()} 
+                                className="inline-block"
                               >
-                                <span className="hidden group-hover/vote:block">CONFIRM VOTE</span>
-                                <span className="block group-hover/vote:hidden tracking-widest">SELECT</span>
-                              </Button>
+                                <Button 
+                                  variant="secondary"
+                                  className={`
+                                    w-auto! h-10 px-8 text-[10px] font-black uppercase transition-all 
+                                    flex items-center justify-center group/vote active:translate-y-0.5 rounded-lg!
+                                    ${votedMediaIds.includes(m.id) 
+                                      ? 'bg-amber-400/10 border-amber-400/40 text-amber-400 hover:bg-red-500! hover:text-black! hover:border-red-500!' 
+                                      : 'bg-white/5 border-white/10 text-white/60 hover:bg-amber-400! hover:text-black! hover:border-amber-400!'
+                                    }
+                                  `}
+                                  onClick={() => {
+                                    handleVote(m.id, event.id);
+                                  }}
+                                  disabled={isVoteLoading}
+                                >
+                                  <span className="hidden group-hover/vote:block">
+                                    {votedMediaIds.includes(m.id) ? 'REMOVE VOTE' : 'CONFIRM VOTE'}
+                                  </span>
+                                  <span className="group-hover/vote:hidden tracking-widest flex items-center gap-2">
+                                    {votedMediaIds.includes(m.id) && (
+                                      <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
+                                    )}
+                                    {votedMediaIds.includes(m.id) ? 'VOTED' : 'SELECT'}
+                                  </span>
+                                </Button>
+                              </div>
                             </div>
                           )}
                         </div>
@@ -301,10 +394,28 @@ export default function EventDetail() {
                                   {isVoting && (
                                     <Button 
                                       variant="secondary"
-                                      className="w-auto! h-10 px-8 bg-white/5 border-white/10 hover:bg-amber-400! hover:text-black! text-[10px] font-black uppercase transition-all flex items-center justify-center group/vote active:translate-y-0.5 rounded-lg!"
+                                      className={`
+                                        w-auto! h-10 px-8 text-[10px] font-black uppercase transition-all 
+                                        flex items-center justify-center group/vote active:translate-y-0.5 rounded-lg!
+                                        ${votedMediaIds.includes(sub.id) 
+                                          ? 'bg-amber-400/10 border-amber-400/40 text-amber-400 hover:bg-red-500! hover:text-black! hover:border-red-500!' 
+                                          : 'bg-white/5 border-white/10 text-white/60 hover:bg-amber-400! hover:text-black! hover:border-amber-400!'
+                                        }
+                                      `}
+                                      onClick={() => {
+                                        handleVote(sub.id, event.id);
+                                      }}
+                                      disabled={isVoteLoading}
                                     >
-                                      <span className="hidden group-hover/vote:block">CONFIRM VOTE</span>
-                                      <span className="block group-hover/vote:hidden tracking-widest">SELECT</span>
+                                      <span className="hidden group-hover/vote:block">
+                                        {votedMediaIds.includes(sub.id) ? 'REMOVE VOTE' : 'CONFIRM VOTE'}
+                                      </span>
+                                      <span className="group-hover/vote:hidden tracking-widest flex items-center gap-2">
+                                        {votedMediaIds.includes(sub.id) && (
+                                          <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
+                                        )}
+                                        {votedMediaIds.includes(sub.id) ? 'VOTED' : 'SELECT'}
+                                      </span>
                                     </Button>
                                   )}
                                 </div>
@@ -373,10 +484,10 @@ export default function EventDetail() {
                             )}
                           </div>
                           <div className="flex flex-col min-w-0">
-                            <span className="text-[11px] font-black uppercase italic truncate group-hover:text-purple-300 transition-colors">
+                            <span className="flex text-[11px] font-black uppercase italic truncate group-hover:text-purple-300 transition-colors">
                               {member.name}
                             </span>
-                            <span className="text-[8px] font-bold uppercase text-white/20">
+                            <span className="flex text-[8px] font-bold uppercase text-white/20">
                               {member.role}
                             </span>
                           </div>

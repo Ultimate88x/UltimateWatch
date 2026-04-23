@@ -26,6 +26,7 @@ import { MembersModule } from './members/members.module';
 import { VotesModule } from './votes/votes.module';
 import { ResultsModule } from './results/results.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { CommentsModule } from './comments/comments.module';
 
 @Module({
   imports: [
@@ -70,6 +71,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     MembersModule,
     VotesModule,
     ResultsModule,
+    CommentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

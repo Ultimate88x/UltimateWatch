@@ -466,7 +466,7 @@ export class EventsService {
         'media.title AS "title"',
         'media.imagePath AS "imagePath"',
         'media.type AS "type"',
-        'COUNT(vote.id) AS "count"',
+        'COUNT(member.id) AS "count"',
         'MAX(vote.createdAt) AS "lastVoteDate"',
       ])
       .where('event.id = :eventId', { eventId: Number(eventId) })

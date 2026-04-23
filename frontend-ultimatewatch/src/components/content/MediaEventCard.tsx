@@ -118,7 +118,7 @@ export const MediaEventCard = ({
               {m.type === "tv" ? "SERIES" : m.type?.toUpperCase()}
             </span>
 
-            {isVoting && isMember && (
+            {isVoting && (
               <span className="text-amber-400 font-mono text-[9px] font-black tracking-widest">
                 {m.count} {m.count === 1 ? 'VOTE' : 'VOTES'}
               </span>
@@ -161,7 +161,7 @@ export const MediaEventCard = ({
                       <p className={`text-[7px] font-black uppercase tracking-widest ${isVoting ? 'text-amber-400' : 'text-purple-main'}`}>
                         {sub.type?.toUpperCase()}
                       </p>
-                      {isVoting && isMember && (
+                      {isVoting && (
                         <span className="text-[9px] font-mono font-bold text-white/40 tracking-tighter uppercase">
                           {sub.count} {sub.count === 1 ? 'VOTE' : 'VOTES'}
                         </span>

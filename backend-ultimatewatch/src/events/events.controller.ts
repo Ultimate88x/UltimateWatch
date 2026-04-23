@@ -58,7 +58,7 @@ export class EventsController {
     @Param('eventId') eventId: number,
   ): Promise<VoteResultDto[]> {
     const voteResults: VoteResultDto[] =
-      await this.eventsService.getResultsByEvent(eventId, false);
+      await this.eventsService.getFormattedResultsByEvent(eventId, false);
 
     return voteResults;
   }

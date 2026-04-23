@@ -4,13 +4,14 @@ import toast from 'react-hot-toast';
 import { useParams } from 'react-router-dom';
 import type { Member } from '../../types/member';
 import { EmptyState } from '../../components/EmptyState';
-import { Film, Calendar, Users, Info, Shield, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Film, Calendar, Users, Info, Shield, ChevronLeft, ChevronRight, Trophy } from 'lucide-react';
 import { Button } from '../../components/Button';
 import { getRelativeDate } from '../../components/utilities/RelativeDate';
 import { useAdvancedNavigation } from '../../components/utilities/SmartNavigate';
 import type { MediaEvent } from '../../types/media-event';
 import type { EnhancedEvent } from '../../types/voting-event';
 import { MediaEventCard } from '../../components/content/MediaEventCard';
+import { EventResultsModal } from '../../components/event/EventResultsModal';
 
 export default function EventDetail() {
   const { smartNavigate } = useAdvancedNavigation();
@@ -28,6 +29,8 @@ export default function EventDetail() {
 
   const [votedMediaIds, setVotedMediaIds] = useState<number[]>([]);
   const [isVoteLoading, setIsVoteLoading] = useState(false);
+
+  const [showResults, setShowResults] = useState(false);
   
   const [isLoading, setIsLoading] = useState(true);
 
@@ -334,7 +337,7 @@ export default function EventDetail() {
                     {event.status === 'voting' 
                       ? isMember 
                         ? `Select up to ${event.maxVotesPerMember === 1 ? 'a' : event.maxVotesPerMember} title${event.maxVotesPerMember === 1 ? '' : 's'} you want to watch!` 
-                        : 'Join the event to vote and see voting results!' 
+                        : 'Join the event to vote!' 
                       : 'Planned marathon lineup'}
                   </p>
                 </div>
@@ -389,9 +392,23 @@ export default function EventDetail() {
               </div>
               <h4 className="text-2xl font-black uppercase italic tracking-tighter">Ready for the marathon?</h4>
               <p className="text-white/80 text-xs font-bold leading-tight">Join the session to interact and vote with the community.</p>
-              <Button variant="solid-accent" className="bg-white text-purple-main hover:bg-white/90 py-6 rounded-2xl mt-2 font-black">
-                JOIN BINGE NOW
-              </Button>
+              {!isMember && (
+                <Button variant="solid-accent" className="bg-white text-purple-main hover:bg-white/90 py-6 rounded-2xl font-black shadow-lg">
+                  JOIN BINGE NOW
+                </Button>
+              )}
+
+              {event.type === "voting_event" && (
+                <Button
+                  variant="outline"
+                  fullWidth
+                  icon={Trophy}
+                  onClick={() => setShowResults(true)}
+                  className="rounded-2xl border-white/20 text-white hover:border-amber-400! hover:text-amber-400"
+                >
+                  {event.status === 'finished' ? 'View Final Results' : 'Live Ranking'}
+                </Button>
+              )}
             </div>
 
             <div className="bg-white/2 border border-white/5 rounded-3xl p-6 flex flex-col gap-5 backdrop-blur-sm">
@@ -489,6 +506,13 @@ export default function EventDetail() {
           </div>
         </div>
       </div>
+
+      <EventResultsModal 
+        eventId={event.id}
+        isOpen={showResults}
+        onClose={() => setShowResults(false)}
+        maxWinners={event.maxMedia || 1}
+        eventName={event.name}      />
     </div>
   );
 };

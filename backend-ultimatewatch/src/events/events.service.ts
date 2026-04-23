@@ -494,6 +494,26 @@ export class EventsService {
     }));
   }
 
+  async getFormattedResultsByEvent(
+    eventId: number,
+    limited: boolean = true,
+  ): Promise<VoteResultDto[]> {
+    const results: VoteResultDto[] = await this.getResultsByEvent(
+      eventId,
+      limited,
+    );
+
+    return Promise.all(
+      results.map(async (row: VoteResultDto) => ({
+        id: Number(row.id),
+        title: await this.formatSingleMediaTitle(row.id, row.title, row.type),
+        imagePath: row.imagePath,
+        type: row.type,
+        count: Number(row.count),
+      })),
+    );
+  }
+
   private async deleteMediaDuplicates(mediaList: number[]): Promise<Media[]> {
     const idSet = new Set(mediaList);
     const idsToDelete = new Set<number>();
@@ -814,5 +834,28 @@ export class EventsService {
     }
 
     return imagePath;
+  }
+
+  private async formatSingleMediaTitle(
+    id: number,
+    title: string,
+    type: MediaType,
+  ): Promise<string> {
+    switch (type) {
+      case MediaType.SEASON: {
+        const season = await this.seasonsService.getByTmdbId(id);
+        return `${season.series.title} S${season.number}: ${season.title}`;
+      }
+
+      case MediaType.EPISODE: {
+        const episode = await this.episodesService.getByTmdbId(id);
+        return `${episode.season.series.title} S${episode.season.number}xE${episode.number}: ${episode.title}`;
+      }
+
+      case MediaType.SERIES:
+      case MediaType.MOVIE:
+      default:
+        return title;
+    }
   }
 }

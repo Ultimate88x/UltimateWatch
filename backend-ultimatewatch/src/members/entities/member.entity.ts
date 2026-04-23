@@ -36,7 +36,7 @@ export class Member extends BaseEntity {
   event: Event;
 
   @OneToMany(() => Comment, (comment) => comment.member)
-  comments: Comment[];
+  comments?: Comment[];
 
   @OneToMany(() => Vote, (vote) => vote.member, { onDelete: 'CASCADE' })
   votes?: Vote[];

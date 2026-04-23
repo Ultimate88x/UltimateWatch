@@ -27,6 +27,7 @@ import { VotesModule } from './votes/votes.module';
 import { ResultsModule } from './results/results.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CommentsModule } from './comments/comments.module';
+import { WebsocketsModule } from './websockets/websockets.module';
 
 @Module({
   imports: [
@@ -72,6 +73,7 @@ import { CommentsModule } from './comments/comments.module';
     VotesModule,
     ResultsModule,
     CommentsModule,
+    WebsocketsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

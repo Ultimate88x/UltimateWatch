@@ -18,6 +18,7 @@ import { EventType } from 'src/common/enums/event.type.enum';
 import { IsAfterDateConstraint } from 'src/common/validations/IsAfterDateConstraint';
 import { Media } from 'src/media/entities/media.entity';
 import { Member } from 'src/members/entities/member.entity';
+import { Comment } from 'src/comments/entities/comment.entity';
 import {
   Check,
   Column,
@@ -98,6 +99,9 @@ export class Event extends BaseEntity {
     cascade: true,
   })
   members: Member[];
+
+  @OneToMany(() => Comment, (comment) => comment.event)
+  comments: Comment[];
 
   @ManyToMany(() => Media, { onDelete: 'CASCADE' })
   @JoinTable({

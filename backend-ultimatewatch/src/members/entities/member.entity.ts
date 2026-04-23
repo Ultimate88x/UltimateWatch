@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { Vote } from 'src/votes/entities/vote.entity';
 import { MemberRole } from 'src/common/enums/member.role.enum';
+import { Comment } from 'src/comments/entities/comment.entity';
 
 @Entity('members')
 @Unique(['user', 'event'])
@@ -33,6 +34,9 @@ export class Member extends BaseEntity {
   })
   @JoinColumn()
   event: Event;
+
+  @OneToMany(() => Comment, (comment) => comment.member)
+  comments: Comment[];
 
   @OneToMany(() => Vote, (vote) => vote.member, { onDelete: 'CASCADE' })
   votes?: Vote[];

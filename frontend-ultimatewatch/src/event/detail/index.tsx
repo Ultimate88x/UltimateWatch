@@ -17,6 +17,7 @@ export default function EventDetail() {
   const [event, setEvent] = useState<Event | null>(null);
 
   const [members, setMembers] = useState<Member[]>([]);
+  const [isMember, setIsMember] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [isMembersLoading, setIsMembersLoading] = useState(true);
@@ -109,7 +110,9 @@ export default function EventDetail() {
         return;
       }
 
+      console.log(data.data);
       setMembers(data.data);
+      setIsMember(data.data.some((member: Member) => member.isCurrentUser));
       setTotalPages(data.lastPage || 1);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error';
@@ -147,8 +150,6 @@ export default function EventDetail() {
       toast.success(data.message);
       
       fetchMedia();
-
-
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Connection Error';
       toast.error(message);
@@ -315,7 +316,7 @@ export default function EventDetail() {
                     {event.status === 'voting' ? 'VOTE' : 'LINEUP'}
                   </h3>
                   <p className="text-[9px] font-bold text-white/30 uppercase tracking-[0.3em]">
-                    {event.status === 'voting' ? 'Select a media to vote for it!' : 'Planned marathon lineup'}
+                    {event.status === 'voting' ? isMember ? 'Select a media to vote for it!' : 'Join the event to vote and see voting results!' : 'Planned marathon lineup'}
                   </p>
                 </div>
               </div>
@@ -368,7 +369,7 @@ export default function EventDetail() {
                                 {m.type === "tv" ? "SERIES" : m.type?.toUpperCase()}
                               </span>
                               
-                              {isVoting && (
+                              {isVoting && isMember && (
                                 <span className="text-amber-400 font-mono text-[9px] font-black tracking-widest">
                                   {m.count} VOTES
                                 </span>
@@ -379,7 +380,7 @@ export default function EventDetail() {
                               {m.title}
                             </h4>
 
-                            {isVoting && !hasSubMedia && (
+                            {isVoting && !hasSubMedia && isMember && (
                               <div className="absolute right-6 top-1/2 -translate-y-1/2">
                                 <div onClick={(e) => e.stopPropagation()} className="inline-block">
                                   <Button 
@@ -432,14 +433,16 @@ export default function EventDetail() {
                                         <p className={`text-[7px] font-black uppercase tracking-widest ${isVoting ? 'text-amber-400' : 'text-purple-main'}`}>
                                           {sub.type?.toUpperCase()}
                                         </p>
-                                        {isVoting && <span className="text-[9px] font-mono font-bold text-white/40 tracking-tighter">{sub.count} VOTES</span>}
+                                        {isVoting && isMember && (
+                                          <span className="text-[9px] font-mono font-bold text-white/40 tracking-tighter">{sub.count} VOTES</span>
+                                        )}
                                       </div>
                                       <h5 className={`font-black text-white/90 uppercase leading-none truncate ${isSeason ? 'text-sm' : 'text-xs'}`}>
                                         {sub.title}
                                       </h5>
                                     </div>
 
-                                    {isVoting && (
+                                    {isVoting && isMember && (
                                       <Button 
                                         variant="secondary"
                                         className={`

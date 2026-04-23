@@ -71,6 +71,7 @@ export class MembersService {
     eventId: number,
     page: number,
     limit: number,
+    userId: number,
   ): Promise<MemberListResponseDto> {
     const skip = (page - 1) * limit;
 
@@ -98,7 +99,9 @@ export class MembersService {
     const [data, total] = await query.getManyAndCount();
 
     return new MemberListResponseDto({
-      data: data.map((member: Member) => this.createMemberDetailDto(member)),
+      data: data.map((member: Member) =>
+        this.createMemberDetailDto(member, userId),
+      ),
       total,
       page,
       lastPage: Math.ceil(total / limit),
@@ -113,11 +116,15 @@ export class MembersService {
     return currentMembers;
   }
 
-  private createMemberDetailDto(member: Member): MemberDetailDto {
+  private createMemberDetailDto(
+    member: Member,
+    userId: number,
+  ): MemberDetailDto {
     return new MemberDetailDto({
       name: member.user.username,
       imagePath: member.user.imagePath,
       role: member.role,
+      isCurrentUser: member.user.id === userId,
     });
   }
 }

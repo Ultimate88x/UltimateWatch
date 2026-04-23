@@ -1,4 +1,4 @@
-type Event = {
+interface Event {
   id: number;
   name: string;
   description?: string | null;

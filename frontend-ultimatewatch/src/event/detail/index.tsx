@@ -2,7 +2,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import React, { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useParams } from 'react-router-dom';
-import type { Event } from '../../types/event';
 import type { Member } from '../../types/member';
 import { EmptyState } from '../../components/EmptyState';
 import { Film, Calendar, Users, Info, Shield, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -10,11 +9,12 @@ import { Button } from '../../components/Button';
 import { getRelativeDate } from '../../components/utilities/RelativeDate';
 import { useAdvancedNavigation } from '../../components/utilities/SmartNavigate';
 import type { MediaEvent } from '../../types/media-event';
+import type { EnhancedEvent } from '../../types/voting-event';
 
 export default function EventDetail() {
   const { smartNavigate } = useAdvancedNavigation();
   const { id } = useParams();
-  const [event, setEvent] = useState<Event | null>(null);
+  const [event, setEvent] = useState<EnhancedEvent | null>(null);
 
   const [members, setMembers] = useState<Member[]>([]);
   const [isMember, setIsMember] = useState(false);
@@ -295,6 +295,38 @@ export default function EventDetail() {
               <Users size={18} className="text-purple-main" />
               <span className="text-sm font-bold uppercase">{members.length} / {event.maxMembers}</span>
             </div>
+
+            {event.status === 'voting' && (
+              <>
+                <div className="h-4 w-px bg-white/10 hidden md:block" />
+                {event.votingEndDate && (
+                  <div className="flex items-center gap-2 text-amber-400/80">
+                    <Calendar size={18} />
+                    <span className="text-sm font-bold uppercase">
+                      Voting Ends: {getRelativeDate(event.votingEndDate)}
+                    </span>
+                  </div>
+                )}
+
+                {event.maxVotesPerMember && (
+                  <div className="flex items-center gap-2 text-white/60">
+                    <Shield size={18} className="text-amber-400" />
+                    <span className="text-sm font-bold uppercase">
+                      Limit: {event.maxVotesPerMember} Votes
+                    </span>
+                  </div>
+                )}
+
+                {event.maxMedia && (
+                  <div className="flex items-center gap-2 px-3 py-1 bg-amber-400/5 border border-amber-400/20 rounded-full">
+                    <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
+                    <span className="text-[9px] text-amber-400 font-black uppercase tracking-[0.2em] italic">
+                      Picking {event.maxMedia} Winner{event.maxMedia > 1 ? 's' : ''}
+                    </span>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </motion.div>
 
@@ -309,14 +341,35 @@ export default function EventDetail() {
               </p>
             </div>
 
-            <div className="flex flex-col gap-8">
+            <div className="flex flex-col gap-4">
               <div className={`flex items-center gap-4 border-l-4 pl-4 py-1 ${event.status === 'voting' ? 'border-amber-400' : 'border-purple-main'}`}>
-                <div className="flex flex-col">
-                  <h3 className="text-sm font-black uppercase italic tracking-tighter text-white">
-                    {event.status === 'voting' ? 'VOTE' : 'LINEUP'}
-                  </h3>
-                  <p className="text-[9px] font-bold text-white/30 uppercase tracking-[0.3em]">
-                    {event.status === 'voting' ? isMember ? 'Select a media to vote for it!' : 'Join the event to vote and see voting results!' : 'Planned marathon lineup'}
+                <div className="flex flex-col flex-1">
+                  <div className="flex justify-between items-end w-full">
+                    <h3 className="text-sm font-black uppercase italic tracking-tighter text-white">
+                      {event.status === 'voting' ? 'VOTE' : 'LINEUP'}
+                    </h3>
+                    
+                    {event.status === 'voting' && isMember && event.maxVotesPerMember && (
+                      <div className="flex flex-col items-end">
+                        <span className="text-[8px] font-bold text-white/30 uppercase tracking-[0.2em]">Your Activity</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black text-white/60 italic uppercase tracking-tighter">
+                            Available Votes:
+                          </span>
+                          <span className={`text-xs font-mono font-black ${votedMediaIds.length >= event.maxVotesPerMember ? 'text-purple-main' : 'text-amber-400'}`}>
+                            {event.maxVotesPerMember - votedMediaIds.length} / {event.maxVotesPerMember}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <p className="text-[9px] font-bold text-white/30 uppercase tracking-[0.3em] mt-1">
+                    {event.status === 'voting' 
+                      ? isMember 
+                        ? `Select up to ${event.maxVotesPerMember === 1 ? 'a' : event.maxVotesPerMember} title${event.maxVotesPerMember === 1 ? '' : 's'} you want to watch!` 
+                        : 'Join the event to vote and see voting results!' 
+                      : 'Planned marathon lineup'}
                   </p>
                 </div>
               </div>
@@ -371,7 +424,7 @@ export default function EventDetail() {
                               
                               {isVoting && isMember && (
                                 <span className="text-amber-400 font-mono text-[9px] font-black tracking-widest">
-                                  {m.count} VOTES
+                                  {m.count} {m.count === 1 ? 'VOTE' : 'VOTES'}
                                 </span>
                               )}
                             </div>
@@ -434,7 +487,7 @@ export default function EventDetail() {
                                           {sub.type?.toUpperCase()}
                                         </p>
                                         {isVoting && isMember && (
-                                          <span className="text-[9px] font-mono font-bold text-white/40 tracking-tighter">{sub.count} VOTES</span>
+                                          <span className="text-[9px] font-mono font-bold text-white/40 tracking-tighter">{sub.count} {sub.count === 1 ? 'VOTE' : 'VOTES'}</span>
                                         )}
                                       </div>
                                       <h5 className={`font-black text-white/90 uppercase leading-none truncate ${isSeason ? 'text-sm' : 'text-xs'}`}>

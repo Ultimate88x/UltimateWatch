@@ -383,6 +383,8 @@ export class EventsService {
         maxMembers: event.maxMembers,
       });
     } else {
+      const votingEvent = event as VotingEvent;
+
       return new VotingEventDetailedInfoDto({
         id: event.id,
         name: event.name,
@@ -391,6 +393,9 @@ export class EventsService {
         type: event.type,
         status: event.status,
         maxMembers: event.maxMembers,
+        maxMedia: votingEvent.maxMedia,
+        maxVotesPerMember: votingEvent.maxVotesPerMember,
+        votingEndDate: votingEvent.votingEndDate,
       });
     }
   }

@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Clock, ChevronLeft, ChevronRight, ArrowRight, Users, HelpCircle, Eye, RotateCw } from 'lucide-react';
+import { Clock, ChevronLeft, ChevronRight, Users, HelpCircle, Eye, RotateCw } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { EmptyState } from '../../components/EmptyState';
@@ -57,14 +57,14 @@ export default function EventList() {
   const getEventStatusUI = (status: string) => {
     switch (status) {
       case 'voting':
-        return { label: 'Voting in Progress', color: 'text-amber-400', bar: 'bg-amber-400/50', btn: 'Go Vote', dot: false };
+        return { label: 'Voting in Progress', color: 'text-amber-400', bar: 'bg-amber-400/50' };
       case 'started':
-        return { label: 'Binge Started', color: 'text-green-500', bar: 'bg-green-500/50', btn: 'Watch Live', dot: true };
+        return { label: 'Binge Started', color: 'text-green-500', bar: 'bg-green-500/50' };
       case 'finished':
-        return { label: 'Marathon Ended', color: 'text-white/20', bar: 'bg-white/10', btn: 'Archived', dot: false };
+        return { label: 'Marathon Ended', color: 'text-white/20', bar: 'bg-white/10' };
       case 'waiting':
       default:
-        return { label: 'Waiting for Start Date', color: 'text-purple-main', bar: 'bg-purple-main/50', btn: 'Join Binge', dot: false };
+        return { label: 'Waiting for Start Date', color: 'text-purple-main', bar: 'bg-purple-main/50' };
     }
   };
 
@@ -193,7 +193,7 @@ export default function EventList() {
 
                 return (
                   <div key={idx} className={`group relative flex flex-row border border-white/5 rounded-3xl overflow-hidden transition-all duration-500 shadow-xl ${isFinished ? 
-                    'bg-white/1 opacity-60' : 
+                    'bg-white/1 opacity-70' : 
                     'bg-white/2 hover:bg-white/4 hover:border-purple-main/30'}`}>
                     
                     <div className="w-36 h-auto relative shrink-0 overflow-hidden bg-[#111] border-r border-white/5">
@@ -258,26 +258,15 @@ export default function EventList() {
                       </div>
                     </div>
 
-                    <div className={`md:w-56 shrink-0 border-t md:border-t-0 md:border-l border-white/5 p-6 flex flex-col items-center justify-center gap-3 ${isFinished ? 'bg-white/1' : 'bg-white/2'}`}>
+                    <div className={`md:w-56 shrink-0 border-t md:border-t-0 md:border-l border-white/5 p-6 flex flex-col items-center justify-center gap-3 ${isFinished ? 'bg-white/1 opacity-90' : 'bg-white/2'}`}>
                       <Button 
-                        variant="ghost"
+                        variant="solid-accent"
                         icon={Eye}
-                        disabled={isFinished}
-                        className="w-full py-4 rounded-2xl font-black uppercase text-[10px] border border-white/5 hover:border-white/10"
+                        showShine={true}
+                        className={`w-full py-4 rounded-2xl font-black uppercase text-[10px] ${!isFinished && 'shadow-[0_0_20px_rgba(168,85,247,0.15)]'}`}
                         onClick={() => smartNavigate(`/events/${event.id}`)}
                       >
                         Details
-                      </Button>
-
-                      <Button 
-                        variant={isFinished ? "secondary" : "solid-accent"}
-                        icon={ArrowRight}
-                        showShine={!isFinished}
-                        disabled={isFinished}
-                        className={`w-full py-4 rounded-2xl font-black uppercase text-[10px] ${!isFinished && 'shadow-[0_0_20px_rgba(168,85,247,0.15)]'}`}
-                        onClick={() => !isFinished && console.log("Join")}
-                      >
-                        {ui.btn}
                       </Button>
                     </div>
                   </div>

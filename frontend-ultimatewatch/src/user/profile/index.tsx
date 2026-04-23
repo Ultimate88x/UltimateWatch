@@ -11,6 +11,7 @@ import { Input } from "../../components/Input";
 import type { UserProfile } from "../../types/user-profile";
 import type { Media } from "../../types/media-item";
 import type { Collection } from "../../types/collection-item";
+import { ConfirmModal } from "../../components/ConfirmModal";
 
 export default function UserProfile() {
   const userString = localStorage.getItem('user');
@@ -549,52 +550,16 @@ export default function UserProfile() {
         <ListCollection title="Public Collections" collections={MOCK_COLLECTIONS} />
       </div>
 
-      <AnimatePresence>
-        {isModalOpen && (
-          <div className="fixed inset-0 p-4 flex items-center justify-center z-50">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsModalOpen(false)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-            />
-
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative max-w-md w-full bg-blue-background shadow-2xl border rounded-2xl border-white/10 p-8 "
-            >
-              <div className="text-center">
-                <div className="mx-auto mb-4 h-16 w-16 bg-red-danger/10 rounded-full flex justify-center items-center">
-                  <span className="text-3xl text-red-danger">!</span>
-                </div>
-                <h3 className="mb-2 text-2xl font-bold text-white uppercase font-inter">Confirm Deletion</h3>
-                <p className="mb-8 text-gray-400">
-                  This action is permanent. Are you sure you want to proceed?
-                </p>
-                
-                <div className="flex gap-4">
-                  <Button 
-                    variant="primary" 
-                    onClick={() => setIsModalOpen(false)}
-                  >
-                    Keep Account
-                  </Button>
-
-                  <Button 
-                    variant="danger" 
-                    onClick={handleDeleteAccount}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <ConfirmModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={handleDeleteAccount}
+        title="Delete Account"
+        description="You are about to delete your account. This action cannot be undone. Are you sure?"
+        confirmText="Yes, Delete"
+        cancelText="Keep Account"
+        variant="danger"
+      />
     </div>
   )
 }

@@ -1,10 +1,10 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import type { Member } from '../../types/member';
 import { EmptyState } from '../../components/EmptyState';
-import { Film, Calendar, Users, Info, Shield, ChevronLeft, ChevronRight, Trophy } from 'lucide-react';
+import { Film, Calendar, Users, Info, Shield, ChevronLeft, ChevronRight, Trophy, LogOut, Play } from 'lucide-react';
 import { Button } from '../../components/Button';
 import { getRelativeDate } from '../../components/utilities/RelativeDate';
 import { useAdvancedNavigation } from '../../components/utilities/SmartNavigate';
@@ -12,9 +12,11 @@ import type { MediaEvent } from '../../types/media-event';
 import type { EnhancedEvent } from '../../types/voting-event';
 import { MediaEventCard } from '../../components/content/MediaEventCard';
 import { EventResultsModal } from '../../components/event/EventResultsModal';
+import { ConfirmModal } from '../../components/ConfirmModal';
 
 export default function EventDetail() {
   const { smartNavigate } = useAdvancedNavigation();
+  const navigate = useNavigate();
   const { id } = useParams();
   const [event, setEvent] = useState<EnhancedEvent | null>(null);
 
@@ -31,6 +33,9 @@ export default function EventDetail() {
   const [isVoteLoading, setIsVoteLoading] = useState(false);
 
   const [showResults, setShowResults] = useState(false);
+
+  const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
   
   const [isLoading, setIsLoading] = useState(true);
 
@@ -114,7 +119,6 @@ export default function EventDetail() {
         return;
       }
 
-      console.log(data.data);
       setMembers(data.data);
       setIsMember(data.data.some((member: Member) => member.isCurrentUser));
       setTotalPages(data.lastPage || 1);
@@ -157,6 +161,64 @@ export default function EventDetail() {
 
     if (mediaList) fetchVotes();
   }, [id, mediaList]);
+
+  const handleJoinEvent = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:3000/events/join/${id}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.message || "Failed to join event");
+        return;
+      }
+
+      toast.success(data.message);
+
+      fetchEvent();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error';
+      toast.error(message);
+      setIsLoading(false);
+    }
+  };
+
+  const handleLeaveEvent = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:3000/events/leave/${id}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.message || "Failed to join event");
+        return;
+      }
+
+      toast.success(data.message);
+
+      fetchEvent();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error';
+      toast.error(message);
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchEvent();
@@ -390,13 +452,41 @@ export default function EventDetail() {
               <div className="absolute -right-4 -top-4 opacity-10 group-hover:rotate-12 transition-transform duration-700">
                 <Shield size={160} />
               </div>
-              <h4 className="text-2xl font-black uppercase italic tracking-tighter">Ready for the marathon?</h4>
-              <p className="text-white/80 text-xs font-bold leading-tight">Join the session to interact and vote with the community.</p>
-              {!isMember && (
-                <Button variant="solid-accent" className="bg-white text-purple-main hover:bg-white/90 py-6 rounded-2xl font-black shadow-lg">
-                  JOIN BINGE NOW
-                </Button>
-              )}
+              <h4 className="text-2xl font-black uppercase italic tracking-tighter">{event.status === 'finished' ? 'Marathon Complete!' : 'Ready for the marathon?'}</h4>
+              <p className="text-white/80 text-xs font-bold leading-tight">{event.status === 'finished' ? 'The marathon has ended.' : 'Join the session to interact with the community.'}</p>
+              <div className="w-full">
+                {!isMember ? (
+                  <Button 
+                    variant="solid-accent" 
+                    onClick={() => setIsJoinModalOpen(true)}
+                    className="w-full bg-white text-purple-main hover:bg-white/60 py-6 rounded-2xl font-black shadow-lg"
+                    disabled={event.status === 'finished'}
+                  >
+                    Become a Member
+                  </Button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="solid-accent"
+                      onClick={() => navigate(`/events/${event.id}/session`)}
+                      icon={Play}
+                      className="w-full bg-white text-purple-main hover:bg-white/60 py-6 rounded-2xl font-black shadow-lg"
+                      disabled={event.status === 'voting' || event.status === 'finished'}
+                    >
+                      Join Session
+                    </Button>
+
+                    <Button
+                      variant="danger"
+                      onClick={() => setIsLeaveModalOpen(true)}
+                      icon={LogOut}
+                      className="w-auto! px-4 py-6 rounded-2xl border border-white/10"
+                      disabled={event.status === 'finished'}
+                      title="Leave Event"
+                    />
+                  </div>
+                )}
+              </div>
 
               {event.type === "voting_event" && (
                 <Button
@@ -512,7 +602,31 @@ export default function EventDetail() {
         isOpen={showResults}
         onClose={() => setShowResults(false)}
         maxWinners={event.maxMedia || 1}
-        eventName={event.name}      />
+        eventName={event.name}
+      />
+
+      <ConfirmModal
+        isOpen={isJoinModalOpen}
+        onClose={() => setIsJoinModalOpen(false)}
+        onConfirm={handleJoinEvent}
+        title="Join Event"
+        description="You are about to join this event. You'll be able participate in the live session."
+        confirmText="Let's Go!"
+        cancelText="Not now"
+        variant="accent"
+        icon={Play}
+      />
+
+      <ConfirmModal
+        isOpen={isLeaveModalOpen}
+        onClose={() => setIsLeaveModalOpen(false)}
+        onConfirm={handleLeaveEvent}
+        title="Leave Event"
+        description="You are about to leave this event. Are you sure?"
+        confirmText="Yes, Leave"
+        cancelText="Don't Leave"
+        variant="danger"
+      />
     </div>
   );
 };

@@ -1,5 +1,4 @@
 export class ChatCommentDto {
-  userId: number;
   username: string;
   userRole: string;
   message: string;

@@ -1,4 +1,4 @@
-import { UseGuards } from '@nestjs/common';
+import { UseFilters, UseGuards } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
@@ -13,13 +13,19 @@ import { CreateCommentDto } from 'src/comments/dto/create-comment-dto';
 import { Comment } from 'src/comments/entities/comment.entity';
 import { GetUser } from 'src/common/decorators/get-user.decorator';
 import { AuthGuard } from 'src/common/guards/auth.guard';
+import { MembersService } from 'src/members/members.service';
+import { WebsocketExceptionFilter } from './websocket-exception.filter';
 
 @WebSocketGateway({ cors: { origin: '*' } })
+@UseFilters(new WebsocketExceptionFilter())
 export class ChatGateway {
   @WebSocketServer()
   server: Server;
 
-  constructor(private readonly commentsService: CommentsService) {}
+  constructor(
+    private readonly commentsService: CommentsService,
+    private readonly membersService: MembersService,
+  ) {}
 
   @SubscribeMessage('event-chat')
   @UseGuards(AuthGuard)
@@ -33,29 +39,36 @@ export class ChatGateway {
     );
 
     const chatResponse = new ChatCommentDto({
-      userId: savedComment.member.user.id,
       username: savedComment.member.user.username,
       userRole: savedComment.member.role,
       message: savedComment.message,
       createdAt: savedComment.createdAt,
     });
 
-    this.server.to(`event_${commentDto.eventId}`).emit('comment', chatResponse);
+    this.server
+      .to(`event_${commentDto.eventId}`)
+      .emit('event-chat', chatResponse);
   }
 
   @SubscribeMessage('joinEvent')
+  @UseGuards(AuthGuard)
   async handleJoinEvent(
-    @MessageBody() eventId: number,
+    @GetUser('userId') userId: number,
+    @MessageBody('eventId') eventId: number,
     @ConnectedSocket() client: Socket,
   ) {
+    await this.membersService.getByUserIdAndEventId(userId, eventId);
     await client.join(`event_${eventId}`);
   }
 
   @SubscribeMessage('leaveEvent')
+  @UseGuards(AuthGuard)
   async handleLeaveEvent(
-    @MessageBody() eventId: number,
+    @GetUser('userId') userId: number,
+    @MessageBody('eventId') eventId: number,
     @ConnectedSocket() client: Socket,
   ) {
+    await this.membersService.getByUserIdAndEventId(userId, eventId);
     await client.leave(`event_${eventId}`);
   }
 }

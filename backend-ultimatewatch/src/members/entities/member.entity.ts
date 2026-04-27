@@ -12,7 +12,6 @@ import {
 import { Vote } from 'src/votes/entities/vote.entity';
 import { MemberRole } from 'src/common/enums/member.role.enum';
 import { Comment } from 'src/comments/entities/comment.entity';
-import { Comment } from 'src/comments/entities/comment.entity';
 
 @Entity('members')
 @Unique(['user', 'event'])

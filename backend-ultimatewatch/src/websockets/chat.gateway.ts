@@ -1,4 +1,4 @@
-import { UsePipes, ValidationPipe } from '@nestjs/common';
+import { UseGuards } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
@@ -11,9 +11,10 @@ import { CommentsService } from 'src/comments/comments.service';
 import { ChatCommentDto } from 'src/comments/dto/chat-comment-dto';
 import { CreateCommentDto } from 'src/comments/dto/create-comment-dto';
 import { Comment } from 'src/comments/entities/comment.entity';
+import { GetUser } from 'src/common/decorators/get-user.decorator';
+import { AuthGuard } from 'src/common/guards/auth.guard';
 
 @WebSocketGateway({ cors: { origin: '*' } })
-@UsePipes(new ValidationPipe())
 export class ChatGateway {
   @WebSocketServer()
   server: Server;
@@ -21,8 +22,15 @@ export class ChatGateway {
   constructor(private readonly commentsService: CommentsService) {}
 
   @SubscribeMessage('event-chat')
-  async handleMessage(@MessageBody() commentDto: CreateCommentDto) {
-    const savedComment: Comment = await this.commentsService.create(commentDto);
+  @UseGuards(AuthGuard)
+  async handleMessage(
+    @GetUser('userId') userId: number,
+    @MessageBody() commentDto: CreateCommentDto,
+  ) {
+    const savedComment: Comment = await this.commentsService.create(
+      userId,
+      commentDto,
+    );
 
     const chatResponse = new ChatCommentDto({
       userId: savedComment.member.user.id,

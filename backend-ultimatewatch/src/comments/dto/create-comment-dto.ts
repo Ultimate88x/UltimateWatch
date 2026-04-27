@@ -9,11 +9,6 @@ export class CreateCommentDto {
   @IsNotEmpty()
   @Type(() => Number)
   @IsInt()
-  userId: number;
-
-  @IsNotEmpty()
-  @Type(() => Number)
-  @IsInt()
   eventId: number;
 
   constructor(init?: Partial<CreateCommentDto>) {

@@ -18,9 +18,9 @@ export class CommentsService {
     return await this.commentRepository.save(comment);
   }
 
-  async create(commentDto: CreateCommentDto): Promise<Comment> {
+  async create(userId: number, commentDto: CreateCommentDto): Promise<Comment> {
     const member: Member = await this.membersService.getByUserIdAndEventId(
-      commentDto.userId,
+      userId,
       commentDto.eventId,
     );
 

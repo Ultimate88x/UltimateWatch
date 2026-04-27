@@ -69,7 +69,7 @@ export const EmptyState = ({
         {showBackButton && (
           <button 
             onClick={handleAction}
-            className="mt-4 px-8 py-3 bg-white/5 hover:bg-purple-main/20 border border-white/10 hover:border-purple-main/50 rounded-xl text-white text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-300 shadow-lg active:scale-95"
+            className="mt-4 px-8 py-3 bg-white/5 hover:bg-purple-main/20 border border-white/10 hover:border-purple-main/50 rounded-xl text-white text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-300 shadow-lg active:scale-95 cursor-pointer"
           >
             {actionLabel}
           </button>

@@ -468,7 +468,7 @@ export default function EventDetail() {
                   <div className="flex items-center gap-2">
                     <Button 
                       variant="solid-accent"
-                      onClick={() => navigate(`/events/${event.id}/session`)}
+                      onClick={() => navigate(`/events/${event.id}/room`)}
                       icon={Play}
                       className="w-full bg-white text-purple-main hover:bg-white/60 py-6 rounded-2xl font-black shadow-lg"
                       disabled={event.status === 'voting' || event.status === 'finished'}

@@ -22,6 +22,7 @@ import FriendsList from "./request/friend-list";
 import EventList from "./event/list";
 import EventDetail from "./event/detail";
 import CreateEvent from "./event/create";
+import EventRoom from "./event/room";
 
 function App() {
   return (
@@ -75,6 +76,7 @@ function App() {
             <Route path="/events" element={<EventList />} />
             <Route path="/events/:id" element={<EventDetail />} />
             <Route path="/events/create" element={<CreateEvent />} />
+            <Route path="/events/:id/room" element={<EventRoom />} />
           </Route>
 
           <Route path="/" element={<Home />} />

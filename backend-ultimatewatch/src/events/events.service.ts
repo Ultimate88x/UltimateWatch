@@ -514,6 +514,10 @@ export class EventsService {
     );
   }
 
+  async updateTimer(id: number, seconds: number) {
+    return await this.eventsRepository.update(id, { timer: seconds });
+  }
+
   private async deleteMediaDuplicates(mediaList: number[]): Promise<Media[]> {
     const idSet = new Set(mediaList);
     const idsToDelete = new Set<number>();

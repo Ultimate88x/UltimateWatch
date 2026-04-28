@@ -34,6 +34,7 @@ import { VotingMediaEventDto } from './dto/voting-media-event-dto';
 import { VotingSubMediaEventDto } from './dto/voting-sub-media-event-dto';
 import { EventType } from 'src/common/enums/event.type.enum';
 import { VotingEventDetailedInfoDto } from './dto/voting-event-detailed-info-dto';
+import { SuggestMediaDto } from './dto/suggest-media-dto';
 
 interface SubMediaEventWithSort extends SubMediaEventDto {
   sortKey: string;
@@ -114,6 +115,28 @@ export class EventsService {
       status: EventStatus.VOTING,
       visibility: '',
     });
+    return await this.saveVotingEvent(event);
+  }
+
+  async addProposedMediaToVotingEvent(
+    eventId: number,
+    suggestMediaDto: SuggestMediaDto,
+  ): Promise<VotingEvent> {
+    const event: VotingEvent = await this.findVotingEventBydId(eventId);
+
+    if (event.status !== EventStatus.VOTING) {
+      throw new BadRequestException(
+        'You can only suggest media to events in voting status',
+      );
+    }
+
+    const mediaList: Media[] = await Promise.all(
+      suggestMediaDto.proposedMediaIds.map(async (id: number) =>
+        this.mediaService.findByTmdbId(id),
+      ),
+    );
+
+    event.proposedMedia = [...(event.proposedMedia || []), ...mediaList];
     return await this.saveVotingEvent(event);
   }
 

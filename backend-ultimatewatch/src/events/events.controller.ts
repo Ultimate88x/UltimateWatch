@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -17,6 +18,7 @@ import { EventDetailedInfoDto } from './dto/event-detailed-info-dto';
 import { VoteResultDto } from 'src/votes/dto/vote-result.dto';
 import { MediaEventDto } from './dto/media-event-dto';
 import { VotingMediaEventDto } from './dto/voting-media-event-dto';
+import { SuggestMediaDto } from './dto/suggest-media-dto';
 
 @Controller('events')
 export class EventsController {
@@ -125,5 +127,19 @@ export class EventsController {
     await this.eventsService.leaveEvent(userId, +id);
 
     return { message: 'Succesfully left the event!' };
+  }
+
+  @Patch('/suggest/:eventId')
+  @UseGuards(AuthGuard)
+  async suggestMedia(
+    @Param('eventId') eventId: string,
+    @Body() suggestMediaDto: SuggestMediaDto,
+  ): Promise<{ message: string }> {
+    await this.eventsService.addProposedMediaToVotingEvent(
+      +eventId,
+      suggestMediaDto,
+    );
+
+    return { message: 'Media succesfully suggested!' };
   }
 }

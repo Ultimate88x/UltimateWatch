@@ -6,7 +6,6 @@ import {
   User, 
   Film, 
   Tv, 
-  MonitorPlay, 
   UserPlus,
   Users,
   Ticket,
@@ -21,7 +20,6 @@ const ALL_MENUS: MenuConfig = {
   catalog: [
     { label: 'Discover Movies', path: '/movies', icon: <Film size={16}/>, requiresAuth: false },
     { label: 'Discover Series', path: '/series', icon: <Tv size={16}/>, requiresAuth: false },
-    { label: 'What to see', path: '/suggested', icon: <MonitorPlay size={16}/>, requiresAuth: false },
   ],
   social: [
     { label: 'Friends', path: '/friends', icon: <Users size={16}/>, requiresAuth: true },

@@ -3,7 +3,7 @@ import { MembersService } from './members.service';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { MemberListResponseDto } from './dto/member-list-response-dto';
 import { GetUser } from 'src/common/decorators/get-user.decorator';
-import { Member } from './entities/member.entity';
+import { MemberDetailDto } from './dto/member-detail-dto';
 
 @Controller('members')
 export class MembersController {
@@ -25,13 +25,13 @@ export class MembersController {
 
   @Get('/exists/:eventId')
   @UseGuards(AuthGuard)
-  async checkUserMemberExists(
+  async retrieveMember(
     @GetUser('userId') userId: number,
     @Param('eventId') eventId: string,
-  ): Promise<boolean> {
-    const member: Member | null =
-      await this.membersService.findByUserIdAndEventId(userId, +eventId);
+  ): Promise<MemberDetailDto | null> {
+    const member: MemberDetailDto | null =
+      await this.membersService.retrieveByUserIdAndEventId(userId, +eventId);
 
-    return member ? true : false;
+    return member;
   }
 }

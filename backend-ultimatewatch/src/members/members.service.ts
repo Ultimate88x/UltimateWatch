@@ -67,6 +67,25 @@ export class MembersService {
     return member;
   }
 
+  async retrieveByUserIdAndEventId(
+    userId: number,
+    eventId: number,
+  ): Promise<MemberDetailDto | null> {
+    const member: Member | null = await this.findByUserIdAndEventId(
+      userId,
+      eventId,
+    );
+
+    return member
+      ? new MemberDetailDto({
+          name: member.user.username || '',
+          imagePath: member.user.imagePath || '',
+          role: member.role || MemberRole.MEMBER,
+          isCurrentUser: true,
+        })
+      : null;
+  }
+
   async getFromEvent(
     eventId: number,
     page: number,

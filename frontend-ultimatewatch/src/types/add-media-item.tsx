@@ -3,7 +3,7 @@ type AddMedia = {
   title: string;
   posterPath: string;
   type: string;
-  parentId: number;
+  parentId?: number;
 }
 
 export type {AddMedia}

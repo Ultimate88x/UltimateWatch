@@ -7,12 +7,11 @@ import { Button } from "../../components/Button";
 import { Input } from "../../components/Input";
 import { motion } from "framer-motion";
 import { EventTypeEnum, type EventType } from "../../enums/EventTypeEnum";
-import { useAdvancedNavigation } from "../../components/utilities/SmartNavigate";
 import type { Media } from "../../types/media-item";
 import { Search, SearchX, ChevronDown } from "lucide-react";
 import ListMedia from "../../components/content/ListMedia";
 import { EmptyState } from "../../components/EmptyState";
-import { MediaActionModal } from "../../components/content/MediaActionModal";
+import { AddMediaModal } from "../../components/content/AddMediaModal";
 import type { AddMedia } from "../../types/add-media-item";
 import { formatDateForInput } from "../../components/utilities/FormatDateForInput";
 
@@ -37,7 +36,6 @@ const INITIAL_VOTING = {
 
 export default function CreateEvent() {
   const navigate = useNavigate();
-  const { smartNavigate } = useAdvancedNavigation();
 
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(false);
@@ -53,14 +51,13 @@ export default function CreateEvent() {
   const [error, setError] = useState<{ field: string; message: string } | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingMedia, setIsLoadingMedia] = useState(false);
 
   const [formData, setFormData] = useState(INITIAL_STANDARD);
   const [votingData, setVotingData] = useState(INITIAL_VOTING);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type: inputType } = e.target;
-    let finalValue: any = inputType === 'number' ? Number(value) : value;
+    let finalValue: string | number | Date = inputType === 'number' ? Number(value) : value;
 
     if (inputType === 'datetime-local' && value) {
       const dateValue = new Date(value);
@@ -203,14 +200,6 @@ export default function CreateEvent() {
   }, [query, mediaType]);
 
   useEffect(() => {
-    setFormData(prev => ({
-      ...prev,
-      mediaIds: selectedMedia.map(m => m.id) as never[],
-      proposedMediaIds: selectedMedia.map(m => m.id) as never[]
-    }));
-  }, [selectedMedia]);
-
-  useEffect(() => {
     const activeParentIds = new Set(
       selectedMedia
         .map(m => m.parentId)
@@ -228,71 +217,24 @@ export default function CreateEvent() {
     }
   }, [selectedMedia, type]);
 
-  const handleAddMediaState = (newItem: AddMedia, isSilent: boolean = false) => {
-    const exists = selectedMedia.some(m => m.id === newItem.id);
-    
-    if (exists) {
-      if (!isSilent) {
-        toast.error("Already in your lineup");
-      }
-      return false; 
-    }
-
-    setSelectedMedia(prev => [...prev, newItem]);
-    return true;
+  const toggleMediaSelection = (id: number) => {
+    setSelectedMediaId(selectedMediaId === id ? null : id);
   };
 
-  const addMediaToLineup = async (media: AddMedia) => {
-    if (selectedMedia.some(m => m.id === media.id)) {
+  const handleAddItemsToLineup = (newItems: AddMedia[]) => {
+    const itemsToAdd = newItems.filter(newItem => 
+      !selectedMedia.some(existing => existing.id === newItem.id && existing.type === newItem.type)
+    );
+
+    if (itemsToAdd.length === 0) {
       toast.error("Already in your lineup");
       return;
     }
 
-    setIsLoadingMedia(true);
-    try {
-      const response = await fetch(`http://localhost:3000/${mediaType}/${media.id}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
+    setSelectedMedia(prevLineup => [...prevLineup, ...itemsToAdd]);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        toast.error(data.message || "Failed to add media");
-        return;
-      }
-
-      media.type = mediaType === "movies" ? "movie" : "series";
-
-      handleAddMediaState(media);
-      toast.success(`${media.title} added to lineup`);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'An unexpected error occurred';
-      toast.error(message);
-    } finally {
-      setIsLoadingMedia(false);
-      setSelectedMediaId(null);
-    }
-  };
-
-  const onAddLocal = (id: number, title: string, posterPath: string, type: string, parentId: number, isSilent: boolean = false) => {
-    const customMedia: AddMedia = {
-      id: id,
-      title: title,
-      posterPath: posterPath,
-      type: type as string,
-      parentId: parentId !== 0 ? parentId : undefined,
-    } as AddMedia;
-
-    if (handleAddMediaState(customMedia, isSilent)) {
-      if (type === 'episode' || (type === 'season' && !selectedMedia.some(m => m.id === id))) {
-        toast.success(`Añadido: ${title}`);
-      }
-    }
-  };
-
-  const toggleMediaSelection = (id: number) => {
-    setSelectedMediaId(selectedMediaId === id ? null : id);
+    const mainItem = newItems[newItems.length - 1];
+    toast.success(`${mainItem.title} added`);
   };
 
   const isVoting = type === EventTypeEnum.VOTING;
@@ -435,21 +377,21 @@ export default function CreateEvent() {
             </div>
             
             <div className="flex flex-col gap-4 overflow-y-auto pr-1 media-scrollbar h-full">
-              {selectedMedia.filter(m => !m.parentId).map((series) => (
-                <div key={series.id} className="flex flex-col bg-white/3 border border-white/10 rounded-xl overflow-hidden shadow-2xl">
+              {selectedMedia.filter(m => !m.parentId).map((media) => (
+                <div key={media.id} className="flex flex-col bg-white/3 border border-white/10 rounded-xl overflow-hidden shadow-2xl">
                   
                   <div className="flex items-center gap-3 p-2.5 bg-linear-to-r from-purple-main/20 to-transparent">
-                    <img src={series.posterPath} className="w-10 h-14 object-cover rounded-md border border-white/10 shadow-lg" alt="" />
+                    <img src={media.posterPath} className="w-10 h-14 object-cover rounded-md border border-white/10 shadow-lg" alt="" />
                     <div className="flex-1 min-w-0">
                       <h3 className="text-[13px] font-black text-white uppercase italic truncate leading-none">
-                        {series.title}
+                        {media.title}
                       </h3>
                       <p className="text-[8px] font-bold text-purple-400 uppercase tracking-widest mt-1 opacity-70">
-                        Current Lineup
+                        {media.type === 'movie' ? 'Movie' : 'Series'}
                       </p>
                     </div>
                     <button 
-                      onClick={() => setSelectedMedia(prev => prev.filter(m => m.id !== series.id && m.parentId !== series.id))}
+                      onClick={() => setSelectedMedia(prev => prev.filter(m => m.id !== media.id && m.parentId !== media.id))}
                       className="p-2 text-white/10 hover:text-red-500 transition-all hover:bg-red-500/10 rounded-lg cursor-pointer"
                     >
                       <SearchX size={16} />
@@ -458,7 +400,7 @@ export default function CreateEvent() {
 
                   <div className="flex flex-col">
                     {selectedMedia
-                      .filter(item => item.parentId === series.id && item.type === 'season')
+                      .filter(item => item.parentId === media.id && item.type === 'season')
                       .map((season) => {
                         const episodes = selectedMedia.filter(item => item.parentId === season.id && item.type === 'episode');
                         const hasEpisodes = episodes.length > 0;
@@ -602,14 +544,11 @@ export default function CreateEvent() {
                         columns={4} 
                       />
 
-                      <MediaActionModal 
+                      <AddMediaModal 
                         media={mediaList.find(m => m.id === selectedMediaId) || null}
                         mediaType={mediaType}
                         onClose={() => setSelectedMediaId(null)}
-                        onAddFull={addMediaToLineup}
-                        onAddLocal={onAddLocal}
-                        isLoadingMedia={isLoadingMedia}
-                        smartNavigate={smartNavigate}
+                        onAddItems={handleAddItemsToLineup}
                       />
                     </div>
                   </div>

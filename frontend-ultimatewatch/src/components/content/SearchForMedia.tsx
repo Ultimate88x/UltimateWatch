@@ -10,12 +10,14 @@ import { EmptyState } from '../EmptyState';
 
 interface SearchForMediaProps {
   selectedMedia: AddMedia[];
-  setSelectedMedia: React.Dispatch<React.SetStateAction<AddMedia[]>>;
+  onSelectMedia?: (mediaId: number) => void;
+  cols?: number;
 }
 
 export const SearchForMedia: React.FC<SearchForMediaProps> = ({
   selectedMedia,
-  setSelectedMedia,
+  onSelectMedia,
+  cols = 4,
 }) => {
   const [mediaList, setMediaList] = useState<AddMedia[]>([]);
   const [mediaType, setMediaType] = useState<'movies' | 'series'>('movies');
@@ -65,15 +67,17 @@ export const SearchForMedia: React.FC<SearchForMediaProps> = ({
     );
 
     if (itemsToAdd.length === 0) {
-      toast.error("Already in your lineup");
+      toast.error("Already in lineup");
       return;
     }
 
-    setSelectedMedia(prevLineup => [...prevLineup, ...itemsToAdd]);
-
     const mainItem = newItems[newItems.length - 1];
-    toast.success(`${mainItem.title} added`);
+    onSelectMedia?.(mainItem.id);
   };
+
+  useEffect(() => {
+    setPage(1);
+  }, [mediaType]);
 
   return (
     <motion.div 
@@ -167,7 +171,7 @@ export const SearchForMedia: React.FC<SearchForMediaProps> = ({
                   <ListMedia 
                     mediaItems={mediaList} 
                     onClick={(id) => toggleMediaSelection(id)} 
-                    columns={4} 
+                    columns={cols} 
                   />
 
                   <AddMediaModal 

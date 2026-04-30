@@ -190,7 +190,7 @@ export function AddMediaModal({
           scale: 1,
           maxWidth: view === 'main' ? '400px' : '700px' 
         }}
-        className="bg-blue-background border border-white/10 rounded-[2.5rem] shadow-2xl w-full mx-4 max-h-[85vh] overflow-hidden flex flex-col"
+        className="bg-blue-background border border-white/10 rounded-[2.5rem] shadow-2xl w-full mx-4 max-h-[75vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="relative p-6 border-b border-white/5 flex flex-col items-center shrink-0">

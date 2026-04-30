@@ -98,7 +98,7 @@ export const MediaEventCard = ({
     </Button>
   );
 
-  return (
+return (
     <motion.div
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
@@ -120,18 +120,23 @@ export const MediaEventCard = ({
 
             {isVoting && (
               <span className="text-amber-400 font-mono text-[9px] font-black tracking-widest">
-                {m.count} {m.count === 1 ? 'VOTE' : 'VOTES'}
+                {m.isVotable ? m.count ?? 0 : 'NOT A VOTING OPTION. ADD IT!'} {m.isVotable ? m.count === 1 ? 'VOTE' : 'VOTES' : ''}
               </span>
             )}
           </div>
 
-          <h4 className="flex text-lg font-black uppercase tracking-tighter text-white leading-none truncate">
+          <h4 className="flex text-lg font-black uppercase tracking-tighter text-white leading-none truncate max-w-[70%]">
             {m.title}
           </h4>
 
-          {isVoting && !hasSubMedia && isMember && (
+          {isVoting && isMember && m.isVotable && (
             <div className="absolute right-6 top-1/2 -translate-y-1/2">
-              <div onClick={(e) => e.stopPropagation()} className="inline-block">
+              <div 
+                onClick={(e) => {
+                  e.stopPropagation();
+                }} 
+                className="inline-block"
+              >
                 {renderVoteButton(m.id)}
               </div>
             </div>
@@ -172,7 +177,11 @@ export const MediaEventCard = ({
                     </h5>
                   </div>
 
-                  {isVoting && isMember && renderVoteButton(sub.id)}
+                  {isVoting && isMember && (
+                    <div onClick={(e) => e.stopPropagation()} className="inline-block">
+                       {renderVoteButton(sub.id)}
+                    </div>
+                  )}
                 </div>
               </div>
             );

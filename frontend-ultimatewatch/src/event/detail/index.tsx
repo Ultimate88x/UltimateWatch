@@ -13,6 +13,9 @@ import type { EnhancedEvent } from '../../types/voting-event';
 import { MediaEventCard } from '../../components/content/MediaEventCard';
 import { EventResultsModal } from '../../components/event/EventResultsModal';
 import { ConfirmModal } from '../../components/ConfirmModal';
+import type { AddMedia } from '../../types/add-media-item';
+import { Modal } from '../../components/Modal';
+import { SearchForMedia } from '../../components/content/SearchForMedia';
 
 export default function EventDetail() {
   const { smartNavigate } = useAdvancedNavigation();
@@ -36,6 +39,7 @@ export default function EventDetail() {
 
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+  const [isSuggestModalOpen, setIsSuggestModalOpen] = useState(false);
   
   const [isLoading, setIsLoading] = useState(true);
 
@@ -89,6 +93,8 @@ export default function EventDetail() {
         toast.error(data.message || "Failed to fetch event media");
         return;
       }
+
+      console.log(data)
 
       setMediaList(data);
     } catch (error) {
@@ -181,8 +187,6 @@ export default function EventDetail() {
         return;
       }
 
-      toast.success(data.message);
-
       fetchEvent();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error';
@@ -217,6 +221,33 @@ export default function EventDetail() {
       const message = error instanceof Error ? error.message : 'Error';
       toast.error(message);
       setIsLoading(false);
+    }
+  };
+
+  const handleSendSuggestion = async (mediaId: number) => {
+    console.log("Suggesting media with ID:", mediaId);
+    try {
+      const response = await fetch(`http://localhost:3000/events/suggest/${id}/${mediaId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.message || "Failed to suggest media");
+        setMediaList(prevList => prevList ? prevList.filter(m => m.id !== mediaId) : []);
+        return;
+      }
+
+      toast.success(data.message);
+      fetchMedia();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'An unexpected error occurred';
+      toast.error(message);
     }
   };
 
@@ -379,6 +410,18 @@ export default function EventDetail() {
                     <h3 className="text-sm font-black uppercase italic tracking-tighter text-white">
                       {event.status === 'voting' ? 'VOTE' : 'LINEUP'}
                     </h3>
+
+                    {isMember && event.status === 'voting' && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        icon={Film}
+                        onClick={() => setIsSuggestModalOpen(true)}
+                        className="text-[10px] font-black uppercase tracking-widest text-purple-main hover:bg-purple-main/10"
+                      >
+                        Suggest Content
+                      </Button>
+                    )}
                     
                     {event.status === 'voting' && isMember && event.maxVotesPerMember && (
                       <div className="flex flex-col items-end">
@@ -595,6 +638,22 @@ export default function EventDetail() {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="h-500">
+        <Modal 
+          isOpen={isSuggestModalOpen} 
+          onClose={() => setIsSuggestModalOpen(false)}
+        >
+          <SearchForMedia 
+            selectedMedia={mediaList as unknown as AddMedia[]}
+            onSelectMedia={(mediaId: number) => {
+              handleSendSuggestion(mediaId);
+              setIsSuggestModalOpen(false);
+            }}
+            cols={5}
+          />
+        </Modal>
       </div>
 
       <EventResultsModal 

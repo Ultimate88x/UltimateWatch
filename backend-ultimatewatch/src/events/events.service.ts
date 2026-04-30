@@ -34,7 +34,6 @@ import { VotingMediaEventDto } from './dto/voting-media-event-dto';
 import { VotingSubMediaEventDto } from './dto/voting-sub-media-event-dto';
 import { EventType } from 'src/common/enums/event.type.enum';
 import { VotingEventDetailedInfoDto } from './dto/voting-event-detailed-info-dto';
-import { SuggestMediaDto } from './dto/suggest-media-dto';
 
 interface SubMediaEventWithSort extends SubMediaEventDto {
   sortKey: string;
@@ -101,10 +100,8 @@ export class EventsService {
     const { creator }: { creator: Member } =
       await this.mapEventCommonValues(userId);
 
-    const proposedMediaList: Media[] = await Promise.all(
-      createEventDto.proposedMediaIds.map(async (id: number) =>
-        this.mediaService.findByTmdbId(id),
-      ),
+    const proposedMediaList: Media[] = await this.deleteMediaDuplicates(
+      createEventDto.proposedMediaIds,
     );
 
     const event: VotingEvent = this.votingEventsRepository.create({
@@ -120,7 +117,7 @@ export class EventsService {
 
   async addProposedMediaToVotingEvent(
     eventId: number,
-    suggestMediaDto: SuggestMediaDto,
+    mediaId: number,
   ): Promise<VotingEvent> {
     const event: VotingEvent = await this.findVotingEventBydId(eventId);
 
@@ -130,14 +127,11 @@ export class EventsService {
       );
     }
 
-    const mediaList: Media[] = await Promise.all(
-      suggestMediaDto.proposedMediaIds.map(async (id: number) =>
-        this.mediaService.findByTmdbId(id),
-      ),
-    );
+    const media: Media = await this.mediaService.findByTmdbId(mediaId);
 
-    event.proposedMedia = [...(event.proposedMedia || []), ...mediaList];
-    return await this.saveVotingEvent(event);
+    event.proposedMedia = [...event.proposedMedia, media];
+
+    return this.saveVotingEvent(event);
   }
 
   async findBydId(id: number): Promise<Event> {
@@ -541,32 +535,41 @@ export class EventsService {
     return await this.eventsRepository.update(id, { timer: seconds });
   }
 
+  private async getConflictiveIds(
+    mediaId: number,
+    currentIds: Set<number>,
+  ): Promise<number[]> {
+    const idsToRemove: number[] = [];
+
+    const episode = await this.episodesService.findByTmdbId(mediaId);
+    if (episode) {
+      const seasonId = episode.season.tmdbId;
+      const seriesId = episode.season.series.tmdbId;
+
+      if (currentIds.has(seasonId)) idsToRemove.push(mediaId);
+      if (currentIds.has(seriesId)) idsToRemove.push(mediaId);
+      return idsToRemove;
+    }
+
+    const season = await this.seasonsService.findByTmdbId(mediaId);
+    if (season) {
+      const seriesId = season.series.tmdbId;
+
+      if (currentIds.has(seriesId)) idsToRemove.push(mediaId);
+      return idsToRemove;
+    }
+
+    return idsToRemove;
+  }
+
   private async deleteMediaDuplicates(mediaList: number[]): Promise<Media[]> {
     const idSet = new Set(mediaList);
     const idsToDelete = new Set<number>();
 
     await Promise.all(
       mediaList.map(async (mediaId) => {
-        const episode = await this.episodesService.findByTmdbId(mediaId);
-        if (episode) {
-          const seasonId = episode.season.tmdbId;
-          const seriesId = episode.season.series.tmdbId;
-          if (idSet.has(seasonId)) {
-            idsToDelete.add(seasonId);
-          } else if (idSet.has(seriesId)) {
-            idsToDelete.add(seriesId);
-          }
-          return;
-        }
-
-        const season = await this.seasonsService.findByTmdbId(mediaId);
-        if (season) {
-          const seriesId = season.series.tmdbId;
-          if (idSet.has(seriesId)) {
-            idsToDelete.add(seriesId);
-          }
-          return;
-        }
+        const conflicts = await this.getConflictiveIds(mediaId, idSet);
+        conflicts.forEach((id) => idsToDelete.add(id));
       }),
     );
 
@@ -690,6 +693,7 @@ export class EventsService {
       let subMediaEvent: (VotingSubMediaEventDto & { sortKey: string }) | null =
         null;
       let count: number | null | undefined;
+      let isVotable: boolean = false;
 
       switch (voteResult.type) {
         case MediaType.SEASON: {
@@ -739,6 +743,7 @@ export class EventsService {
           imagePath = voteResult.imagePath;
           subMediaEvent = null;
           count = voteResult.count;
+          isVotable = true;
           break;
       }
 
@@ -749,6 +754,7 @@ export class EventsService {
           if (!mediaEventDto.subMediaEvent) mediaEventDto.subMediaEvent = [];
           mediaEventDto.subMediaEvent.push(subMediaEvent);
         }
+        if (isVotable) mediaEventDto.isVotable = isVotable;
       } else {
         mediaEventDtoList.push(
           new VotingMediaEventDto({
@@ -761,6 +767,7 @@ export class EventsService {
                 : MediaType.SERIES,
             subMediaEvent: subMediaEvent ? [subMediaEvent] : null,
             count,
+            isVotable,
           }),
         );
       }

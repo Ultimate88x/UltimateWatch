@@ -10,7 +10,7 @@ import { EventTypeEnum, type EventType } from "../../enums/EventTypeEnum";
 import { SearchX } from "lucide-react";
 import type { AddMedia } from "../../types/add-media-item";
 import { formatDateForInput } from "../../components/utilities/FormatDateForInput";
-import { SearchForMedia } from "../../components/content/SearchForMediaModal";
+import { SearchForMedia } from "../../components/content/SearchForMedia";
 
 const INITIAL_STANDARD = {
   name: '',

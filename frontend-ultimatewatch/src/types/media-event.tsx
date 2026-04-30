@@ -7,6 +7,7 @@ type MediaEvent = {
   type: string;
   subMediaEvent?: SubMediaEvent[] | null | undefined;
   count?: number | null | undefined;
+  isVotable?: boolean;
 }
 
 export type {MediaEvent}

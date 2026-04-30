@@ -1,7 +1,6 @@
-type AddMedia = {
-  id: number;
-  title: string;
-  posterPath: string;
+import type { Media } from "./media-item";
+
+interface AddMedia extends Media {
   type: string;
   parentId?: number;
 }

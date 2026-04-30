@@ -4,6 +4,7 @@ import { VotingSubMediaEventDto } from './voting-sub-media-event-dto';
 export class VotingMediaEventDto extends MediaEventDto {
   declare subMediaEvent?: VotingSubMediaEventDto[] | null | undefined;
   count: number | null | undefined;
+  isVotable?: boolean;
 
   constructor(init?: Partial<VotingMediaEventDto>) {
     super();

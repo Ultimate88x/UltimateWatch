@@ -410,18 +410,6 @@ export default function EventDetail() {
                     <h3 className="text-sm font-black uppercase italic tracking-tighter text-white">
                       {event.status === 'voting' ? 'VOTE' : 'LINEUP'}
                     </h3>
-
-                    {isMember && event.status === 'voting' && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        icon={Film}
-                        onClick={() => setIsSuggestModalOpen(true)}
-                        className="text-[10px] font-black uppercase tracking-widest text-purple-main hover:bg-purple-main/10"
-                      >
-                        Suggest Content
-                      </Button>
-                    )}
                     
                     {event.status === 'voting' && isMember && event.maxVotesPerMember && (
                       <div className="flex flex-col items-end">
@@ -449,6 +437,37 @@ export default function EventDetail() {
               </div>
 
               <div className="flex flex-col gap-4">
+                {isMember && event.status === 'voting' && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    onClick={() => setIsSuggestModalOpen(true)}
+                    className="group relative overflow-hidden bg-purple-main/5 border border-purple-main/20 rounded-2xl p-6 cursor-pointer hover:bg-purple-main/10 transition-all border-dashed"
+                  >
+                    <div className="flex items-center justify-between relative z-10">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-purple-main/20 flex items-center justify-center text-purple-main group-hover:scale-110 transition-transform">
+                          <Film size={24} />
+                        </div>
+                        <div>
+                          <h4 className="text-white font-black uppercase italic tracking-tighter text-lg">
+                            Missing something?
+                          </h4>
+                          <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">
+                            Suggest a movie or series to the voting pool
+                          </p>
+                        </div>
+                      </div>
+                      <div className="px-4 py-2 bg-purple-main text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-lg group-hover:bg-purple-light transition-colors">
+                        Add Suggestion
+                      </div>
+                    </div>
+                    
+                    <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                      <Film size={100} />
+                    </div>
+                  </motion.div>
+                )}
                 {isMediaLoading ? (
                   <div className="h-full w-full flex flex-col items-center justify-center py-20">
                     <motion.div

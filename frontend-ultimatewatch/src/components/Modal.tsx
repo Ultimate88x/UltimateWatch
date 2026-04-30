@@ -37,7 +37,7 @@ export const Modal = ({
               <X size={28} />
             </button>
 
-            <div className="w-fit h-full overflow-y-auto media-scrollbar">
+            <div className="w-full h-full overflow-y-auto media-scrollbar">
               {children}
             </div>
           </motion.div>

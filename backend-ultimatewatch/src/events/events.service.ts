@@ -127,6 +127,10 @@ export class EventsService {
       );
     }
 
+    if (event.proposedMedia.some((media) => media.id === mediaId)) {
+      throw new BadRequestException('Media already in lineup');
+    }
+
     const media: Media = await this.mediaService.findByTmdbId(mediaId);
 
     event.proposedMedia = [...event.proposedMedia, media];

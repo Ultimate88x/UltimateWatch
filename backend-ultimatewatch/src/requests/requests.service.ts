@@ -65,6 +65,25 @@ export class RequestsService {
     return request;
   }
 
+  async isFriendsWithUser(userId1: number, userId2: number): Promise<boolean> {
+    const request = await this.friendRequestsRepository.findOne({
+      where: [
+        {
+          sender: { id: userId1 },
+          receiver: { id: userId2 },
+          accepted: true,
+        },
+        {
+          sender: { id: userId2 },
+          receiver: { id: userId1 },
+          accepted: true,
+        },
+      ],
+    });
+
+    return !!request;
+  }
+
   async getPendingReceivedFriendRequestsFromUser(
     userId: number,
     page: number = 1,

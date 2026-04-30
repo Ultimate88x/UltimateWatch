@@ -11,6 +11,7 @@ import { MembersModule } from 'src/members/members.module';
 import { SeasonModule } from 'src/seasons/seasons.module';
 import { EpisodeModule } from 'src/episodes/episodes.module';
 import { Media } from 'src/media/entities/media.entity';
+import { RequestsModule } from 'src/requests/requests.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { Media } from 'src/media/entities/media.entity';
     MembersModule,
     SeasonModule,
     EpisodeModule,
+    RequestsModule,
   ],
   controllers: [EventsController],
   providers: [EventsService],

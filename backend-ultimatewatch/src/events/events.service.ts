@@ -4,7 +4,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Event } from './entities/event.entity';
-import { LessThanOrEqual, Repository } from 'typeorm';
+import { Brackets, LessThanOrEqual, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UsersService } from 'src/users/users.service';
 import { User } from 'src/users/entities/user.entity';
@@ -34,6 +34,8 @@ import { VotingMediaEventDto } from './dto/voting-media-event-dto';
 import { VotingSubMediaEventDto } from './dto/voting-sub-media-event-dto';
 import { EventType } from 'src/common/enums/event.type.enum';
 import { VotingEventDetailedInfoDto } from './dto/voting-event-detailed-info-dto';
+import { EventVisibility } from 'src/common/enums/event.visibility.enum';
+import { RequestsService } from 'src/requests/requests.service';
 
 interface SubMediaEventWithSort extends SubMediaEventDto {
   sortKey: string;
@@ -59,6 +61,7 @@ export class EventsService {
     private readonly membersService: MembersService,
     private readonly seasonsService: SeasonService,
     private readonly episodesService: EpisodeService,
+    private readonly requestsService: RequestsService,
   ) {}
 
   async saveStandardEvent(
@@ -211,6 +214,15 @@ export class EventsService {
       )
       .leftJoinAndSelect('ownerMember.user', 'ownerUser')
       .leftJoinAndSelect('event.media', 'eventMedia')
+      .leftJoin(
+        'request',
+        'fr',
+        `((fr.senderId = :userId AND fr.receiverId = ownerUser.id) OR 
+          (fr.receiverId = :userId AND fr.senderId = ownerUser.id)) 
+            AND fr.accepted = true 
+            AND fr.type = :friendRequestType`,
+        { userId, friendRequestType: 'friend_requests' },
+      )
       .where((qb) => {
         const subQuery = qb
           .subQuery()
@@ -220,11 +232,25 @@ export class EventsService {
           .getQuery();
         return 'event.id NOT IN ' + subQuery;
       })
-      .setParameter('userId', userId)
-      .setParameter('ownerRole', MemberRole.OWNER)
       .andWhere('event.status != :finishedStatus', {
         finishedStatus: EventStatus.FINISHED,
       })
+      .andWhere(
+        new Brackets((qb) => {
+          qb.where('event.visibility = :public', {
+            public: EventVisibility.PUBLIC,
+          })
+            .orWhere('event.visibility = :request', {
+              request: EventVisibility.REQUEST_ONLY,
+            })
+            .orWhere('(event.visibility = :friends AND fr.id IS NOT NULL)', {
+              friends: EventVisibility.FRIENDS_ONLY,
+            });
+        }),
+      )
+      .setParameter('userId', userId)
+      .setParameter('ownerRole', MemberRole.OWNER)
+      .setParameter('friendRequestType', 'friend_requests')
       .orderBy('event.createdAt', 'DESC')
       .skip(skip)
       .take(limit);
@@ -358,6 +384,20 @@ export class EventsService {
 
     if (event.status === EventStatus.FINISHED) {
       throw new BadRequestException('You cannot join a finished event');
+    }
+
+    if (event.visibility === EventVisibility.FRIENDS_ONLY) {
+      const isFriendsWithOwner: boolean =
+        await this.requestsService.isFriendsWithUser(
+          userId,
+          event.members.find((m) => m.role === MemberRole.OWNER)?.user.id || 0,
+        );
+
+      if (!isFriendsWithOwner) {
+        throw new ForbiddenException(
+          'You are not friends with the owner of this event',
+        );
+      }
     }
 
     const currentMembers: number =

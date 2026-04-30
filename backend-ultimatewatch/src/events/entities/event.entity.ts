@@ -15,6 +15,7 @@ import {
 import { BaseEntity } from 'src/common/entities/base.entity';
 import { EventStatus } from 'src/common/enums/event.status.enum';
 import { EventType } from 'src/common/enums/event.type.enum';
+import { EventVisibility } from 'src/common/enums/event.visibility.enum';
 import { IsAfterDateConstraint } from 'src/common/validations/IsAfterDateConstraint';
 import { Media } from 'src/media/entities/media.entity';
 import { Member } from 'src/members/entities/member.entity';
@@ -50,9 +51,10 @@ export class Event extends BaseEntity {
   @IsString()
   description?: string | null;
 
-  @Column({ default: 'public' })
-  @IsString()
-  visibility: string;
+  @Index()
+  @Column()
+  @IsEnum(EventVisibility)
+  visibility: EventVisibility;
 
   @Column({ type: 'timestamp' })
   @IsNotEmpty()

@@ -88,7 +88,6 @@ export class EventsService {
       media: mediaList,
       timer: 0,
       status: EventStatus.WAITING,
-      visibility: '',
     });
     return await this.saveStandardEvent(event);
   }
@@ -110,7 +109,6 @@ export class EventsService {
       proposedMedia: proposedMediaList,
       timer: 0,
       status: EventStatus.VOTING,
-      visibility: '',
     });
     return await this.saveVotingEvent(event);
   }
@@ -400,6 +398,7 @@ export class EventsService {
         description: event.description,
         eventDate: event.eventDate,
         type: event.type,
+        visibility: event.visibility,
         status: event.status,
         maxMembers: event.maxMembers,
       });
@@ -412,6 +411,7 @@ export class EventsService {
         description: event.description,
         eventDate: event.eventDate,
         type: event.type,
+        visibility: event.visibility,
         status: event.status,
         maxMembers: event.maxMembers,
         maxMedia: votingEvent.maxMedia,
@@ -459,6 +459,7 @@ export class EventsService {
       name: event.name,
       eventDate: event.eventDate,
       type: event.type,
+      visibility: event.visibility,
       status: event.status,
       creatorName: creator.user.username,
       creatorImagePath: creator.user.imagePath,

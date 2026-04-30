@@ -9,7 +9,9 @@ import {
   IsInt,
   Max,
   Min,
+  IsEnum,
 } from 'class-validator';
+import { EventVisibility } from 'src/common/enums/event.visibility.enum';
 
 export class CreateEventDto {
   @IsNotEmpty()
@@ -36,6 +38,14 @@ export class CreateEventDto {
   @Min(2, { message: 'An event requires a minimum of 2 members' })
   @Max(50, { message: 'An event can have up to 50 members' })
   maxMembers: number;
+
+  @IsNotEmpty()
+  @IsEnum(EventVisibility, {
+    message: `Visibility must be one of the following: ${Object.values(
+      EventVisibility,
+    ).join(', ')}`,
+  })
+  visibility: EventVisibility;
 
   constructor(init?: Partial<CreateEventDto>) {
     Object.assign(this, init);

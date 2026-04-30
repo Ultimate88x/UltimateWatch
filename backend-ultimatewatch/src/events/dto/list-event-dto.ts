@@ -1,11 +1,13 @@
 import { EventStatus } from 'src/common/enums/event.status.enum';
 import { EventType } from 'src/common/enums/event.type.enum';
+import { EventVisibility } from 'src/common/enums/event.visibility.enum';
 
 export class ListEventDto {
   id: number;
   name: string;
   eventDate: Date;
   type: EventType;
+  visibility: EventVisibility;
   status: EventStatus;
   creatorName: string;
   creatorImagePath: string;

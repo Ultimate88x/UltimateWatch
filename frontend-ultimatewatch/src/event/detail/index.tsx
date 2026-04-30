@@ -358,6 +358,13 @@ export default function EventDetail() {
               <span className="text-sm font-bold uppercase">{members.length} / {event.maxMembers}</span>
             </div>
 
+            <div className="flex items-center gap-2 text-white/60">
+              <Shield size={18} className="text-purple-main" />
+              <span className="text-sm font-bold uppercase tracking-wider">
+                {event.visibility?.replace('_', ' ')}
+              </span>
+            </div>
+
             {event.status === 'voting' && (
               <>
                 <div className="h-4 w-px bg-white/10 hidden md:block" />

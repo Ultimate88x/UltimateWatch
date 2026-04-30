@@ -10,12 +10,14 @@ import { EmptyState } from '../EmptyState';
 
 interface SearchForMediaProps {
   selectedMedia: AddMedia[];
+  setSelectedMedia?: React.Dispatch<React.SetStateAction<AddMedia[]>>;
   onSelectMedia?: (mediaId: number) => void;
   cols?: number;
 }
 
 export const SearchForMedia: React.FC<SearchForMediaProps> = ({
   selectedMedia,
+  setSelectedMedia,
   onSelectMedia,
   cols = 4,
 }) => {
@@ -69,6 +71,10 @@ export const SearchForMedia: React.FC<SearchForMediaProps> = ({
     if (itemsToAdd.length === 0) {
       toast.error("Already in lineup");
       return;
+    }
+
+    if (setSelectedMedia) {
+      setSelectedMedia(prev => [...prev, ...itemsToAdd]);
     }
 
     const mainItem = newItems[newItems.length - 1];

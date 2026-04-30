@@ -1,5 +1,6 @@
 import { EventStatus } from 'src/common/enums/event.status.enum';
 import { EventType } from 'src/common/enums/event.type.enum';
+import { EventVisibility } from 'src/common/enums/event.visibility.enum';
 
 export class EventDetailedInfoDto {
   id: number;
@@ -7,6 +8,7 @@ export class EventDetailedInfoDto {
   description?: string | null;
   eventDate: Date;
   type: EventType;
+  visibility: EventVisibility;
   status: EventStatus;
   maxMembers: number;
 

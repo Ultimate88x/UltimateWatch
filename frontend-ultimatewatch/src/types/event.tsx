@@ -4,6 +4,7 @@ interface Event {
   description?: string | null;
   eventDate: string;
   type: string;
+  visibility: string;
   status: string;
   maxMembers: number;
 }

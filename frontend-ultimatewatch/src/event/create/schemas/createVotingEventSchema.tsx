@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { EventVisibilityEnum } from "../../../enums/EventVisibility";
 
 export const createVotingEventSchema = z.object({
   name: z
@@ -9,6 +10,10 @@ export const createVotingEventSchema = z.object({
     .string()
     .optional()
     .nullable(),
+
+  visibility: z.nativeEnum(EventVisibilityEnum, {
+    error: () => ({ message: "Please select a valid visibility option" }),
+  }),
 
   eventDate: z
     .preprocess((arg) => (typeof arg === "string" || arg instanceof Date ? new Date(arg) : arg), z.date())

@@ -11,6 +11,7 @@ import { SearchX } from "lucide-react";
 import type { AddMedia } from "../../types/add-media-item";
 import { formatDateForInput } from "../../components/utilities/FormatDateForInput";
 import { SearchForMedia } from "../../components/content/SearchForMedia";
+import { EventVisibilityEnum } from "../../enums/EventVisibility";
 
 const INITIAL_STANDARD = {
   name: '',
@@ -18,6 +19,7 @@ const INITIAL_STANDARD = {
   eventDate: new Date(new Date(Date.now() + 600000 * 6).setSeconds(0, 0)),
   maxMembers: 5,
   mediaIds: [] as number[],
+  visibility: EventVisibilityEnum.PUBLIC,
 };
 
 const INITIAL_VOTING = {
@@ -29,6 +31,7 @@ const INITIAL_VOTING = {
   maxVotesPerMember: 1,
   votingEndDate: new Date(new Date(Date.now() + 300000 * 6).setSeconds(0, 0)),
   proposedMediaIds: [] as number[],
+  visibility: EventVisibilityEnum.PUBLIC,
 };
 
 export default function CreateEvent() {
@@ -143,6 +146,8 @@ export default function CreateEvent() {
           field = 'maxVotesPerMember';
         } else if (lowerMessage.includes('max media') || lowerMessage.includes('maxmedia')) {
           field = 'maxMedia';
+        } else if (lowerMessage.includes('visibility')) {
+          field = 'visibility';
         } else {
           toast.error(message);
         }
@@ -204,6 +209,23 @@ export default function CreateEvent() {
                 >
                   <option value={EventTypeEnum.STANDARD} className="bg-blue-background text-white">Standard Session</option>
                   <option value={EventTypeEnum.VOTING} className="bg-blue-background text-white">Voting Marathon</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="font-bold text-white/40 ml-2 text-[10px] uppercase tracking-widest">
+                  Event Visibility
+                </label>
+                <select 
+                  name="visibility"
+                  value={data.visibility}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 bg-white/10 shadow-lg border-2 rounded-2xl transition-all text-white focus:outline-none border-white/20 focus:border-purple-main focus:bg-white/20 cursor-pointer appearance-none"
+                >
+                  <option value={EventVisibilityEnum.PUBLIC} className="bg-blue-background text-white">Public</option>
+                  <option value={EventVisibilityEnum.PRIVATE} className="bg-blue-background text-white">Private</option>
+                  <option value={EventVisibilityEnum.REQUEST_ONLY} className="bg-blue-background text-white">Request Only</option>
+                  <option value={EventVisibilityEnum.FRIENDS_ONLY} className="bg-blue-background text-white">Friends Only</option>
                 </select>
               </div>
 
@@ -381,7 +403,11 @@ export default function CreateEvent() {
             </div>
           </div>
         </motion.div>
-        <SearchForMedia selectedMedia={selectedMedia} setSelectedMedia={setSelectedMedia} />
+
+        <SearchForMedia 
+          selectedMedia={selectedMedia} 
+          setSelectedMedia={setSelectedMedia} 
+          onSelectMedia={() => toast.success("Media added succesfully!")}/>
       </div>
     </div>
   );

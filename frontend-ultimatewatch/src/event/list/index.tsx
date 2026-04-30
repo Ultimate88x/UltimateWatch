@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Clock, ChevronLeft, ChevronRight, Users, HelpCircle, Eye, RotateCw } from 'lucide-react';
+import { Clock, ChevronLeft, ChevronRight, Users, HelpCircle, Eye, RotateCw, Shield } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { EmptyState } from '../../components/EmptyState';
@@ -230,7 +230,7 @@ export default function EventList() {
                           </p>
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-3 items-end gap-6 pt-4 border-t border-white/5 w-full">
+                        <div className="grid grid-cols-4 items-end gap-6 pt-4 border-t border-white/5 w-full">
                           <div className="flex flex-col min-w-0">
                             <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">Members</span>
                             <div className="flex items-center gap-2 text-white font-black text-sm">
@@ -243,6 +243,15 @@ export default function EventList() {
                             <div className="flex items-center gap-2 text-white/70 font-bold text-xs">
                               <Clock size={14} className={isFinished ? 'text-white/10' : 'text-purple-main shrink-0'} />
                               <span className={`truncate ${isFinished ? 'text-white/20' : ''}`}>{getRelativeDate(event.eventDate)}</span>
+                            </div>
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">Access</span>
+                            <div className="flex items-center gap-2 text-white/70 font-bold text-xs uppercase">
+                              <Shield size={14} className={isFinished ? 'text-white/10' : 'text-purple-main shrink-0'} />
+                              <span className={`truncate ${isFinished ? 'text-white/20' : ''}`}>
+                                {event.visibility?.replace('_', ' ') || 'Public'}
+                              </span>
                             </div>
                           </div>
                           <div className="relative -bottom-1.5 flex flex-col items-start min-w-0 italic">

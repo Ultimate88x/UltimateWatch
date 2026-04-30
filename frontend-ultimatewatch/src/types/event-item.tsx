@@ -3,6 +3,7 @@ type EventItem = {
   name: string;
   eventDate: string;
   type: string;
+  visibility: string;
   status: string;
   creatorName: string;
   creatorImagePath: string;

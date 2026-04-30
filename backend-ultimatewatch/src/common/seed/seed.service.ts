@@ -20,6 +20,7 @@ import { MembersService } from 'src/members/members.service';
 import { SeriesDetailDto } from 'src/series/dto/series-detail-dto';
 import { MemberRole } from '../enums/member.role.enum';
 import { CreateStandardEventDto } from 'src/events/dto/create-standard-event-dto';
+import { EventVisibility } from '../enums/event.visibility.enum';
 
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
@@ -124,6 +125,7 @@ export class SeedService implements OnApplicationBootstrap {
       maxVotesPerMember: 1,
       votingEndDate: new Date(new Date(Date.now() + 300000).setSeconds(0, 0)),
       proposedMediaIds: [1429, 105248, 114410],
+      visibility: EventVisibility.PUBLIC,
     });
 
     const testVotingEvent: VotingEvent =
@@ -160,6 +162,7 @@ export class SeedService implements OnApplicationBootstrap {
       eventDate: new Date(new Date(Date.now() + 600000).setSeconds(0, 0)),
       maxMembers: 5,
       mediaIds: [1429, 105248, 114410],
+      visibility: EventVisibility.PUBLIC,
     });
 
     await this.eventService.createStandardEvent(standardEvent, testAdmin.id);

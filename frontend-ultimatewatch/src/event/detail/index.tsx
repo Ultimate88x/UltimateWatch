@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { Member } from '../../types/member';
 import { EmptyState } from '../../components/EmptyState';
-import { Film, Calendar, Users, Info, Shield, ChevronLeft, ChevronRight, Trophy, LogOut, Play } from 'lucide-react';
+import { Film, Calendar, Users, Info, Shield, ChevronLeft, ChevronRight, Trophy, LogOut, Play, UserPlus } from 'lucide-react';
 import { Button } from '../../components/Button';
 import { getRelativeDate } from '../../components/utilities/RelativeDate';
 import { useAdvancedNavigation } from '../../components/utilities/SmartNavigate';
@@ -16,6 +16,7 @@ import { ConfirmModal } from '../../components/ConfirmModal';
 import type { AddMedia } from '../../types/add-media-item';
 import { Modal } from '../../components/Modal';
 import { SearchForMedia } from '../../components/content/SearchForMedia';
+import { InviteFriendsModal } from '../../components/event/InviteFriendsModal';
 
 export default function EventDetail() {
   const { smartNavigate } = useAdvancedNavigation();
@@ -42,6 +43,7 @@ export default function EventDetail() {
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
   const [isSuggestModalOpen, setIsSuggestModalOpen] = useState(false);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   
   const [isLoading, setIsLoading] = useState(true);
 
@@ -129,7 +131,7 @@ export default function EventDetail() {
       setIsMember(data.data.some((member: Member) => member.isCurrentUser));
       setTotalPages(data.lastPage || 1);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Error';
+      const message = error instanceof Error ? error.message : 'An unexpected error occurred';
       toast.error(message);
       setIsLoading(false);
     } finally {
@@ -634,34 +636,60 @@ export default function EventDetail() {
                       </div>
                     ))
                   ) : (
-                    members.map((member) => (
-                      <motion.div
-                        key={member.name}
-                        initial={{ opacity: 0, x: 10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                      >
-                        <button 
-                          className="relative flex items-center gap-3 group cursor-pointer"
-                          onClick={(e) => smartNavigate(`/users/${member.name}`, e)}
+                    <>
+                      {isMember && event.status !== 'finished' && members.length < event.maxMembers && (
+                        <motion.div
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0 }}
                         >
-                          <div className="relative shrink-0">
-                            <img src={member.imagePath} className="w-10 h-10 rounded-xl object-cover border border-white/10" alt={member.name} />
-                            {member.role === 'owner' && (
-                              <div className="absolute -top-1 -right-1 bg-purple-main w-3 h-3 rounded-full border-2 border-[#0a0a0a]" />
-                            )}
-                          </div>
-                          <div className="flex flex-col min-w-0">
-                            <span className="flex text-[11px] font-black uppercase italic truncate group-hover:text-purple-300 transition-colors">
-                              {member.name}
-                            </span>
-                            <span className="flex text-[8px] font-bold uppercase text-white/20">
-                              {member.role}
-                            </span>
-                          </div>
-                        </button>
-                      </motion.div>
-                    ))
+                          <button
+                            onClick={() => setIsInviteModalOpen(true)}
+                            className="w-full flex items-center gap-3 p-2 rounded-xl border border-dashed border-purple-main/30 bg-purple-main/5 hover:bg-purple-main/10 transition-all group cursor-pointer"
+                          >
+                            <div className="w-10 h-10 rounded-xl bg-purple-main/20 flex items-center justify-center text-purple-main group-hover:scale-110 transition-transform">
+                              <UserPlus size={18} />
+                            </div>
+                            <div className="flex flex-col items-start min-w-0">
+                              <span className="text-[11px] font-black uppercase italic text-purple-main">
+                                Invite your squad
+                              </span>
+                              <span className="text-[8px] font-bold uppercase text-purple-main/40">
+                                {event.maxMembers - members.length} slots available
+                              </span>
+                            </div>
+                          </button>
+                        </motion.div>
+                      )}
+
+                      {members.map((member) => (
+                        <motion.div
+                          key={member.name}
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                        >
+                          <button 
+                            className="relative flex items-center gap-3 group cursor-pointer"
+                            onClick={(e) => smartNavigate(`/users/${member.name}`, e)}
+                          >
+                            <div className="relative shrink-0">
+                              <img src={member.imagePath} className="w-10 h-10 rounded-xl object-cover border border-white/10" alt={member.name} />
+                              {member.role === 'owner' && (
+                                <div className="absolute -top-1 -right-1 bg-purple-main w-3 h-3 rounded-full border-2 border-[#0a0a0a]" />
+                              )}
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                              <span className="flex text-[11px] font-black uppercase italic truncate group-hover:text-purple-300 transition-colors">
+                                {member.name}
+                              </span>
+                              <span className="flex text-[8px] font-bold uppercase text-white/20">
+                                {member.role}
+                              </span>
+                            </div>
+                          </button>
+                        </motion.div>
+                      ))}
+                    </>
                   )}
                 </AnimatePresence>
               </div>
@@ -706,6 +734,12 @@ export default function EventDetail() {
           </div>
         </div>
       </div>
+
+      <InviteFriendsModal 
+        isOpen={isInviteModalOpen}
+        onClose={() => setIsInviteModalOpen(false)}
+        eventId={id}
+      />
 
       <div className="h-500">
         <Modal 

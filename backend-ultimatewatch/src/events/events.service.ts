@@ -606,6 +606,15 @@ export class EventsService {
       );
     }
 
+    const currentMembers: number =
+      await this.membersService.countFromEvent(eventId);
+
+    if (currentMembers >= event.maxMembers) {
+      throw new ForbiddenException(
+        'This event has reached its limit of members',
+      );
+    }
+
     await this.membersService.getByUserIdAndEventId(userId, eventId);
 
     const receiverIsMemberOfEvent: boolean =
@@ -665,7 +674,7 @@ export class EventsService {
       .select([
         'user.id AS id',
         'user.username AS username',
-        'user.imagePath AS imagePath',
+        'user.imagePath AS "imagePath"',
         'invite.id IS NOT NULL AS "hasPendingInvite"',
       ])
       .orderBy('user.username', 'ASC')

@@ -173,9 +173,16 @@ export class EventsController {
   async getFriendsToInvite(
     @GetUser('userId') userId: number,
     @Param('eventId') eventId: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
   ): Promise<FriendInviteResponseDto> {
     const friendsToInvite: FriendInviteResponseDto =
-      await this.eventsService.getFriendsToInvite(userId, +eventId);
+      await this.eventsService.getFriendsToInvite(
+        userId,
+        +eventId,
+        page,
+        limit,
+      );
 
     return friendsToInvite;
   }

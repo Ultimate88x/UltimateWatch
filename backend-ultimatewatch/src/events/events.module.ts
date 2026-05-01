@@ -12,10 +12,11 @@ import { SeasonModule } from 'src/seasons/seasons.module';
 import { EpisodeModule } from 'src/episodes/episodes.module';
 import { Media } from 'src/media/entities/media.entity';
 import { RequestsModule } from 'src/requests/requests.module';
+import { User } from 'src/users/entities/user.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Event, StandardEvent, VotingEvent, Media]),
+    TypeOrmModule.forFeature([Event, StandardEvent, VotingEvent, Media, User]),
     UsersModule,
     MediaModule,
     MembersModule,

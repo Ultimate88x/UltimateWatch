@@ -23,6 +23,8 @@ export default function EventDetail() {
   const { id } = useParams();
   const [event, setEvent] = useState<EnhancedEvent | null>(null);
 
+  const [canSeeEvent, setCanSeeEvent] = useState(false);
+
   const [members, setMembers] = useState<Member[]>([]);
   const [isMember, setIsMember] = useState(false);
   const [page, setPage] = useState(1);
@@ -94,8 +96,6 @@ export default function EventDetail() {
         return;
       }
 
-      console.log(data)
-
       setMediaList(data);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error';
@@ -136,6 +136,41 @@ export default function EventDetail() {
       setTimeout(() => setIsMembersLoading(false), 250);
     }
   }, [id, page]);
+
+  useEffect(() => {
+    const checkCanSeeEvent = async () => {
+      try {
+        const response = await fetch(
+          `http://localhost:3000/events/can-see/${id}`,
+            {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${localStorage.getItem('token')}`,
+              },
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          toast.error(data.message || "Failed to check if user can see event");
+          return;
+        }
+
+        setCanSeeEvent(data);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Error';
+        toast.error(message);
+      } finally {
+        if (!canSeeEvent) {
+          setTimeout(() => setIsLoading(false), 400);
+        }
+      }
+    }
+
+    checkCanSeeEvent();
+  }, [id, canSeeEvent]);
 
   useEffect(() => {
     const fetchVotes = async () => {
@@ -252,8 +287,10 @@ export default function EventDetail() {
   };
 
   useEffect(() => {
-    fetchEvent();
-  }, [fetchEvent]);
+    if (canSeeEvent) {
+      fetchEvent();
+    }
+  }, [fetchEvent, canSeeEvent]);
 
   useEffect(() => {
     if (event) {
@@ -299,6 +336,10 @@ export default function EventDetail() {
         </motion.p>
       </div>
     );
+  }
+
+  if (!canSeeEvent) {
+    return <EmptyState icon={Shield} title='You do not have permission to view this event' description='The visibility to this event is limited' />;
   }
 
   if (!event) {

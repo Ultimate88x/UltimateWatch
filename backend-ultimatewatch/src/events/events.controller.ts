@@ -138,4 +138,18 @@ export class EventsController {
 
     return { message: 'Media succesfully suggested!' };
   }
+
+  @Get('can-see/:eventId')
+  @UseGuards(AuthGuard)
+  async checkEventVisibility(
+    @GetUser('userId') userId: number,
+    @Param('eventId') eventId: string,
+  ): Promise<boolean> {
+    const isVisible: boolean = await this.eventsService.checkCanSeeEvent(
+      userId,
+      +eventId,
+    );
+
+    return isVisible;
+  }
 }

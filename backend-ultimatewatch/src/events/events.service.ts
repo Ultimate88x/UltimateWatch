@@ -386,18 +386,15 @@ export class EventsService {
       throw new BadRequestException('You cannot join a finished event');
     }
 
-    if (event.visibility === EventVisibility.FRIENDS_ONLY) {
-      const isFriendsWithOwner: boolean =
-        await this.requestsService.isFriendsWithUser(
-          userId,
-          event.members.find((m) => m.role === MemberRole.OWNER)?.user.id || 0,
-        );
+    const userCanJoinEvent: boolean = await this.checkCanSeeEvent(
+      userId,
+      eventId,
+    );
 
-      if (!isFriendsWithOwner) {
-        throw new ForbiddenException(
-          'You are not friends with the owner of this event',
-        );
-      }
+    if (!userCanJoinEvent) {
+      throw new ForbiddenException(
+        'You do not have permission to join this event',
+      );
     }
 
     const currentMembers: number =
@@ -405,7 +402,7 @@ export class EventsService {
 
     if (currentMembers >= event.maxMembers) {
       throw new ForbiddenException(
-        'This events has reached its limit of members',
+        'This event has reached its limit of members',
       );
     }
 
@@ -424,6 +421,40 @@ export class EventsService {
     }
 
     await this.membersService.delete(existingMember.id);
+  }
+
+  async checkCanSeeEvent(userId: number, eventId: number): Promise<boolean> {
+    const event: Event = await this.findBydId(eventId);
+    const owner: Member | undefined = event.members.find(
+      (m) => m.role === MemberRole.OWNER,
+    );
+
+    if (!owner) {
+      throw new ResourceNotFoundException(
+        'Event owner',
+        'EVENT_ID',
+        eventId.toString(),
+      );
+    }
+
+    if (userId === owner.user.id) {
+      return true;
+    }
+
+    switch (event.visibility) {
+      case EventVisibility.FRIENDS_ONLY:
+        return await this.requestsService.isFriendsWithUser(
+          userId,
+          owner.user.id,
+        );
+
+      case EventVisibility.PRIVATE:
+        return false;
+
+      case EventVisibility.REQUEST_ONLY:
+      case EventVisibility.PUBLIC:
+        return true;
+    }
   }
 
   async getEventDetailedInformation(

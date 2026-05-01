@@ -71,7 +71,7 @@ export class RequestsController {
     await this.requestsService.resolveFriendRequest(+id, accept, userId);
 
     return {
-      message: `Friend request succesfully ${accept ? 'accepted' : 'rejected'}!`,
+      message: `Friend request successfully ${accept ? 'accepted' : 'rejected'}!`,
     };
   }
 
@@ -92,6 +92,6 @@ export class RequestsController {
     @Param('username') username: string,
   ): Promise<{ message: string }> {
     await this.requestsService.deleteFriend(username, userId);
-    return { message: 'Succesfully removed!' };
+    return { message: 'Successfully removed!' };
   }
 }

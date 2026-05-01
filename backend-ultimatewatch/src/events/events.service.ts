@@ -36,6 +36,7 @@ import { EventType } from 'src/common/enums/event.type.enum';
 import { VotingEventDetailedInfoDto } from './dto/voting-event-detailed-info-dto';
 import { EventVisibility } from 'src/common/enums/event.visibility.enum';
 import { RequestsService } from 'src/requests/requests.service';
+import { CreateEventInviteRequestDto } from 'src/requests/dto/create-event-invite-request-dto';
 
 interface SubMediaEventWithSort extends SubMediaEventDto {
   sortKey: string;
@@ -585,6 +586,37 @@ export class EventsService {
       type: row.type,
       count: Number(row.count),
     }));
+  }
+
+  async inviteUserToEvent(
+    userId: number,
+    createEventInviteRequestDto: CreateEventInviteRequestDto,
+  ): Promise<void> {
+    const { receiverId, eventId } = createEventInviteRequestDto;
+
+    const event: Event = await this.findBydId(eventId);
+
+    if (event.status === EventStatus.FINISHED) {
+      throw new BadRequestException(
+        'You cannot invite users to a finished event',
+      );
+    }
+
+    await this.membersService.getByUserIdAndEventId(userId, eventId);
+
+    const receiverIsMemberOfEvent: boolean =
+      !!(await this.membersService.findByUserIdAndEventId(receiverId, eventId));
+
+    if (receiverIsMemberOfEvent) {
+      throw new BadRequestException(
+        'The user is already a member of the event',
+      );
+    }
+
+    await this.requestsService.createEventInviteRequest(
+      userId,
+      createEventInviteRequestDto,
+    );
   }
 
   async getFormattedResultsByEvent(

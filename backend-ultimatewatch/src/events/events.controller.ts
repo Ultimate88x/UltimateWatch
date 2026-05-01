@@ -18,6 +18,7 @@ import { EventDetailedInfoDto } from './dto/event-detailed-info-dto';
 import { VoteResultDto } from 'src/votes/dto/vote-result.dto';
 import { MediaEventDto } from './dto/media-event-dto';
 import { VotingMediaEventDto } from './dto/voting-media-event-dto';
+import { CreateEventInviteRequestDto } from 'src/requests/dto/create-event-invite-request-dto';
 
 @Controller('events')
 export class EventsController {
@@ -151,5 +152,18 @@ export class EventsController {
     );
 
     return isVisible;
+  }
+
+  @Post('/invite')
+  @UseGuards(AuthGuard)
+  async inviteUserToEvent(
+    @GetUser('userId') userId: number,
+    @Body() createEventInviteRequestDto: CreateEventInviteRequestDto,
+  ): Promise<{ message: string }> {
+    await this.eventsService.inviteUserToEvent(
+      userId,
+      createEventInviteRequestDto,
+    );
+    return { message: 'User invited to event successfully!' };
   }
 }

@@ -5,10 +5,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Request } from './entities/request.entity';
 import { FriendRequest } from './entities/friend-request.entity';
 import { UsersModule } from 'src/users/users.module';
+import { EventInviteRequest } from './entities/event-invite-request.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Request, FriendRequest]),
+    TypeOrmModule.forFeature([Request, FriendRequest, EventInviteRequest]),
     forwardRef(() => UsersModule),
   ],
   controllers: [RequestsController],

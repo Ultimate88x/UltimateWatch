@@ -9,9 +9,9 @@ export abstract class Request extends BaseEntity {
   @Column()
   accepted: boolean = false;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   sender: User;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   receiver: User;
 }

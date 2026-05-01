@@ -14,6 +14,8 @@ import { User } from 'src/users/entities/user.entity';
 import { UsersService } from 'src/users/users.service';
 import { RequestDto } from './dto/request-dto';
 import { RequestResponseDto } from './dto/request-response-dto';
+import { EventInviteRequest } from './entities/event-invite-request.entity';
+import { CreateEventInviteRequestDto } from './dto/create-event-invite-request-dto';
 
 @Injectable()
 export class RequestsService {
@@ -22,6 +24,8 @@ export class RequestsService {
     private readonly requestsRepository: Repository<Request>,
     @InjectRepository(FriendRequest)
     private readonly friendRequestsRepository: Repository<FriendRequest>,
+    @InjectRepository(EventInviteRequest)
+    private readonly eventInviteRequestsRepository: Repository<EventInviteRequest>,
     @Inject(forwardRef(() => UsersService))
     private readonly usersService: UsersService,
   ) {}
@@ -30,6 +34,12 @@ export class RequestsService {
     friendRequest: FriendRequest,
   ): Promise<FriendRequest> {
     return await this.friendRequestsRepository.save(friendRequest);
+  }
+
+  async saveEventInviteRequest(
+    eventInviteRequest: EventInviteRequest,
+  ): Promise<EventInviteRequest> {
+    return await this.eventInviteRequestsRepository.save(eventInviteRequest);
   }
 
   async findById(id: number): Promise<Request> {
@@ -58,6 +68,25 @@ export class RequestsService {
         {
           sender: { id: userId2 },
           receiver: { id: userId1 },
+        },
+      ],
+    });
+
+    return request;
+  }
+
+  async findActiveEventInviteRequestToUser(
+    userId1: number,
+    userId2: number,
+    eventId: number,
+  ): Promise<Request | null> {
+    const request = await this.eventInviteRequestsRepository.findOne({
+      where: [
+        {
+          sender: { id: userId1 },
+          receiver: { id: userId2 },
+          event: { id: eventId },
+          accepted: false,
         },
       ],
     });
@@ -196,6 +225,40 @@ export class RequestsService {
     });
 
     await this.saveFriendRequest(newRequest);
+  }
+
+  async createEventInviteRequest(
+    senderId: number,
+    createEventInviteRequestDto: CreateEventInviteRequestDto,
+  ): Promise<void> {
+    const { receiverId, eventId } = createEventInviteRequestDto;
+    if (senderId === receiverId) {
+      throw new BadRequestException('You cannot invite yourself to an event');
+    }
+
+    const existingRequest: Request | null =
+      await this.findActiveEventInviteRequestToUser(
+        senderId,
+        receiverId,
+        eventId,
+      );
+
+    if (existingRequest) {
+      throw new BadRequestException(
+        'You have an ongoing invite request for this user and event',
+      );
+    }
+
+    const sender: User = await this.usersService.findById(senderId);
+    const receiver: User = await this.usersService.findById(receiverId);
+
+    const newRequest = this.eventInviteRequestsRepository.create({
+      sender,
+      receiver,
+      event: { id: eventId },
+    });
+
+    await this.saveEventInviteRequest(newRequest);
   }
 
   async getRelationStatus(

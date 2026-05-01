@@ -23,7 +23,7 @@ export default function EventDetail() {
   const { id } = useParams();
   const [event, setEvent] = useState<EnhancedEvent | null>(null);
 
-  const [canSeeEvent, setCanSeeEvent] = useState(false);
+  const [canSeeEvent, setCanSeeEvent] = useState<boolean | null>(null);
 
   const [members, setMembers] = useState<Member[]>([]);
   const [isMember, setIsMember] = useState(false);
@@ -338,7 +338,7 @@ export default function EventDetail() {
     );
   }
 
-  if (!canSeeEvent) {
+  if (canSeeEvent === false) {
     return <EmptyState icon={Shield} title='You do not have permission to view this event' description='The visibility to this event is limited' />;
   }
 

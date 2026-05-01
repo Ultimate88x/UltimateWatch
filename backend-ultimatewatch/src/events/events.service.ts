@@ -37,6 +37,8 @@ import { VotingEventDetailedInfoDto } from './dto/voting-event-detailed-info-dto
 import { EventVisibility } from 'src/common/enums/event.visibility.enum';
 import { RequestsService } from 'src/requests/requests.service';
 import { CreateEventInviteRequestDto } from 'src/requests/dto/create-event-invite-request-dto';
+import { FriendInviteItemDto } from './dto/friend-invite-item-dto';
+import { FriendInviteResponseDto } from './dto/friend-invite-response-dto';
 
 interface SubMediaEventWithSort extends SubMediaEventDto {
   sortKey: string;
@@ -57,6 +59,8 @@ export class EventsService {
     private readonly votingEventsRepository: Repository<VotingEvent>,
     @InjectRepository(Media)
     private readonly mediaRepository: Repository<Media>,
+    @InjectRepository(User)
+    private readonly usersRepository: Repository<User>,
     private readonly usersService: UsersService,
     private readonly mediaService: MediaService,
     private readonly membersService: MembersService,
@@ -617,6 +621,64 @@ export class EventsService {
       userId,
       createEventInviteRequestDto,
     );
+  }
+
+  async getFriendsToInvite(
+    userId: number,
+    eventId: number,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<FriendInviteResponseDto> {
+    const skip = (page - 1) * limit;
+
+    const query = this.usersRepository
+      .createQueryBuilder('user')
+      .innerJoin(
+        'request',
+        'friendship',
+        `((friendship.senderId = :userId AND friendship.receiverId = user.id) OR 
+        (friendship.receiverId = :userId AND friendship.senderId = user.id)) 
+      AND friendship.accepted = true 
+      AND friendship.type = :friendType`,
+        { userId, friendType: 'friend_requests' },
+      )
+      .leftJoin(
+        'members',
+        'member',
+        'member.userId = user.id AND member.eventId = :eventId',
+        { eventId },
+      )
+      .leftJoin(
+        'request',
+        'invite',
+        `invite.receiverId = user.id 
+      AND invite.eventId = :eventId 
+      AND invite.type = :inviteType`,
+        { eventId, inviteType: 'event_invite_requests' },
+      )
+      .where('member.id IS NULL')
+      .andWhere('user.id != :userId');
+
+    const total = await query.getCount();
+
+    const data: FriendInviteItemDto[] = await query
+      .select([
+        'user.id AS id',
+        'user.username AS username',
+        'user.imagePath AS imagePath',
+        'invite.id IS NOT NULL AS "hasPendingInvite"',
+      ])
+      .orderBy('user.username', 'ASC')
+      .offset(skip)
+      .limit(limit)
+      .getRawMany();
+
+    return {
+      data,
+      total,
+      page,
+      lastPage: Math.ceil(total / limit),
+    };
   }
 
   async getFormattedResultsByEvent(

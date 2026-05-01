@@ -19,6 +19,7 @@ import { VoteResultDto } from 'src/votes/dto/vote-result.dto';
 import { MediaEventDto } from './dto/media-event-dto';
 import { VotingMediaEventDto } from './dto/voting-media-event-dto';
 import { CreateEventInviteRequestDto } from 'src/requests/dto/create-event-invite-request-dto';
+import { FriendInviteResponseDto } from './dto/friend-invite-response-dto';
 
 @Controller('events')
 export class EventsController {
@@ -165,5 +166,17 @@ export class EventsController {
       createEventInviteRequestDto,
     );
     return { message: 'User invited to event successfully!' };
+  }
+
+  @Get('friends-to-invite/:eventId')
+  @UseGuards(AuthGuard)
+  async getFriendsToInvite(
+    @GetUser('userId') userId: number,
+    @Param('eventId') eventId: string,
+  ): Promise<FriendInviteResponseDto> {
+    const friendsToInvite: FriendInviteResponseDto =
+      await this.eventsService.getFriendsToInvite(userId, +eventId);
+
+    return friendsToInvite;
   }
 }

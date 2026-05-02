@@ -94,4 +94,19 @@ export class RequestsController {
     await this.requestsService.deleteFriend(username, userId);
     return { message: 'Successfully removed!' };
   }
+
+  @Delete('event-invite/:eventId/:otherUserId')
+  @UseGuards(AuthGuard)
+  async deleteEventInviteRequest(
+    @GetUser('userId') userId: number,
+    @Param('eventId') eventId: string,
+    @Param('otherUserId') otherUserId: string,
+  ): Promise<{ message: string }> {
+    await this.requestsService.deleteEventInviteRequest(
+      userId,
+      +otherUserId,
+      +eventId,
+    );
+    return { message: 'Successfully deleted!' };
+  }
 }

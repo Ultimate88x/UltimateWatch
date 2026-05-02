@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, ChevronLeft, ChevronRight, Check, Send, X } from 'lucide-react';
+import { Users, ChevronLeft, ChevronRight, Send, X, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button } from '../Button';
 import { EmptyState } from '../EmptyState';
@@ -55,18 +55,26 @@ export const InviteFriendsModal = ({ isOpen, onClose, eventId }: InviteFriendsMo
     fetchFriendsToInvite();
   }, [isOpen, page, eventId]);
 
-  const handleInvite = async (friendId: number) => {
+  const handleInvite = async (friendId: number, hasPendingInvite: boolean) => {
+    const url = hasPendingInvite 
+      ? `http://localhost:3000/requests/event-invite/${eventId}/${friendId}`
+      : `http://localhost:3000/events/invite`;
+
+    const method = hasPendingInvite ? 'DELETE' : 'POST';
+
     try {
-      const response = await fetch(`http://localhost:3000/events/invite`, {
-        method: 'POST',
+      const response = await fetch(url, {
+        method: method,
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
-        body: JSON.stringify({
-            receiverId: Number(friendId), 
-            eventId: Number(eventId),
-          }),
+        body: !hasPendingInvite 
+          ? JSON.stringify({
+              receiverId: Number(friendId),
+              eventId: Number(eventId),
+            })
+          : undefined,
       });
 
       const data = await response.json();
@@ -78,7 +86,7 @@ export const InviteFriendsModal = ({ isOpen, onClose, eventId }: InviteFriendsMo
 
       toast.success(data.message);
       setFriends(prev => 
-        prev.map(f => f.id === friendId ? { ...f, hasPendingInvite: true } : f)
+        prev.map(f => f.id === friendId ? { ...f, hasPendingInvite: !hasPendingInvite } : f)
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : 'An unexpected error occurred';
@@ -182,10 +190,9 @@ return (
                           className={`h-9 w-25! rounded-xl font-black italic transition-all ${
                             friend.hasPendingInvite ? 'bg-white/5 text-white/10' : 'min-w-20'
                           }`}
-                          onClick={() => !friend.hasPendingInvite && handleInvite(friend.id)}
-                          disabled={friend.hasPendingInvite}
+                          onClick={() => handleInvite(friend.id, friend.hasPendingInvite)}
                         >
-                          {friend.hasPendingInvite ? <Check className="w-4 h-4 text-green-500" /> : <Send className="w-3.5 h-3.5" />}
+                          {friend.hasPendingInvite ? <Trash2 className="w-4 h-4 text-red-500" /> : <Send className="w-3.5 h-3.5" />}
                         </Button>
                       </motion.div>
                     ))}

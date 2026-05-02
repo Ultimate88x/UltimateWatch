@@ -75,7 +75,7 @@ export class RequestsService {
     return request;
   }
 
-  async findActiveEventInviteRequestToUser(
+  async findActiveEventInviteRequestBetweenUsers(
     userId1: number,
     userId2: number,
     eventId: number,
@@ -87,6 +87,35 @@ export class RequestsService {
           receiver: { id: userId2 },
           event: { id: eventId },
           accepted: false,
+        },
+        {
+          sender: { id: userId2 },
+          receiver: { id: userId1 },
+          event: { id: eventId },
+          accepted: false,
+        },
+      ],
+    });
+
+    return request;
+  }
+
+  async findEventInviteRequestBetweenUsers(
+    userId1: number,
+    userId2: number,
+    eventId: number,
+  ): Promise<Request | null> {
+    const request = await this.eventInviteRequestsRepository.findOne({
+      where: [
+        {
+          sender: { id: userId1 },
+          receiver: { id: userId2 },
+          event: { id: eventId },
+        },
+        {
+          sender: { id: userId2 },
+          receiver: { id: userId1 },
+          event: { id: eventId },
         },
       ],
     });
@@ -237,7 +266,7 @@ export class RequestsService {
     }
 
     const existingRequest: Request | null =
-      await this.findActiveEventInviteRequestToUser(
+      await this.findActiveEventInviteRequestBetweenUsers(
         senderId,
         receiverId,
         eventId,
@@ -282,8 +311,31 @@ export class RequestsService {
     await this.saveFriendRequest(friendRequest);
   }
 
-  async deleteFriendRequest(id: number): Promise<void> {
-    await this.friendRequestsRepository.delete(id);
+  async deleteRequest(id: number): Promise<void> {
+    await this.requestsRepository.delete(id);
+  }
+
+  async deleteEventInviteRequest(
+    userId: number,
+    otherUserId: number,
+    eventId: number,
+  ): Promise<void> {
+    const request: Request | null =
+      await this.findEventInviteRequestBetweenUsers(
+        userId,
+        otherUserId,
+        eventId,
+      );
+
+    if (!request) {
+      throw new ResourceNotFoundException(
+        'Event Invite Request',
+        'USER_ID, OTHER_USER_ID, EVENT_ID',
+        `${userId.toString()}, ${otherUserId.toString()}, ${eventId.toString()}`,
+      );
+    }
+
+    await this.deleteRequest(request.id);
   }
 
   async resolveFriendRequest(
@@ -306,7 +358,7 @@ export class RequestsService {
     if (accept) {
       await this.acceptFriendRequest(request);
     } else {
-      await this.deleteFriendRequest(id);
+      await this.deleteRequest(id);
     }
 
     return accept;
@@ -367,6 +419,6 @@ export class RequestsService {
       );
     }
 
-    await this.deleteFriendRequest(friendRequest.id);
+    await this.deleteRequest(friendRequest.id);
   }
 }

@@ -1,9 +1,14 @@
-import { ChildEntity, ManyToOne } from 'typeorm';
+import { Check, ChildEntity, ManyToOne } from 'typeorm';
 import { Request } from './request.entity';
 import { Event } from '../../events/entities/event.entity';
+import { User } from 'src/users/entities/user.entity';
 
 @ChildEntity('event_invite_requests')
+@Check(`"senderId" <> "receiverId"`)
 export class EventInviteRequest extends Request {
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  receiver: User;
+
   @ManyToOne(() => Event)
   event: Event;
 }

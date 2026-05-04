@@ -640,15 +640,16 @@ export class EventsService {
     accept: boolean,
   ): Promise<void> {
     if (accept) {
-      const request: Request = await this.requestsService.findById(id, [
-        'sender',
-        'receiver',
-        'event',
-      ]);
-      await this.joinEvent(userId, (request as EventInviteRequest).event.id);
+      const request: EventInviteRequest =
+        await this.requestsService.findEventInviteRequestById(id);
+      await this.joinEvent(userId, request.event.id);
     }
 
-    await this.requestsService.resolveRequest(+id, accept, userId);
+    await this.requestsService.resolveEventInvitationRequest(
+      +id,
+      accept,
+      userId,
+    );
   }
 
   async getFriendsToInvite(

@@ -62,7 +62,7 @@ export class RequestsController {
     );
   }
 
-  @Patch('resolve/:id')
+  @Patch('friend-request/resolve/:id')
   @UseGuards(AuthGuard)
   async resolveFriendRequest(
     @GetUser('userId') userId: number,
@@ -70,7 +70,7 @@ export class RequestsController {
     @Body() resolveRequestDto: ResolveRequestDto,
   ): Promise<{ message: string }> {
     const { accept } = resolveRequestDto;
-    await this.requestsService.resolveRequest(+id, accept, userId);
+    await this.requestsService.resolveFriendRequest(+id, accept, userId);
 
     return {
       message: `Request successfully ${accept ? 'accepted' : 'rejected'}!`,

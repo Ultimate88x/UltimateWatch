@@ -32,7 +32,7 @@ export class RequestsService {
     private readonly usersService: UsersService,
   ) {}
 
-  async saveRequest(request: Request): Promise<FriendRequest> {
+  async saveRequest(request: Request): Promise<Request> {
     return await this.requestsRepository.save(request);
   }
 
@@ -48,13 +48,36 @@ export class RequestsService {
     return await this.eventInviteRequestsRepository.save(eventInviteRequest);
   }
 
-  async findById(
-    id: number,
-    relations: string[] = ['sender', 'receiver'],
-  ): Promise<Request> {
+  async findById(id: number): Promise<Request> {
     const request = await this.requestsRepository.findOne({
       where: { id },
-      relations: relations,
+      relations: ['sender', 'receiver'],
+    });
+
+    if (!request) {
+      throw new ResourceNotFoundException('Request', 'ID', id.toString());
+    }
+
+    return request;
+  }
+
+  async findFriendRequestById(id: number): Promise<FriendRequest> {
+    const request = await this.friendRequestsRepository.findOne({
+      where: { id },
+      relations: ['sender', 'receiver'],
+    });
+
+    if (!request) {
+      throw new ResourceNotFoundException('Request', 'ID', id.toString());
+    }
+
+    return request;
+  }
+
+  async findEventInviteRequestById(id: number): Promise<EventInviteRequest> {
+    const request = await this.eventInviteRequestsRepository.findOne({
+      where: { id },
+      relations: ['sender', 'receiver', 'event'],
     });
 
     if (!request) {
@@ -67,7 +90,7 @@ export class RequestsService {
   async findActiveFriendRequestBetweenUsers(
     userId1: number,
     userId2: number,
-  ): Promise<Request | null> {
+  ): Promise<FriendRequest | null> {
     const request = await this.friendRequestsRepository.findOne({
       where: [
         {
@@ -410,16 +433,26 @@ export class RequestsService {
     await this.deleteRequest(request.id);
   }
 
-  async resolveRequest(
+  async resolveRequest(request: Request, accept: boolean): Promise<boolean> {
+    if (request.accepted) {
+      throw new BadRequestException('This request has already been resolved');
+    }
+
+    if (accept) {
+      await this.acceptRequest(request);
+    } else {
+      await this.deleteRequest(request.id);
+    }
+
+    return accept;
+  }
+
+  async resolveFriendRequest(
     id: number,
     accept: boolean,
     currentUserId: number,
   ): Promise<boolean> {
-    const request: Request = await this.findById(id, [
-      'sender',
-      'receiver',
-      'event',
-    ]);
+    const request: FriendRequest = await this.findFriendRequestById(id);
 
     if (request.receiver.id !== currentUserId) {
       throw new ForbiddenException(
@@ -427,26 +460,31 @@ export class RequestsService {
       );
     }
 
-    if (request.accepted) {
-      throw new BadRequestException('This request has already been resolved');
+    return await this.resolveRequest(request, accept);
+  }
+
+  async resolveEventInvitationRequest(
+    id: number,
+    accept: boolean,
+    currentUserId: number,
+  ): Promise<boolean> {
+    const request: EventInviteRequest =
+      await this.findEventInviteRequestById(id);
+
+    if (request.receiver.id !== currentUserId) {
+      throw new ForbiddenException(
+        'You are not authorized to resolve this request',
+      );
     }
 
-    if (accept) {
-      if ('event' in request) {
-        const requests: Request[] = await this.findEventRequestsFromUser(
-          currentUserId,
-          (request as EventInviteRequest).event.id,
-        );
+    const requests: Request[] = await this.findEventRequestsFromUser(
+      currentUserId,
+      request.event.id,
+    );
 
-        await Promise.all(
-          requests.map((request: Request) => this.acceptRequest(request)),
-        );
-      } else {
-        await this.acceptRequest(request);
-      }
-    } else {
-      await this.deleteRequest(id);
-    }
+    await Promise.all(
+      requests.map((request: Request) => this.acceptRequest(request)),
+    );
 
     return accept;
   }

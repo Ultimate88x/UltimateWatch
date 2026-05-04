@@ -1,9 +1,8 @@
 import { BaseEntity } from 'src/common/entities/base.entity';
 import { User } from 'src/users/entities/user.entity';
-import { Entity, TableInheritance, ManyToOne, Check, Column } from 'typeorm';
+import { Entity, TableInheritance, ManyToOne, Column } from 'typeorm';
 
 @Entity()
-@Check(`"senderId" <> "receiverId"`)
 @TableInheritance({ column: { type: 'varchar', name: 'type' } })
 export abstract class Request extends BaseEntity {
   @Column()
@@ -11,7 +10,4 @@ export abstract class Request extends BaseEntity {
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   sender: User;
-
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  receiver: User;
 }

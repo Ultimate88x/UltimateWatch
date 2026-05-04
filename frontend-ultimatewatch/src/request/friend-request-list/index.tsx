@@ -62,7 +62,7 @@ export default function FriendRequests() {
       const isAccepting = action === 'accept';
       const [response] = await Promise.all([
         fetch(
-          `http://localhost:3000/requests/friend-request/resolve/${requestId}`, {
+          `http://localhost:3000/requests/resolve/${requestId}`, {
           method: 'PATCH',
           headers: { 
             'Content-Type': 'application/json',

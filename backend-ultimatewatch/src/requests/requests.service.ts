@@ -32,6 +32,10 @@ export class RequestsService {
     private readonly usersService: UsersService,
   ) {}
 
+  async saveRequest(request: Request): Promise<FriendRequest> {
+    return await this.requestsRepository.save(request);
+  }
+
   async saveFriendRequest(
     friendRequest: FriendRequest,
   ): Promise<FriendRequest> {
@@ -44,10 +48,13 @@ export class RequestsService {
     return await this.eventInviteRequestsRepository.save(eventInviteRequest);
   }
 
-  async findById(id: number): Promise<Request> {
+  async findById(
+    id: number,
+    relations: string[] = ['sender', 'receiver'],
+  ): Promise<Request> {
     const request = await this.requestsRepository.findOne({
       where: { id },
-      relations: ['sender', 'receiver'],
+      relations: relations,
     });
 
     if (!request) {
@@ -224,6 +231,22 @@ export class RequestsService {
     });
   }
 
+  async findEventRequestsFromUser(
+    userId: number,
+    eventId: number,
+  ): Promise<Request[]> {
+    await this.usersService.findById(userId);
+    const requests = await this.eventInviteRequestsRepository.find({
+      where: {
+        receiver: { id: userId },
+        event: { id: eventId },
+        accepted: false,
+      },
+    });
+
+    return requests;
+  }
+
   async createFriendRequest(
     senderId: number,
     receiverId: number,
@@ -350,10 +373,10 @@ export class RequestsService {
     return request.accepted ? 'accepted' : 'pending';
   }
 
-  async acceptFriendRequest(friendRequest: FriendRequest): Promise<void> {
-    friendRequest.accepted = true;
+  async acceptRequest(request: Request): Promise<void> {
+    request.accepted = true;
 
-    await this.saveFriendRequest(friendRequest);
+    await this.saveRequest(request);
   }
 
   async deleteRequest(id: number): Promise<void> {
@@ -383,12 +406,12 @@ export class RequestsService {
     await this.deleteRequest(request.id);
   }
 
-  async resolveFriendRequest(
+  async resolveRequest(
     id: number,
     accept: boolean,
-    currentUserId,
+    currentUserId: number,
   ): Promise<boolean> {
-    const request: Request = await this.findById(id);
+    const request = await this.findById(id, ['sender', 'receiver', 'event']);
 
     if (request.receiver.id !== currentUserId) {
       throw new ForbiddenException(
@@ -401,7 +424,18 @@ export class RequestsService {
     }
 
     if (accept) {
-      await this.acceptFriendRequest(request);
+      if ('event' in request) {
+        const requests: Request[] = await this.findEventRequestsFromUser(
+          currentUserId,
+          (request as EventInviteRequest).event.id,
+        );
+
+        await Promise.all(
+          requests.map((request: Request) => this.acceptRequest(request)),
+        );
+      } else {
+        await this.acceptRequest(request);
+      }
     } else {
       await this.deleteRequest(id);
     }

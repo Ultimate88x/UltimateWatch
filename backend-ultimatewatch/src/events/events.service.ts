@@ -39,6 +39,8 @@ import { RequestsService } from 'src/requests/requests.service';
 import { CreateEventInviteRequestDto } from 'src/requests/dto/create-event-invite-request-dto';
 import { FriendInviteItemDto } from './dto/friend-invite-item-dto';
 import { FriendInviteResponseDto } from './dto/friend-invite-response-dto';
+import { Request } from 'src/requests/entities/request.entity';
+import { EventInviteRequest } from 'src/requests/entities/event-invite-request.entity';
 
 interface SubMediaEventWithSort extends SubMediaEventDto {
   sortKey: string;
@@ -632,6 +634,23 @@ export class EventsService {
     );
   }
 
+  async resolveEventRequest(
+    userId: number,
+    id: number,
+    accept: boolean,
+  ): Promise<void> {
+    if (accept) {
+      const request: Request = await this.requestsService.findById(id, [
+        'sender',
+        'receiver',
+        'event',
+      ]);
+      await this.joinEvent(userId, (request as EventInviteRequest).event.id);
+    }
+
+    await this.requestsService.resolveRequest(+id, accept, userId);
+  }
+
   async getFriendsToInvite(
     userId: number,
     eventId: number,
@@ -661,8 +680,10 @@ export class EventsService {
         'request',
         'invite',
         `invite.receiverId = user.id 
+      AND invite.senderId = :userId
       AND invite.eventId = :eventId 
-      AND invite.type = :inviteType`,
+      AND invite.type = :inviteType
+      AND invite.accepted = false`,
         { eventId, inviteType: 'event_invite_requests' },
       )
       .where('member.id IS NULL')

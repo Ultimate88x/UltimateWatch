@@ -20,6 +20,7 @@ import { MediaEventDto } from './dto/media-event-dto';
 import { VotingMediaEventDto } from './dto/voting-media-event-dto';
 import { CreateEventInviteRequestDto } from 'src/requests/dto/create-event-invite-request-dto';
 import { FriendInviteResponseDto } from './dto/friend-invite-response-dto';
+import { ResolveRequestDto } from 'src/requests/dto/resolve-request-dto';
 
 @Controller('events')
 export class EventsController {
@@ -185,5 +186,20 @@ export class EventsController {
       );
 
     return friendsToInvite;
+  }
+
+  @Patch('event-request/resolve/:id')
+  @UseGuards(AuthGuard)
+  async resolveFriendRequest(
+    @GetUser('userId') userId: number,
+    @Param('id') id: number,
+    @Body() resolveRequestDto: ResolveRequestDto,
+  ): Promise<{ message: string }> {
+    const { accept } = resolveRequestDto;
+    await this.eventsService.resolveEventRequest(userId, +id, accept);
+
+    return {
+      message: `Request successfully ${accept ? 'accepted' : 'rejected'}!`,
+    };
   }
 }

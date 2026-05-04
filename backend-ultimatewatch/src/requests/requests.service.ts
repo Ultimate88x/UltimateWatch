@@ -403,6 +403,10 @@ export class RequestsService {
       );
     }
 
+    if (request.accepted) {
+      throw new BadRequestException('You cannot delete an accepted request');
+    }
+
     await this.deleteRequest(request.id);
   }
 
@@ -411,7 +415,11 @@ export class RequestsService {
     accept: boolean,
     currentUserId: number,
   ): Promise<boolean> {
-    const request = await this.findById(id, ['sender', 'receiver', 'event']);
+    const request: Request = await this.findById(id, [
+      'sender',
+      'receiver',
+      'event',
+    ]);
 
     if (request.receiver.id !== currentUserId) {
       throw new ForbiddenException(

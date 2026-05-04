@@ -53,7 +53,7 @@ export default function EventInvitationRequests() {
     fetchRequests();
   }, [fetchRequests]);
 
-  const handleAction = async (requestId: number, action: 'accept' | 'reject' | 'cancel') => {
+  const handleAction = async (requestId: number, action: 'accept' | 'reject') => {
     const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
     setIsActionLoading(true);
 
@@ -61,7 +61,7 @@ export default function EventInvitationRequests() {
       const isAccepting = action === 'accept';
       const [response] = await Promise.all([
         fetch(
-          `http://localhost:3000/requests/friend-request/resolve/${requestId}`, {
+          `http://localhost:3000/events/event-request/resolve/${requestId}`, {
           method: 'PATCH',
           headers: { 
             'Content-Type': 'application/json',

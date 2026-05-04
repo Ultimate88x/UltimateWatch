@@ -54,7 +54,7 @@ export default function FriendRequests() {
     fetchRequests();
   }, [fetchRequests]);
 
-  const handleAction = async (requestId: number, action: 'accept' | 'reject' | 'cancel') => {
+  const handleAction = async (requestId: number, action: 'accept' | 'reject') => {
     const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
     setIsActionLoading(true);
 

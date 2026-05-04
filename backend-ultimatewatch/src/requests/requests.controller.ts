@@ -30,7 +30,7 @@ export class RequestsController {
     await this.requestsService.createFriendRequest(userId, receiverId);
 
     return {
-      message: 'Friend request sent successfully!',
+      message: 'Request sent successfully!',
     };
   }
 
@@ -73,7 +73,7 @@ export class RequestsController {
     await this.requestsService.resolveRequest(+id, accept, userId);
 
     return {
-      message: `Friend request successfully ${accept ? 'accepted' : 'rejected'}!`,
+      message: `Request successfully ${accept ? 'accepted' : 'rejected'}!`,
     };
   }
 

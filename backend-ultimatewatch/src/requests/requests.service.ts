@@ -12,10 +12,11 @@ import { Request } from './entities/request.entity';
 import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
 import { User } from 'src/users/entities/user.entity';
 import { UsersService } from 'src/users/users.service';
-import { RequestDto } from './dto/request-dto';
+import { FriendRequestDto } from './dto/friend-request-dto';
 import { RequestResponseDto } from './dto/request-response-dto';
 import { EventInviteRequest } from './entities/event-invite-request.entity';
 import { CreateEventInviteRequestDto } from './dto/create-event-invite-request-dto';
+import { EventInvitationRequestDto } from './dto/event-invitation-request-dto';
 
 @Injectable()
 export class RequestsService {
@@ -146,7 +147,7 @@ export class RequestsService {
     userId: number,
     page: number = 1,
     limit: number = 10,
-  ): Promise<RequestResponseDto> {
+  ): Promise<RequestResponseDto<FriendRequestDto>> {
     await this.usersService.findById(userId);
     const skip = (page - 1) * limit;
 
@@ -166,7 +167,7 @@ export class RequestsService {
 
     const data = friendRequests.map(
       (request: FriendRequest) =>
-        new RequestDto({
+        new FriendRequestDto({
           id: request.id,
           username: request.sender.username,
           userImagePath: request.sender.imagePath,
@@ -186,7 +187,7 @@ export class RequestsService {
     userId: number,
     page: number = 1,
     limit: number = 10,
-  ): Promise<RequestResponseDto> {
+  ): Promise<RequestResponseDto<FriendRequestDto>> {
     await this.usersService.findById(userId);
     const skip = (page - 1) * limit;
 
@@ -206,7 +207,7 @@ export class RequestsService {
 
     const data = friendRequests.map(
       (request: FriendRequest) =>
-        new RequestDto({
+        new FriendRequestDto({
           id: request.id,
           username: request.receiver.username,
           userImagePath: request.receiver.imagePath,
@@ -254,6 +255,48 @@ export class RequestsService {
     });
 
     await this.saveFriendRequest(newRequest);
+  }
+
+  async getPendingReceivedEventInvitationsFromUser(
+    userId: number,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<RequestResponseDto<EventInvitationRequestDto>> {
+    await this.usersService.findById(userId);
+    const skip = (page - 1) * limit;
+
+    const [friendRequests, total] =
+      await this.eventInviteRequestsRepository.findAndCount({
+        where: {
+          receiver: { id: userId },
+          accepted: false,
+        },
+        relations: ['sender', 'event'],
+        order: {
+          createdAt: 'DESC',
+        },
+        skip: skip,
+        take: limit,
+      });
+
+    const data = friendRequests.map(
+      (request: EventInviteRequest) =>
+        new EventInvitationRequestDto({
+          id: request.id,
+          username: request.sender.username,
+          userImagePath: request.sender.imagePath,
+          createdAt: request.createdAt.toISOString(),
+          eventId: request.event.id,
+          eventName: request.event.name,
+        }),
+    );
+
+    return new RequestResponseDto({
+      data: data,
+      total: total,
+      page: page,
+      lastPage: Math.ceil(total / limit) || 1,
+    });
   }
 
   async createEventInviteRequest(
@@ -368,7 +411,7 @@ export class RequestsService {
     userId: number,
     page: number = 1,
     limit: number = 10,
-  ): Promise<RequestResponseDto> {
+  ): Promise<RequestResponseDto<FriendRequestDto>> {
     await this.usersService.findById(userId);
     const skip = (page - 1) * limit;
 
@@ -387,7 +430,7 @@ export class RequestsService {
       const friend =
         request.sender.id === userId ? request.receiver : request.sender;
 
-      return new RequestDto({
+      return new FriendRequestDto({
         id: request.id,
         username: friend.username,
         userImagePath: friend.imagePath,

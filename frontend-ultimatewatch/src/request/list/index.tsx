@@ -23,7 +23,7 @@ export default function FriendRequests() {
     setIsLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:3000/requests/${activeTab}?page=${page}&limit=5`,
+        `http://localhost:3000/requests/friend-request/${activeTab}?page=${page}&limit=5`,
           {
             method: 'GET',
             headers: {

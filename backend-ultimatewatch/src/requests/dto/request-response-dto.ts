@@ -1,16 +1,14 @@
-import { RequestDto } from './request-dto';
-
-export class RequestResponseDto {
-  data: RequestDto[];
+export class RequestResponseDto<T> {
+  data: T[];
   total: number;
   page: number;
   lastPage: number;
 
-  constructor(init?: Partial<RequestResponseDto>) {
+  constructor(init?: Partial<RequestResponseDto<T>>) {
     Object.assign(this, init);
   }
 
-  static empty(): RequestResponseDto {
+  static empty(): RequestResponseDto<[]> {
     return new RequestResponseDto({
       data: [],
       total: 0,

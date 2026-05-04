@@ -14,6 +14,8 @@ import { GetUser } from 'src/common/decorators/get-user.decorator';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { RequestResponseDto } from './dto/request-response-dto';
 import { ResolveRequestDto } from './dto/resolve-request-dto';
+import { FriendRequestDto } from './dto/friend-request-dto';
+import { EventInvitationRequestDto } from './dto/event-invitation-request-dto';
 
 @Controller('requests')
 export class RequestsController {
@@ -32,13 +34,13 @@ export class RequestsController {
     };
   }
 
-  @Get('received')
+  @Get('friend-request/received')
   @UseGuards(AuthGuard)
   async findPendingReceivedFriendRequests(
     @GetUser('userId') userId: number,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
-  ): Promise<RequestResponseDto> {
+  ): Promise<RequestResponseDto<FriendRequestDto>> {
     return await this.requestsService.getPendingReceivedFriendRequestsFromUser(
       userId,
       +page,
@@ -46,13 +48,13 @@ export class RequestsController {
     );
   }
 
-  @Get('sent')
+  @Get('friend-request/sent')
   @UseGuards(AuthGuard)
   async findPendingSentFriendRequests(
     @GetUser('userId') userId: number,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
-  ): Promise<RequestResponseDto> {
+  ): Promise<RequestResponseDto<FriendRequestDto>> {
     return await this.requestsService.getPendingSentFriendRequestsFromUser(
       userId,
       +page,
@@ -81,7 +83,7 @@ export class RequestsController {
     @GetUser('userId') userId: number,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
-  ): Promise<RequestResponseDto> {
+  ): Promise<RequestResponseDto<FriendRequestDto>> {
     return await this.requestsService.getFriendsFromUser(userId, +page, +limit);
   }
 
@@ -93,6 +95,20 @@ export class RequestsController {
   ): Promise<{ message: string }> {
     await this.requestsService.deleteFriend(username, userId);
     return { message: 'Successfully removed!' };
+  }
+
+  @Get('event-invite-request/received')
+  @UseGuards(AuthGuard)
+  async findPendingReceivedEventInvitationsFromUser(
+    @GetUser('userId') userId: number,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ): Promise<RequestResponseDto<EventInvitationRequestDto>> {
+    return await this.requestsService.getPendingReceivedEventInvitationsFromUser(
+      userId,
+      +page,
+      +limit,
+    );
   }
 
   @Delete('event-invite/:eventId/:otherUserId')

@@ -6,7 +6,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { FriendRequest } from './entities/friend-request.entity';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Request } from './entities/request.entity';
 import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
@@ -17,6 +17,7 @@ import { RequestResponseDto } from './dto/request-response-dto';
 import { EventInviteRequest } from './entities/event-invite-request.entity';
 import { CreateEventInviteRequestDto } from './dto/create-event-invite-request-dto';
 import { EventInvitationRequestDto } from './dto/event-invitation-request-dto';
+import { EventStatus } from 'src/common/enums/event.status.enum';
 
 @Injectable()
 export class RequestsService {
@@ -269,6 +270,7 @@ export class RequestsService {
       await this.eventInviteRequestsRepository.findAndCount({
         where: {
           receiver: { id: userId },
+          event: { status: Not(EventStatus.FINISHED) },
           accepted: false,
         },
         relations: ['sender', 'event'],

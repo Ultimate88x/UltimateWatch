@@ -9,7 +9,8 @@ import {
   UserPlus,
   Users,
   Ticket,
-  PlusSquare, 
+  PlusSquare,
+  Mail, 
 } from "lucide-react";
 import type { MenuItem } from "../types/menu-item";
 import { useOutsideClick } from "./utilities/UseOutsideClick";
@@ -28,6 +29,7 @@ const ALL_MENUS: MenuConfig = {
   events: [
     { label: 'Event List', path: '/events', icon: <Ticket size={16}/>, requiresAuth: true },
     { label: 'Create Event', path: '/events/create', icon: <PlusSquare size={16}/>, requiresAuth: true },
+    { label: 'Event Invitations', path: '/event-invitations', icon: <Mail size={16}/>, requiresAuth: true },
   ]
 };
 

@@ -17,12 +17,13 @@ import MovieDetail from "./content/movies/detail";
 import SeriesDetail from "./content/series/detail";
 import UserDetail from "./user/detail";
 import UserSearchResultsList from "./user/search";
-import FriendRequests from "./request/list";
+import FriendRequests from "./request/friend-request-list";
 import FriendsList from "./request/friend-list";
 import EventList from "./event/list";
 import EventDetail from "./event/detail";
 import CreateEvent from "./event/create";
 import EventRoom from "./event/room";
+import EventInvitationRequests from "./request/event-invitation-list";
 
 function App() {
   return (
@@ -77,6 +78,7 @@ function App() {
             <Route path="/events/:id" element={<EventDetail />} />
             <Route path="/events/create" element={<CreateEvent />} />
             <Route path="/events/:id/room" element={<EventRoom />} />
+            <Route path="/event-invitations" element={<EventInvitationRequests />} />
           </Route>
 
           <Route path="/" element={<Home />} />

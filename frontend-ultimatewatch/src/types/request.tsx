@@ -1,4 +1,4 @@
-type Request = {
+interface Request {
   id: number;
   username: string;
   userImagePath: string;

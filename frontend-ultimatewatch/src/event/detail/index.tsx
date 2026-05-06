@@ -18,6 +18,7 @@ import { Modal } from '../../components/Modal';
 import { SearchForMedia } from '../../components/content/SearchForMedia';
 import { InviteFriendsModal } from '../../components/event/InviteFriendsModal';
 import { EventVisibilityEnum } from '../../enums/EventVisibility';
+import { EventAccessRequestsModal } from '../../components/event/EventAccessRequestsModal';
 
 export default function EventDetail() {
   const { smartNavigate } = useAdvancedNavigation();
@@ -29,6 +30,7 @@ export default function EventDetail() {
 
   const [members, setMembers] = useState<Member[]>([]);
   const [isMember, setIsMember] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [isMembersLoading, setIsMembersLoading] = useState(true);
@@ -49,6 +51,7 @@ export default function EventDetail() {
   const [isDeleteRequestModalOpen, setIsDeleteRequestModalOpen] = useState(false);
   const [isSuggestModalOpen, setIsSuggestModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isAccessRequestsModalOpen, setIsAccessRequestsModalOpen] = useState(false);
   
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -133,8 +136,11 @@ export default function EventDetail() {
         return;
       }
 
+      const userMember = data.data.find(((member: Member) => member.isCurrentUser));
+
       setMembers(data.data);
-      setIsMember(data.data.some((member: Member) => member.isCurrentUser));
+      setIsMember(!!userMember);
+      setIsOwner(!!userMember && userMember.role === "owner");
       setTotalPages(data.lastPage || 1);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'An unexpected error occurred';
@@ -478,7 +484,7 @@ export default function EventDetail() {
           animate={{ opacity: 1, y: 0 }}
           className="flex flex-col gap-2"
         >
-          <h1 className="text-6xl md:text-8xl font-black italic uppercase tracking-tighter leading-none flex flex-col">
+          <h1 className="text-8xl font-black italic uppercase tracking-tighter leading-none flex flex-col">
             <span className="text-purple-main/45 text-sm mb-2 tracking-[0.5em] font-black italic non-italic">
               {event.type.replace('_', ' ')} // {getEventStatusUI(event.status).label}
             </span>
@@ -554,7 +560,7 @@ export default function EventDetail() {
         </motion.div>
 
         <div className="grid grid-cols-12 gap-6">
-          <div className="lg:col-span-8 flex flex-col gap-6">
+          <div className="col-span-8 flex flex-col gap-6">
             <div className="bg-white/2 border border-white/5 rounded-3xl p-8 backdrop-blur-md">
               <h3 className="flex items-center gap-3 text-xs font-black uppercase tracking-[0.3em] mb-4 text-white/30">
                 <Info size={14} /> Event Description
@@ -731,6 +737,18 @@ export default function EventDetail() {
                 )}
               </div>
 
+              {isOwner && event.visibility === EventVisibilityEnum.REQUEST_ONLY && (
+                 <Button
+                    variant="outline"
+                    fullWidth
+                    icon={Users}
+                    onClick={() => setIsAccessRequestsModalOpen(true)}
+                    className="rounded-2xl border-white/20 text-white bg-white/10 hover:bg-white/20 hover:border-white/40 mt-2"
+                  >
+                    Manage Requests
+                  </Button>
+               )}
+
               {event.type === "voting_event" && (
                 <Button
                   variant="outline"
@@ -756,73 +774,82 @@ export default function EventDetail() {
 
               <div className="flex flex-col gap-4">
                 <AnimatePresence mode="popLayout">
-                  {isMembersLoading ? (
-                    [...Array(10)].map((_, i) => (
-                      <div key={`skeleton-${i}`} className="flex items-center gap-3 animate-pulse">
-                        <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/5" />
-                        <div className="flex flex-col gap-2 flex-1">
-                          <div className="h-2.5 w-24 bg-white/10 rounded-full" />
-                          <div className="h-2 w-12 bg-white/5 rounded-full" />
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <>
-                      {isMember && event.status !== 'finished' && members.length < event.maxMembers && (
-                        <motion.div
-                          initial={{ opacity: 0, x: 10 }}
-                          animate={{ opacity: 1, x: 0 }}
+                    {isMembersLoading ? (
+                      [...Array(10)].map((_, i) => (
+                        <motion.div 
+                          key={`skeleton-${i}`} 
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="flex items-center gap-3 animate-pulse"
                         >
-                          <button
-                            onClick={() => setIsInviteModalOpen(true)}
-                            className="w-full flex items-center gap-3 p-2 rounded-xl border border-dashed border-purple-main/30 bg-purple-main/5 hover:bg-purple-main/10 transition-all group cursor-pointer"
-                          >
-                            <div className="w-10 h-10 rounded-xl bg-purple-main/20 flex items-center justify-center text-purple-main group-hover:scale-110 transition-transform">
-                              <UserPlus size={18} />
-                            </div>
-                            <div className="flex flex-col items-start min-w-0">
-                              <span className="text-[11px] font-black uppercase italic text-purple-main">
-                                Invite your squad
-                              </span>
-                              <span className="text-[8px] font-bold uppercase text-purple-main/40">
-                                {event.maxMembers - members.length} slots available
-                              </span>
-                            </div>
-                          </button>
+                          <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/5" />
+                          <div className="flex flex-col gap-2 flex-1">
+                            <div className="h-2.5 w-24 bg-white/10 rounded-full" />
+                            <div className="h-2 w-12 bg-white/5 rounded-full" />
+                          </div>
                         </motion.div>
-                      )}
+                      ))
+                    ) : (
+                      [
+                        isMember && event.status !== 'finished' && members.length < event.maxMembers && (
+                          <motion.div
+                            key="invite-button"
+                            initial={{ opacity: 0, x: 10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -10 }}
+                          >
+                            <button
+                              onClick={() => setIsInviteModalOpen(true)}
+                              className="w-full flex items-center gap-3 p-2 rounded-xl border border-dashed border-purple-main/30 bg-purple-main/5 hover:bg-purple-main/10 transition-all group cursor-pointer"
+                            >
+                              <div className="w-10 h-10 rounded-xl bg-purple-main/20 flex items-center justify-center text-purple-main group-hover:scale-110 transition-transform">
+                                <UserPlus size={18} />
+                              </div>
+                              <div className="flex flex-col items-start min-w-0">
+                                <span className="text-[11px] font-black uppercase italic text-purple-main">
+                                  Invite your squad
+                                </span>
+                                <span className="text-[8px] font-bold uppercase text-purple-main/40">
+                                  {event.maxMembers - members.length} slots available
+                                </span>
+                              </div>
+                            </button>
+                          </motion.div>
+                        ),
 
-                      {members.map((member) => (
-                        <motion.div
-                          key={member.name}
-                          initial={{ opacity: 0, x: 10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, scale: 0.95 }}
-                        >
-                          <button 
-                            className="relative flex items-center gap-3 group cursor-pointer"
-                            onClick={(e) => smartNavigate(`/users/${member.name}`, e)}
+                        ...members.map((member) => (
+                          <motion.div
+                            key={member.name}
+                            initial={{ opacity: 0, x: 10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            layout
                           >
-                            <div className="relative shrink-0">
-                              <img src={member.imagePath} className="w-10 h-10 rounded-xl object-cover border border-white/10" alt={member.name} />
-                              {member.role === 'owner' && (
-                                <div className="absolute -top-1 -right-1 bg-purple-main w-3 h-3 rounded-full border-2 border-[#0a0a0a]" />
-                              )}
-                            </div>
-                            <div className="flex flex-col min-w-0">
-                              <span className="flex text-[11px] font-black uppercase italic truncate group-hover:text-purple-300 transition-colors">
-                                {member.name}
-                              </span>
-                              <span className="flex text-[8px] font-bold uppercase text-white/20">
-                                {member.role}
-                              </span>
-                            </div>
-                          </button>
-                        </motion.div>
-                      ))}
-                    </>
-                  )}
-                </AnimatePresence>
+                            <button 
+                              className="relative flex items-center gap-3 group cursor-pointer"
+                              onClick={(e) => smartNavigate(`/users/${member.name}`, e)}
+                            >
+                              <div className="relative shrink-0">
+                                <img src={member.imagePath} className="w-10 h-10 rounded-xl object-cover border border-white/10" alt={member.name} />
+                                {member.role === 'owner' && (
+                                  <div className="absolute -top-1 -right-1 bg-purple-main w-3 h-3 rounded-full border-2 border-[#0a0a0a]" />
+                                )}
+                              </div>
+                              <div className="flex flex-col min-w-0">
+                                <span className="flex text-[11px] font-black uppercase italic truncate group-hover:text-purple-300 transition-colors">
+                                  {member.name}
+                                </span>
+                                <span className="flex text-[8px] font-bold uppercase text-white/20">
+                                  {member.role}
+                                </span>
+                              </div>
+                            </button>
+                          </motion.div>
+                        ))
+                      ]
+                    )}
+                  </AnimatePresence>
               </div>
 
               {totalPages > 1 && (
@@ -869,6 +896,12 @@ export default function EventDetail() {
       <InviteFriendsModal 
         isOpen={isInviteModalOpen}
         onClose={() => setIsInviteModalOpen(false)}
+        eventId={id}
+      />
+
+      <EventAccessRequestsModal 
+        isOpen={isAccessRequestsModalOpen}
+        onClose={() => setIsAccessRequestsModalOpen(false)}
         eventId={id}
       />
 

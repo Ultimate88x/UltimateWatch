@@ -3,7 +3,7 @@ interface Request {
   username: string;
   userImagePath: string;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
 };
 
 export type {Request}

@@ -61,7 +61,7 @@ export default function EventInvitationRequests() {
       const isAccepting = action === 'accept';
       const [response] = await Promise.all([
         fetch(
-          `http://localhost:3000/events/event-request/resolve/${requestId}`, {
+          `http://localhost:3000/events/event-invite-request/resolve/${requestId}`, {
           method: 'PATCH',
           headers: { 
             'Content-Type': 'application/json',

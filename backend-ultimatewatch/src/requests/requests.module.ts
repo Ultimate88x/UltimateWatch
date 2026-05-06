@@ -6,10 +6,16 @@ import { Request } from './entities/request.entity';
 import { FriendRequest } from './entities/friend-request.entity';
 import { UsersModule } from 'src/users/users.module';
 import { EventInviteRequest } from './entities/event-invite-request.entity';
+import { EventAccessRequest } from './entities/event-access-request.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Request, FriendRequest, EventInviteRequest]),
+    TypeOrmModule.forFeature([
+      Request,
+      FriendRequest,
+      EventInviteRequest,
+      EventAccessRequest,
+    ]),
     forwardRef(() => UsersModule),
   ],
   controllers: [RequestsController],

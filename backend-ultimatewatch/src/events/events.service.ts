@@ -634,7 +634,7 @@ export class EventsService {
     );
   }
 
-  async resolveEventRequest(
+  async resolveEventInviteRequest(
     userId: number,
     id: number,
     accept: boolean,
@@ -710,6 +710,36 @@ export class EventsService {
       page,
       lastPage: Math.ceil(total / limit),
     };
+  }
+
+  async requestAccessToEvent(userId: number, eventId: number): Promise<void> {
+    const event: Event = await this.findBydId(eventId);
+
+    if (event.status === EventStatus.FINISHED) {
+      throw new BadRequestException(
+        'You cannot request access to a finished event',
+      );
+    }
+
+    const currentMembers: number =
+      await this.membersService.countFromEvent(eventId);
+
+    if (currentMembers >= event.maxMembers) {
+      throw new ForbiddenException(
+        'This event has reached its limit of members',
+      );
+    }
+
+    await this.membersService.getByUserIdAndEventId(userId, eventId);
+
+    const receiverIsMemberOfEvent: boolean =
+      !!(await this.membersService.findByUserIdAndEventId(userId, eventId));
+
+    if (receiverIsMemberOfEvent) {
+      throw new BadRequestException('You are already a member of the event');
+    }
+
+    await this.requestsService.createEventAccessRequest(userId, eventId);
   }
 
   async getFormattedResultsByEvent(

@@ -169,6 +169,16 @@ export class EventsController {
     return { message: 'User invited to event successfully!' };
   }
 
+  @Post('/request-access/:eventId')
+  @UseGuards(AuthGuard)
+  async requestAccessToEvent(
+    @GetUser('userId') userId: number,
+    @Param('eventId') eventId: string,
+  ): Promise<{ message: string }> {
+    await this.eventsService.requestAccessToEvent(userId, +eventId);
+    return { message: 'Access to event requested successfully!' };
+  }
+
   @Get('friends-to-invite/:eventId')
   @UseGuards(AuthGuard)
   async getFriendsToInvite(
@@ -188,15 +198,15 @@ export class EventsController {
     return friendsToInvite;
   }
 
-  @Patch('event-request/resolve/:id')
+  @Patch('event-invite-request/resolve/:id')
   @UseGuards(AuthGuard)
-  async resolveFriendRequest(
+  async resolveEventInviteRequest(
     @GetUser('userId') userId: number,
     @Param('id') id: number,
     @Body() resolveRequestDto: ResolveRequestDto,
   ): Promise<{ message: string }> {
     const { accept } = resolveRequestDto;
-    await this.eventsService.resolveEventRequest(userId, +id, accept);
+    await this.eventsService.resolveEventInviteRequest(userId, +id, accept);
 
     return {
       message: `Request successfully ${accept ? 'accepted' : 'rejected'}!`,

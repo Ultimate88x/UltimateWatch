@@ -137,6 +137,22 @@ export class EventsController {
     return { message: 'Succesfully left the event!' };
   }
 
+  @Patch('/add/:eventId/:mediaId')
+  @UseGuards(AuthGuard)
+  async addMedia(
+    @GetUser('userId') userId: number,
+    @Param('eventId') eventId: string,
+    @Param('mediaId') mediaId: string,
+  ): Promise<{ message: string }> {
+    await this.eventsService.addMediaToStandardEvent(
+      userId,
+      +eventId,
+      +mediaId,
+    );
+
+    return { message: 'Media succesfully added!' };
+  }
+
   @Patch('/suggest/:eventId/:mediaId')
   @UseGuards(AuthGuard)
   async suggestMedia(
@@ -146,6 +162,18 @@ export class EventsController {
     await this.eventsService.addProposedMediaToVotingEvent(+eventId, +mediaId);
 
     return { message: 'Media succesfully suggested!' };
+  }
+
+  @Patch('/remove/:eventId/:mediaId')
+  @UseGuards(AuthGuard)
+  async removeMediaFromEvent(
+    @GetUser('userId') userId: number,
+    @Param('eventId') eventId: string,
+    @Param('mediaId') mediaId: string,
+  ): Promise<{ message: string }> {
+    await this.eventsService.deleteMediaFromEvent(userId, +eventId, +mediaId);
+
+    return { message: 'Media succesfully removed!' };
   }
 
   @Get('can-see/:eventId')

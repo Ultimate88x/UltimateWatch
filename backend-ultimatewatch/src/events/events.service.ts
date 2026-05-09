@@ -239,6 +239,100 @@ export class EventsService {
     await this.deleteEvent(eventId);
   }
 
+  async addMediaToStandardEvent(
+    userId: number,
+    eventId: number,
+    mediaId: number,
+  ): Promise<StandardEvent> {
+    const event: StandardEvent = await this.findStandardEventBydId(eventId);
+    const eventOwner: Member =
+      await this.membersService.getOwnerFromEvent(eventId);
+
+    if (eventOwner.user.id !== userId) {
+      throw new ForbiddenException(
+        'You do not have permissions to add media to this event',
+      );
+    }
+
+    if (event.status !== EventStatus.WAITING) {
+      throw new BadRequestException(
+        'You can only add media to events in waiting status',
+      );
+    }
+
+    if (event.media?.some((media) => media.tmdbId === mediaId)) {
+      throw new BadRequestException('Media already in lineup');
+    }
+
+    if ((event.media?.length || 0) >= 20) {
+      throw new BadRequestException(
+        "You've reached the limit of media for an event (20)",
+      );
+    }
+
+    const media: Media = await this.mediaService.findByTmdbId(mediaId);
+
+    event.media = [...(event.media || []), media];
+
+    return this.saveStandardEvent(event);
+  }
+
+  async deleteMediaFromEvent(
+    userId: number,
+    eventId: number,
+    mediaId: number,
+  ): Promise<void> {
+    const event: Event = await this.findBydId(eventId);
+    const eventOwner: Member =
+      await this.membersService.getOwnerFromEvent(eventId);
+
+    if (eventOwner.user.id !== userId) {
+      throw new ForbiddenException(
+        'You do not have permissions to delete media from this event',
+      );
+    }
+
+    if (event.type === EventType.STANDARD) {
+      await this.deleteMediaFromStandardEvent(userId, eventId, mediaId);
+    } else {
+      await this.deleteMediaFromVotingEvent(userId, eventId, mediaId);
+    }
+  }
+
+  async deleteMediaFromStandardEvent(
+    userId: number,
+    eventId: number,
+    mediaId: number,
+  ): Promise<StandardEvent> {
+    const event: StandardEvent = await this.findStandardEventBydId(eventId);
+
+    if (event.status !== EventStatus.WAITING) {
+      throw new BadRequestException(
+        'You can only delete media from events in waiting status',
+      );
+    }
+
+    if ((event.media?.length || 0) <= 1) {
+      throw new BadRequestException(
+        'An event must have a minimum of one media',
+      );
+    }
+
+    const media: Media | undefined = event.media?.find(
+      (media) => media.tmdbId === mediaId,
+    );
+
+    if (!media) {
+      throw new BadRequestException('Media not found in event');
+    }
+
+    event.media = event.media?.filter(
+      (media: Media) => media.tmdbId !== mediaId,
+    );
+
+    return this.saveStandardEvent(event);
+  }
+
   async addProposedMediaToVotingEvent(
     eventId: number,
     mediaId: number,
@@ -251,13 +345,96 @@ export class EventsService {
       );
     }
 
-    if (event.proposedMedia.some((media) => media.id === mediaId)) {
+    if (event.proposedMedia.some((media) => media.tmdbId === mediaId)) {
       throw new BadRequestException('Media already in lineup');
+    }
+
+    if (event.proposedMedia.length >= 50) {
+      throw new BadRequestException(
+        'The maximum amount of proposed media has been reached (50)',
+      );
     }
 
     const media: Media = await this.mediaService.findByTmdbId(mediaId);
 
     event.proposedMedia = [...event.proposedMedia, media];
+
+    return this.saveVotingEvent(event);
+  }
+
+  async deleteMediaFromVotingEvent(
+    userId: number,
+    eventId: number,
+    mediaId: number,
+  ): Promise<StandardEvent> {
+    const event: VotingEvent = await this.findVotingEventBydId(eventId);
+    const eventOwner: Member =
+      await this.membersService.getOwnerFromEvent(eventId);
+
+    if (eventOwner.user.id !== userId) {
+      throw new ForbiddenException(
+        'You do not have permissions to delete media from this event',
+      );
+    }
+
+    switch (event.status) {
+      case EventStatus.WAITING:
+        {
+          if ((event.media?.length || 0) <= 1) {
+            throw new BadRequestException(
+              'An event must have a minimum of one media',
+            );
+          }
+
+          const media: Media | undefined = event.media?.find(
+            (media) => media.tmdbId === mediaId,
+          );
+
+          if (!media) {
+            throw new BadRequestException('Media not found in event');
+          }
+
+          event.media = [];
+          const voteResults: VoteResultDto[] =
+            await this.getResultsByEvent(eventId);
+
+          for (const v of voteResults) {
+            const media: Media = await this.mediaService.findByTmdbId(v.id);
+            event.media.push(media);
+          }
+        }
+
+        break;
+
+      case EventStatus.VOTING:
+        {
+          if (event.proposedMedia.length <= 1) {
+            throw new BadRequestException(
+              'An event must have a minimum of one media',
+            );
+          }
+
+          const media: Media | undefined = event.proposedMedia.find(
+            (media) => media.tmdbId === mediaId,
+          );
+
+          if (!media) {
+            throw new BadRequestException('Media not found in event');
+          }
+
+          event.proposedMedia = event.proposedMedia.filter(
+            (media: Media) => media.tmdbId !== mediaId,
+          );
+        }
+
+        break;
+
+      case EventStatus.STARTED:
+      case EventStatus.FINISHED:
+        throw new BadRequestException(
+          'You can only delete media from events in waiting status',
+        );
+    }
 
     return this.saveVotingEvent(event);
   }
@@ -284,7 +461,7 @@ export class EventsService {
     const event: StandardEvent | null =
       await this.standardEventsRepository.findOne({
         where: { id },
-        relations: ['members'],
+        relations: ['media', 'members'],
       });
 
     if (!event) {

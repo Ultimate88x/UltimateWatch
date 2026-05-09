@@ -380,7 +380,7 @@ export class EventsService {
     switch (event.status) {
       case EventStatus.WAITING:
         {
-          if ((event.media?.length || 0) <= 1) {
+          if ((event.proposedMedia?.length || 0) <= 1) {
             throw new BadRequestException(
               'An event must have a minimum of one media',
             );
@@ -393,6 +393,12 @@ export class EventsService {
           if (!media) {
             throw new BadRequestException('Media not found in event');
           }
+
+          event.proposedMedia = event.proposedMedia.filter(
+            (media: Media) => media.tmdbId !== mediaId,
+          );
+
+          await this.saveVotingEvent(event);
 
           event.media = [];
           const voteResults: VoteResultDto[] =
@@ -479,7 +485,7 @@ export class EventsService {
     const event: VotingEvent | null = await this.votingEventsRepository.findOne(
       {
         where: { id },
-        relations: ['proposedMedia', 'members'],
+        relations: ['media', 'proposedMedia', 'members'],
       },
     );
 

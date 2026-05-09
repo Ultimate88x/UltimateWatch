@@ -5,15 +5,17 @@ import { Button } from '../Button';
 import type { SubMediaEvent } from '../../types/sub-media-event';
 import { useAdvancedNavigation } from '../utilities/SmartNavigate';
 import toast from 'react-hot-toast';
+import { useState } from 'react';
+import { X } from 'lucide-react';
+import { ConfirmModal } from '../ConfirmModal';
 
 interface MediaEventCardProps {
   media: MediaEvent;
   event: EnhancedEvent;
   isMember: boolean;
   votedMediaIds: number[];
-  isVoteLoading: boolean;
-  setIsVoteLoading: (loading: boolean) => void;
   onEventUpdate?: () => void;
+  isOwner: boolean;
 }
 
 export const MediaEventCard = ({
@@ -21,11 +23,16 @@ export const MediaEventCard = ({
   event,
   isMember,
   votedMediaIds,
-  isVoteLoading,
-  setIsVoteLoading,
-  onEventUpdate = () => {}
+  onEventUpdate = () => {},
+  isOwner,
 }: MediaEventCardProps) => {
   const { smartNavigate } = useAdvancedNavigation();
+
+  const [isVoteLoading, setIsVoteLoading] = useState(false);
+
+  const [selectedMediaId, setSelectedMediaId] = useState<number | null>(null);
+  const [isRemoveMediaModalOpen, setIsRemoveMediaModalOpen] = useState(false);
+
   const isVoting = event.status === 'voting';
   const hasSubMedia = m.subMediaEvent && m.subMediaEvent.length > 0;
 
@@ -60,6 +67,7 @@ export const MediaEventCard = ({
 
       if (!response.ok) {
         toast.error(data.message || "Failed to process vote request");
+        setIsVoteLoading(false)
         return;
       }
 
@@ -67,10 +75,38 @@ export const MediaEventCard = ({
       
       onEventUpdate();
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Connection Error';
+      const message = error instanceof Error ? error.message : 'An unexpected error ocurred';
       toast.error(message);
     } finally {
       setTimeout(() => setIsVoteLoading(false), 250);
+    }
+  };
+
+  const removeMedia = async () => {
+    try {
+      const response = await fetch(`http://localhost:3000/events/remove/${event.id}/${selectedMediaId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.message || "Failed to remove media");
+        return;
+      }
+
+      toast.success(data.message);
+      
+      onEventUpdate();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'An unexpected error ocurred';
+      toast.error(message);
+    } finally {
+      setSelectedMediaId(null);
     }
   };
 
@@ -129,18 +165,31 @@ return (
             {m.title}
           </h4>
 
-          {isVoting && isMember && m.isVotable && (
-            <div className="absolute right-6 top-1/2 -translate-y-1/2">
-              <div 
-                onClick={(e) => {
-                  e.stopPropagation();
-                }} 
-                className="inline-block"
-              >
-                {renderVoteButton(m.id)}
-              </div>
+          <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-6">
+              
+              {(event.status === 'voting' || event.status === 'waiting') && isOwner && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedMediaId(m.id);
+                    setIsRemoveMediaModalOpen(true);
+                  }}
+                  className="w-10 h-10 flex items-center justify-center bg-white/5 border border-white/10 text-white/40 hover:bg-red-500 hover:text-black hover:border-red-500 transition-all active:translate-y-0.5 rounded-lg cursor-pointer"
+                  title="Remove"
+                >
+                  <X size={16} strokeWidth={3} />
+                </button>
+              )}
+
+              {isVoting && isMember && m.isVotable && (
+                <div 
+                  onClick={(e) => e.stopPropagation()} 
+                  className="inline-block"
+                >
+                  {renderVoteButton(m.id)}
+                </div>
+              )}
             </div>
-          )}
         </div>
       </div>
 
@@ -188,6 +237,20 @@ return (
           })}
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={isRemoveMediaModalOpen}
+        onClose={() => {
+          setSelectedMediaId(null);
+          setIsRemoveMediaModalOpen(false)
+        }}
+        onConfirm={removeMedia}
+        title="Delete Media"
+        description="You are about to remove the selected media from the event. Continue?"
+        confirmText="Yes, Remove"
+        cancelText="Don't Remove"
+        variant="accent"
+      />
     </motion.div>
   );
 };

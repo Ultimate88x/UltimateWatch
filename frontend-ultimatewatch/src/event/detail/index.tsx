@@ -28,7 +28,7 @@ export default function EventDetail() {
   const [event, setEvent] = useState<EnhancedEvent | null>(null);
 
   const [canSeeEvent, setCanSeeEvent] = useState<boolean | null>(null);
-  const [canModifyContent, setCanModifyContent] = useState<boolean>(false);
+  const [canAddContent, setCanAddContent] = useState<boolean>(false);
 
   const [members, setMembers] = useState<Member[]>([]);
   const [isMember, setIsMember] = useState(false);
@@ -41,7 +41,6 @@ export default function EventDetail() {
   const [isMediaLoading, setIsMediaLoading] = useState(true);
 
   const [votedMediaIds, setVotedMediaIds] = useState<number[]>([]);
-  const [isVoteLoading, setIsVoteLoading] = useState(false);
 
   const [accessRequestId, setAccessRequestId] = useState<number | null>(null);
 
@@ -81,7 +80,7 @@ export default function EventDetail() {
       }
 
       setEvent(data);
-      setCanModifyContent(data.type === EventTypeEnum.STANDARD && data.status === 'waiting');
+      setCanAddContent(data.type === EventTypeEnum.STANDARD && data.status === 'waiting');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error';
       toast.error(message);
@@ -462,15 +461,15 @@ export default function EventDetail() {
     }
   };
 
-  const addTitle = canModifyContent
+  const addTitle = canAddContent
     ? "Add to the lineup" 
     : "Missing something?";
 
-  const addSubtitle = canModifyContent
+  const addSubtitle = canAddContent
     ? "Add a new movie or series to the list"
     : "Suggest a movie or series to the voting pool";
 
-  const addButton = canModifyContent
+  const addButton = canAddContent
     ? "Add Media"
     : "Add Suggestion";
 
@@ -646,7 +645,7 @@ export default function EventDetail() {
               </div>
 
               <div className="flex flex-col gap-4">
-                {isMember && (event.status === 'voting' || canModifyContent && isOwner) && (
+                {isMember && (event.status === 'voting' || canAddContent && isOwner) && (
                   <motion.button 
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -707,9 +706,8 @@ export default function EventDetail() {
                         event={event!}
                         isMember={isMember}
                         votedMediaIds={votedMediaIds}
-                        isVoteLoading={isVoteLoading}
-                        setIsVoteLoading={setIsVoteLoading}
-                        onEventUpdate={fetchMedia}
+                        onEventUpdate={fetchMedia} 
+                        isOwner={isOwner}
                       />
                     ))}
                   </div>

@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { Member } from '../../types/member';
 import { EmptyState } from '../../components/EmptyState';
-import { Film, Calendar, Users, Info, Shield, ChevronLeft, ChevronRight, Trophy, LogOut, Play, UserPlus, Trash } from 'lucide-react';
+import { Film, Calendar, Users, Info, Shield, ChevronLeft, ChevronRight, Trophy, LogOut, Play, UserPlus, Trash, AlertTriangle } from 'lucide-react';
 import { Button } from '../../components/Button';
 import { getRelativeDate } from '../../components/utilities/RelativeDate';
 import { useAdvancedNavigation } from '../../components/utilities/SmartNavigate';
@@ -52,6 +52,7 @@ export default function EventDetail() {
   const [isSuggestModalOpen, setIsSuggestModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isAccessRequestsModalOpen, setIsAccessRequestsModalOpen] = useState(false);
+  const [isDeleteEventModalOpen, setIsDeleteEventModalOpen] = useState(false);
   
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -379,7 +380,6 @@ export default function EventDetail() {
   };
 
   const handleSendSuggestion = async (mediaId: number) => {
-    console.log("Suggesting media with ID:", mediaId);
     try {
       const response = await fetch(`http://localhost:3000/events/suggest/${id}/${mediaId}`, {
         method: 'PATCH',
@@ -399,6 +399,31 @@ export default function EventDetail() {
 
       toast.success(data.message);
       fetchMedia();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'An unexpected error occurred';
+      toast.error(message);
+    }
+  };
+
+  const cancelEvent = async () => {
+    try {
+      const response = await fetch(`http://localhost:3000/events/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.message || "Failed to delete event");
+        return;
+      }
+
+      toast.success(data.message);
+      navigate('/events');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'An unexpected error occurred';
       toast.error(message);
@@ -739,16 +764,16 @@ export default function EventDetail() {
               </div>
 
               {isOwner && event.visibility === EventVisibilityEnum.REQUEST_ONLY && (
-                 <Button
-                    variant="outline"
-                    fullWidth
-                    icon={Users}
-                    onClick={() => setIsAccessRequestsModalOpen(true)}
-                    className="rounded-2xl border-white/20 text-white bg-white/10 hover:bg-white/20 hover:border-white/40 mt-2"
-                  >
-                    Manage Requests
-                  </Button>
-               )}
+                <Button
+                  variant="outline"
+                  fullWidth
+                  icon={Users}
+                  onClick={() => setIsAccessRequestsModalOpen(true)}
+                  className="rounded-2xl border-white/20 text-white bg-white/10 hover:bg-white/20 hover:border-white/40 mt-2"
+                >
+                  Manage Requests
+                </Button>
+              )}
 
               {event.type === "voting_event" && (
                 <Button
@@ -759,6 +784,17 @@ export default function EventDetail() {
                   className="rounded-2xl border-white/20 text-white hover:border-amber-400! hover:text-amber-400"
                 >
                   {event.status === 'finished' ? 'View Final Results' : 'Live Ranking'}
+                </Button>
+              )}
+
+              {isOwner && (
+                <Button
+                  variant="danger"
+                  fullWidth
+                  icon={AlertTriangle}
+                  onClick={() => setIsDeleteEventModalOpen(true)}
+                >
+                  Cancel Event
                 </Button>
               )}
             </div>
@@ -974,6 +1010,17 @@ export default function EventDetail() {
         description="You are about to delete your request to join this event. Are you sure?"
         confirmText="Yes, Delete"
         cancelText="Don't Delete"
+        variant="danger"
+      />
+
+      <ConfirmModal
+        isOpen={isDeleteEventModalOpen}
+        onClose={() => setIsDeleteEventModalOpen(false)}
+        onConfirm={cancelEvent}
+        title="Cancel Event"
+        description="You are about to cancel this event and delete all its contents. Are you sure?"
+        confirmText="Yes, Cancel"
+        cancelText="Don't Cancel"
         variant="danger"
       />
     </div>

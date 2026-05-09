@@ -199,7 +199,7 @@ export default function CreateEvent() {
               />
 
               <div className="flex flex-col gap-2">
-                <label className="font-bold text-white/40 ml-2 text-[10px] uppercase tracking-widest">
+                <label className="relative font-inter font-medium text-white/90 ml-2 text-sm -mb-1">
                   Event Type
                 </label>
                 <select 
@@ -213,7 +213,7 @@ export default function CreateEvent() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="font-bold text-white/40 ml-2 text-[10px] uppercase tracking-widest">
+                <label className="relative font-inter font-medium text-white/90 ml-2 text-sm -mb-1">
                   Event Visibility
                 </label>
                 <select 
@@ -266,7 +266,7 @@ export default function CreateEvent() {
                         error={error}
                       />
                       <Input
-                        label="Votes Per Member (cannot be modified later)"
+                        label="Votes Per Member"
                         name="maxVotesPerMember"
                         type="number"
                         value={votingData.maxVotesPerMember.toString()}

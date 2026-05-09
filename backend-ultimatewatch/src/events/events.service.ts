@@ -104,6 +104,12 @@ export class EventsService {
       timer: 0,
       status: EventStatus.WAITING,
     });
+    const updatedEvent: StandardEvent = await this.saveStandardEvent(event);
+
+    updatedEvent.createdAt = new Date(
+      new Date(updatedEvent.createdAt).setSeconds(0, 0),
+    );
+
     return await this.saveStandardEvent(event);
   }
 
@@ -125,6 +131,13 @@ export class EventsService {
       timer: 0,
       status: EventStatus.VOTING,
     });
+
+    const updatedEvent: VotingEvent = await this.saveVotingEvent(event);
+
+    updatedEvent.createdAt = new Date(
+      new Date(updatedEvent.createdAt).setSeconds(0, 0),
+    );
+
     return await this.saveVotingEvent(event);
   }
 
@@ -155,6 +168,16 @@ export class EventsService {
       }
     }
 
+    if (updateEventDto.eventDate) {
+      if (
+        updateEventDto.eventDate < new Date(event.createdAt.getTime() + 600000)
+      ) {
+        throw new BadRequestException(
+          'Event date must be at least ten minutes after creation',
+        );
+      }
+    }
+
     const updatedEvent: StandardEvent = this.standardEventsRepository.merge(
       event,
       updateEventDto,
@@ -180,7 +203,7 @@ export class EventsService {
 
     if (
       event.status === EventStatus.STARTED ||
-      event.status !== EventStatus.FINISHED
+      event.status === EventStatus.FINISHED
     ) {
       throw new BadRequestException('You can no longer update the event');
     }
@@ -195,7 +218,7 @@ export class EventsService {
 
     if (updateEventDto.eventDate) {
       if (
-        updateEventDto.eventDate <= new Date(event.eventDate.getTime() + 600000)
+        updateEventDto.eventDate < new Date(event.createdAt.getTime() + 600000)
       ) {
         throw new BadRequestException(
           'Event date must be at least ten minutes after creation',
@@ -205,12 +228,18 @@ export class EventsService {
 
     if (updateEventDto.votingEndDate) {
       if (
-        updateEventDto.votingEndDate <=
-        new Date(event.votingEndDate.getTime() + 300000)
+        updateEventDto.votingEndDate <
+        new Date(event.createdAt.getTime() + 300000)
       ) {
         throw new BadRequestException(
           'Voting period must last at least five minutes',
         );
+      }
+    }
+
+    if (updateEventDto.maxMedia) {
+      if (event.status === EventStatus.WAITING) {
+        updateEventDto.maxMedia = undefined;
       }
     }
 
@@ -234,6 +263,12 @@ export class EventsService {
       throw new ForbiddenException(
         'You do not have permissions to delete this event',
       );
+    }
+
+    const event: Event = await this.findBydId(eventId);
+
+    if (event.status === EventStatus.STARTED) {
+      throw new BadRequestException('You cannot delete an ongoing event');
     }
 
     await this.deleteEvent(eventId);

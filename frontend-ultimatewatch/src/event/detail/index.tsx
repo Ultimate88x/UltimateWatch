@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { Member } from '../../types/member';
 import { EmptyState } from '../../components/EmptyState';
-import { Film, Calendar, Users, Info, Shield, ChevronLeft, ChevronRight, Trophy, LogOut, Play, UserPlus, Trash, AlertTriangle } from 'lucide-react';
+import { Film, Calendar, Users, Info, Shield, ChevronLeft, ChevronRight, Trophy, LogOut, Play, UserPlus, Trash, AlertTriangle, Settings } from 'lucide-react';
 import { Button } from '../../components/Button';
 import { getRelativeDate } from '../../components/utilities/RelativeDate';
 import { useAdvancedNavigation } from '../../components/utilities/SmartNavigate';
@@ -20,6 +20,7 @@ import { InviteFriendsModal } from '../../components/event/InviteFriendsModal';
 import { EventVisibilityEnum } from '../../enums/EventVisibility';
 import { EventAccessRequestsModal } from '../../components/event/EventAccessRequestsModal';
 import { EventTypeEnum } from '../../enums/EventTypeEnum';
+import { EditEventModal } from '../../components/event/update/EditEventModal';
 
 export default function EventDetail() {
   const { smartNavigate } = useAdvancedNavigation();
@@ -54,6 +55,7 @@ export default function EventDetail() {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isAccessRequestsModalOpen, setIsAccessRequestsModalOpen] = useState(false);
   const [isDeleteEventModalOpen, setIsDeleteEventModalOpen] = useState(false);
+  const [isEditEventModalOpen, setIsEditEventModalOpen] = useState(false);
   
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -777,6 +779,17 @@ export default function EventDetail() {
                 )}
               </div>
 
+              {isOwner && (event.status === 'voting' || event.status === 'waiting') && (
+                <Button
+                  variant="secondary"
+                  fullWidth
+                  icon={Settings}
+                  onClick={() => setIsEditEventModalOpen(true)}
+                >
+                  Manage Event Settings
+                </Button>
+              )}
+
               {isOwner && event.visibility === EventVisibilityEnum.REQUEST_ONLY && (
                 <Button
                   variant="outline"
@@ -801,7 +814,7 @@ export default function EventDetail() {
                 </Button>
               )}
 
-              {isOwner && (
+              {isOwner && event.status !== 'started' && (
                 <Button
                   variant="danger"
                   fullWidth
@@ -1035,6 +1048,13 @@ export default function EventDetail() {
         confirmText="Yes, Cancel"
         cancelText="Don't Cancel"
         variant="danger"
+      />
+
+      <EditEventModal 
+        isOpen={isEditEventModalOpen} 
+        onClose={() => setIsEditEventModalOpen(false)} 
+        event={event} 
+        onUpdate={fetchEvent}
       />
     </div>
   );

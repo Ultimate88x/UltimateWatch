@@ -12,7 +12,7 @@ export class UpdateVotingEventDto extends PartialType(CreateEventDto) {
   @Max(20, {
     message: 'An event must have less or equal to 20 different media',
   })
-  maxMedia: number;
+  maxMedia?: number;
 
   @Type(() => Date)
   @IsDate()

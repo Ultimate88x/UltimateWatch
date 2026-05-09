@@ -215,6 +215,21 @@ export class EventsController {
     };
   }
 
+  @Patch('event-access-request/resolve/:id')
+  @UseGuards(AuthGuard)
+  async resolveEventAccessRequest(
+    @GetUser('userId') userId: number,
+    @Param('id') id: number,
+    @Body() resolveRequestDto: ResolveRequestDto,
+  ): Promise<{ message: string }> {
+    const { accept } = resolveRequestDto;
+    await this.eventsService.resolveEventAccessRequest(userId, +id, accept);
+
+    return {
+      message: `Request successfully ${accept ? 'accepted' : 'rejected'}!`,
+    };
+  }
+
   @Get('access-requests/:eventId')
   @UseGuards(AuthGuard)
   async getActiveAccessRequests(

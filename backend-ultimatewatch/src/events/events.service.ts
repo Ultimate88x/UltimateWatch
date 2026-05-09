@@ -42,6 +42,8 @@ import { FriendInviteResponseDto } from './dto/friend-invite-response-dto';
 import { EventInviteRequest } from 'src/requests/entities/event-invite-request.entity';
 import { EventAccessRequestDto } from 'src/requests/dto/event-access-request-dto';
 import { RequestResponseDto } from 'src/requests/dto/request-response-dto';
+import { Request } from 'src/requests/entities/request.entity';
+import { EventAccessRequest } from 'src/requests/entities/event-access-request.entity';
 
 interface SubMediaEventWithSort extends SubMediaEventDto {
   sortKey: string;
@@ -651,18 +653,61 @@ export class EventsService {
     userId: number,
     id: number,
     accept: boolean,
-  ): Promise<void> {
-    if (accept) {
-      const request: EventInviteRequest =
-        await this.requestsService.findEventInviteRequestById(id);
-      await this.joinEvent(userId, request.event.id);
+  ): Promise<boolean> {
+    const request: EventInviteRequest =
+      await this.requestsService.findEventInviteRequestById(id);
+
+    if (request.receiver.id !== userId) {
+      throw new ForbiddenException(
+        'You are not authorized to resolve this request',
+      );
     }
 
-    await this.requestsService.resolveEventInvitationRequest(
-      +id,
-      accept,
-      userId,
+    if (accept) {
+      const requests: Request[] =
+        await this.requestsService.findEventRequestsFromUser(
+          userId,
+          request.event.id,
+        );
+
+      await Promise.all(
+        requests.map((request: Request) =>
+          this.requestsService.resolveRequest(request, accept),
+        ),
+      );
+
+      await this.joinEvent(userId, request.event.id);
+    } else {
+      await this.requestsService.resolveRequest(request, accept);
+    }
+
+    return accept;
+  }
+
+  async resolveEventAccessRequest(
+    userId: number,
+    id: number,
+    accept: boolean,
+  ): Promise<boolean> {
+    const request: EventAccessRequest =
+      await this.requestsService.findEventAccessRequestById(id);
+
+    const eventOwner: Member | undefined = request.event.members.find(
+      (member: Member) => member.role === MemberRole.OWNER,
     );
+    const isEventOwner: boolean = eventOwner?.user.id === userId;
+
+    if (!isEventOwner) {
+      throw new ForbiddenException(
+        'You are not authorized to resolve this request',
+      );
+    }
+
+    if (accept) {
+      await this.joinEvent(request.sender.id, request.event.id);
+    }
+
+    return await this.requestsService.resolveRequest(request, accept);
   }
 
   async getFriendsToInvite(

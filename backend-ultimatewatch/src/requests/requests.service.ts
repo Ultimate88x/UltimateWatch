@@ -606,32 +606,6 @@ export class RequestsService {
     return await this.resolveRequest(request, accept);
   }
 
-  async resolveEventInvitationRequest(
-    id: number,
-    accept: boolean,
-    currentUserId: number,
-  ): Promise<boolean> {
-    const request: EventInviteRequest =
-      await this.findEventInviteRequestById(id);
-
-    if (request.receiver.id !== currentUserId) {
-      throw new ForbiddenException(
-        'You are not authorized to resolve this request',
-      );
-    }
-
-    const requests: Request[] = await this.findEventRequestsFromUser(
-      currentUserId,
-      request.event.id,
-    );
-
-    await Promise.all(
-      requests.map((request: Request) => this.acceptRequest(request)),
-    );
-
-    return accept;
-  }
-
   async getFriendsFromUser(
     userId: number,
     page: number = 1,

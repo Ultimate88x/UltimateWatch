@@ -19,6 +19,7 @@ import { SearchForMedia } from '../../components/content/SearchForMedia';
 import { InviteFriendsModal } from '../../components/event/InviteFriendsModal';
 import { EventVisibilityEnum } from '../../enums/EventVisibility';
 import { EventAccessRequestsModal } from '../../components/event/EventAccessRequestsModal';
+import { EventTypeEnum } from '../../enums/EventTypeEnum';
 
 export default function EventDetail() {
   const { smartNavigate } = useAdvancedNavigation();
@@ -27,6 +28,7 @@ export default function EventDetail() {
   const [event, setEvent] = useState<EnhancedEvent | null>(null);
 
   const [canSeeEvent, setCanSeeEvent] = useState<boolean | null>(null);
+  const [canModifyContent, setCanModifyContent] = useState<boolean>(false);
 
   const [members, setMembers] = useState<Member[]>([]);
   const [isMember, setIsMember] = useState(false);
@@ -49,7 +51,7 @@ export default function EventDetail() {
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
   const [isDeleteRequestModalOpen, setIsDeleteRequestModalOpen] = useState(false);
-  const [isSuggestModalOpen, setIsSuggestModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isAccessRequestsModalOpen, setIsAccessRequestsModalOpen] = useState(false);
   const [isDeleteEventModalOpen, setIsDeleteEventModalOpen] = useState(false);
@@ -79,6 +81,7 @@ export default function EventDetail() {
       }
 
       setEvent(data);
+      setCanModifyContent(data.type === EventTypeEnum.STANDARD && data.status === 'waiting');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error';
       toast.error(message);
@@ -379,9 +382,10 @@ export default function EventDetail() {
     }
   };
 
-  const handleSendSuggestion = async (mediaId: number) => {
+  const handleAddMedia = async (mediaId: number) => {
     try {
-      const response = await fetch(`http://localhost:3000/events/suggest/${id}/${mediaId}`, {
+      const addUrl: string = event?.status === 'voting' ? 'suggest' : 'add';
+      const response = await fetch(`http://localhost:3000/events/${addUrl}/${id}/${mediaId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -457,6 +461,18 @@ export default function EventDetail() {
         return { label: 'Waiting for Start Date', color: 'text-purple-main', bar: 'bg-purple-main/50', btn: 'Join Binge', dot: false };
     }
   };
+
+  const addTitle = canModifyContent
+    ? "Add to the lineup" 
+    : "Missing something?";
+
+  const addSubtitle = canModifyContent
+    ? "Add a new movie or series to the list"
+    : "Suggest a movie or series to the voting pool";
+
+  const addButton = canModifyContent
+    ? "Add Media"
+    : "Add Suggestion";
 
   if (isLoading) {
     return (
@@ -630,11 +646,11 @@ export default function EventDetail() {
               </div>
 
               <div className="flex flex-col gap-4">
-                {isMember && event.status === 'voting' && (
-                  <motion.div 
+                {isMember && (event.status === 'voting' || canModifyContent && isOwner) && (
+                  <motion.button 
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    onClick={() => setIsSuggestModalOpen(true)}
+                    onClick={() => setIsAddModalOpen(true)}
                     className="group relative overflow-hidden bg-purple-main/5 border border-purple-main/20 rounded-2xl p-6 cursor-pointer hover:bg-purple-main/10 transition-all border-dashed"
                   >
                     <div className="flex items-center justify-between relative z-10">
@@ -643,23 +659,23 @@ export default function EventDetail() {
                           <Film size={24} />
                         </div>
                         <div>
-                          <h4 className="text-white font-black uppercase italic tracking-tighter text-lg">
-                            Missing something?
+                          <h4 className="text-start text-white font-black uppercase italic tracking-tighter text-lg">
+                            {addTitle}
                           </h4>
                           <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">
-                            Suggest a movie or series to the voting pool
+                            {addSubtitle}
                           </p>
                         </div>
                       </div>
                       <div className="px-4 py-2 bg-purple-main text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-lg group-hover:bg-purple-light transition-colors">
-                        Add Suggestion
+                        {addButton}
                       </div>
                     </div>
                     
                     <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity">
                       <Film size={100} />
                     </div>
-                  </motion.div>
+                  </motion.button>
                 )}
                 {isMediaLoading ? (
                   <div className="h-full w-full flex flex-col items-center justify-center py-20">
@@ -945,14 +961,13 @@ export default function EventDetail() {
 
       <div className="h-500">
         <Modal 
-          isOpen={isSuggestModalOpen} 
-          onClose={() => setIsSuggestModalOpen(false)}
+          isOpen={isAddModalOpen} 
+          onClose={() => setIsAddModalOpen(false)}
         >
           <SearchForMedia 
             selectedMedia={mediaList as unknown as AddMedia[]}
             onSelectMedia={(mediaId: number) => {
-              handleSendSuggestion(mediaId);
-              setIsSuggestModalOpen(false);
+              handleAddMedia(mediaId);
             }}
             cols={5}
           />

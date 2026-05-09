@@ -266,7 +266,7 @@ export default function CreateEvent() {
                         error={error}
                       />
                       <Input
-                        label="Votes Per Member"
+                        label="Votes Per Member (cannot be modified later)"
                         name="maxVotesPerMember"
                         type="number"
                         value={votingData.maxVotesPerMember.toString()}

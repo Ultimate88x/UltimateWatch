@@ -60,7 +60,7 @@ export class Event extends BaseEntity {
   @IsNotEmpty()
   @Type(() => Date)
   @IsDate()
-  @MinDate(() => new Date(Date.now() + 300000))
+  @MinDate(() => new Date(Date.now() + 600000))
   eventDate: Date;
 
   @Column({ type: 'timestamp', nullable: true })

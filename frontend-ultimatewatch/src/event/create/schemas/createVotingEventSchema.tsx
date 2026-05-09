@@ -17,8 +17,8 @@ export const createVotingEventSchema = z.object({
 
   eventDate: z
     .preprocess((arg) => (typeof arg === "string" || arg instanceof Date ? new Date(arg) : arg), z.date())
-    .refine((date) => date > new Date(Date.now() + 300000), {
-      message: "Event date must be at least five minutes after creation",
+    .refine((date) => date > new Date(Date.now() + 600000), {
+      message: "Event date must be at least ten minutes after creation",
     }),
 
   maxMembers: z

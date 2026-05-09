@@ -28,8 +28,8 @@ export class CreateEventDto {
   @IsNotEmpty()
   @Type(() => Date)
   @IsDate()
-  @MinDate(() => new Date(Date.now() + 300000), {
-    message: 'Event date must be at least five minutes after creation',
+  @MinDate(() => new Date(Date.now() + 600000), {
+    message: 'Event date must be at least ten minutes after creation',
   })
   eventDate: Date;
 

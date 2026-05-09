@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -24,6 +25,8 @@ import { FriendInviteResponseDto } from './dto/friend-invite-response-dto';
 import { ResolveRequestDto } from 'src/requests/dto/resolve-request-dto';
 import { EventAccessRequestDto } from 'src/requests/dto/event-access-request-dto';
 import { RequestResponseDto } from 'src/requests/dto/request-response-dto';
+import { UpdateStandardEventDto } from './dto/update-standard-event-dto';
+import { UpdateVotingEventDto } from './dto/update-voting-event-dto';
 
 @Controller('events')
 export class EventsController {
@@ -248,6 +251,36 @@ export class EventsController {
       );
 
     return activeAccessRequests;
+  }
+
+  @Put('/standard/:eventId')
+  @UseGuards(AuthGuard)
+  async updateStandardEvent(
+    @GetUser('userId') userId: number,
+    @Param('eventId') eventId: string,
+    @Body() updateEventDto: UpdateStandardEventDto,
+  ): Promise<{ message: string }> {
+    await this.eventsService.updateStandardEvent(
+      userId,
+      +eventId,
+      updateEventDto,
+    );
+    return { message: 'Event updated succesfully!' };
+  }
+
+  @Put('/voting/:eventId')
+  @UseGuards(AuthGuard)
+  async updateVotingEvent(
+    @GetUser('userId') userId: number,
+    @Param('eventId') eventId: string,
+    @Body() updateEventDto: UpdateVotingEventDto,
+  ): Promise<{ message: string }> {
+    await this.eventsService.updateVotingEvent(
+      userId,
+      +eventId,
+      updateEventDto,
+    );
+    return { message: 'Event updated succesfully!' };
   }
 
   @Delete(':eventId')

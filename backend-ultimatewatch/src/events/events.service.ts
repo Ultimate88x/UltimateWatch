@@ -44,6 +44,8 @@ import { EventAccessRequestDto } from 'src/requests/dto/event-access-request-dto
 import { RequestResponseDto } from 'src/requests/dto/request-response-dto';
 import { Request } from 'src/requests/entities/request.entity';
 import { EventAccessRequest } from 'src/requests/entities/event-access-request.entity';
+import { UpdateStandardEventDto } from './dto/update-standard-event-dto';
+import { UpdateVotingEventDto } from './dto/update-voting-event-dto';
 
 interface SubMediaEventWithSort extends SubMediaEventDto {
   sortKey: string;
@@ -126,6 +128,100 @@ export class EventsService {
     return await this.saveVotingEvent(event);
   }
 
+  async updateStandardEvent(
+    userId: number,
+    eventId: number,
+    updateEventDto: UpdateStandardEventDto,
+  ): Promise<StandardEvent> {
+    const event: StandardEvent = await this.findStandardEventBydId(eventId);
+    const eventOwner: Member =
+      await this.membersService.getOwnerFromEvent(eventId);
+
+    if (eventOwner.user.id !== userId) {
+      throw new ForbiddenException(
+        'You do not have permissions to update this event',
+      );
+    }
+
+    if (event.status !== EventStatus.WAITING) {
+      throw new BadRequestException('You can no longer update the event');
+    }
+
+    if (updateEventDto.maxMembers) {
+      if (updateEventDto.maxMembers < event.members.length) {
+        throw new BadRequestException(
+          'You cannot set the maximum number of members to a value lower than the current amount of members',
+        );
+      }
+    }
+
+    const updatedEvent: StandardEvent = this.standardEventsRepository.merge(
+      event,
+      updateEventDto,
+    );
+
+    return await this.saveStandardEvent(updatedEvent);
+  }
+
+  async updateVotingEvent(
+    userId: number,
+    eventId: number,
+    updateEventDto: UpdateVotingEventDto,
+  ): Promise<VotingEvent> {
+    const event: VotingEvent = await this.findVotingEventBydId(eventId);
+    const eventOwner: Member =
+      await this.membersService.getOwnerFromEvent(eventId);
+
+    if (eventOwner.user.id !== userId) {
+      throw new ForbiddenException(
+        'You do not have permissions to update this event',
+      );
+    }
+
+    if (
+      event.status === EventStatus.STARTED ||
+      event.status !== EventStatus.FINISHED
+    ) {
+      throw new BadRequestException('You can no longer update the event');
+    }
+
+    if (updateEventDto.maxMembers) {
+      if (updateEventDto.maxMembers < event.members.length) {
+        throw new BadRequestException(
+          'You cannot set the maximum number of members to a value lower than the current amount of members',
+        );
+      }
+    }
+
+    if (updateEventDto.eventDate) {
+      if (
+        updateEventDto.eventDate <= new Date(event.eventDate.getTime() + 600000)
+      ) {
+        throw new BadRequestException(
+          'Event date must be at least ten minutes after creation',
+        );
+      }
+    }
+
+    if (updateEventDto.votingEndDate) {
+      if (
+        updateEventDto.votingEndDate <=
+        new Date(event.votingEndDate.getTime() + 300000)
+      ) {
+        throw new BadRequestException(
+          'Voting period must last at least five minutes',
+        );
+      }
+    }
+
+    const updatedEvent: VotingEvent = this.votingEventsRepository.merge(
+      event,
+      updateEventDto,
+    );
+
+    return await this.saveVotingEvent(updatedEvent);
+  }
+
   async deleteEvent(eventId: number): Promise<void> {
     await this.eventsRepository.delete(eventId);
   }
@@ -135,7 +231,9 @@ export class EventsService {
       await this.membersService.getOwnerFromEvent(eventId);
 
     if (eventOwner.user.id !== userId) {
-      throw new ForbiddenException('You cannot delete this event');
+      throw new ForbiddenException(
+        'You do not have permissions to delete this event',
+      );
     }
 
     await this.deleteEvent(eventId);
@@ -182,11 +280,29 @@ export class EventsService {
     return event;
   }
 
+  async findStandardEventBydId(id: number): Promise<StandardEvent> {
+    const event: StandardEvent | null =
+      await this.standardEventsRepository.findOne({
+        where: { id },
+        relations: ['members'],
+      });
+
+    if (!event) {
+      throw new ResourceNotFoundException(
+        'Standard Event',
+        'ID',
+        id.toString(),
+      );
+    }
+
+    return event;
+  }
+
   async findVotingEventBydId(id: number): Promise<VotingEvent> {
     const event: VotingEvent | null = await this.votingEventsRepository.findOne(
       {
         where: { id },
-        relations: ['proposedMedia'],
+        relations: ['proposedMedia', 'members'],
       },
     );
 

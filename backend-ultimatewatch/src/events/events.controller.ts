@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -247,5 +248,15 @@ export class EventsController {
       );
 
     return activeAccessRequests;
+  }
+
+  @Delete(':eventId')
+  @UseGuards(AuthGuard)
+  async cancelEvent(
+    @GetUser('userId') userId: number,
+    @Param('eventId') eventId: string,
+  ): Promise<{ message: string }> {
+    await this.eventsService.cancelEvent(userId, +eventId);
+    return { message: 'Event deleted succesfully!' };
   }
 }

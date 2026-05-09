@@ -126,6 +126,21 @@ export class EventsService {
     return await this.saveVotingEvent(event);
   }
 
+  async deleteEvent(eventId: number): Promise<void> {
+    await this.eventsRepository.delete(eventId);
+  }
+
+  async cancelEvent(userId: number, eventId: number): Promise<void> {
+    const eventOwner: Member =
+      await this.membersService.getOwnerFromEvent(eventId);
+
+    if (eventOwner.user.id !== userId) {
+      throw new ForbiddenException('You cannot delete this event');
+    }
+
+    await this.deleteEvent(eventId);
+  }
+
   async addProposedMediaToVotingEvent(
     eventId: number,
     mediaId: number,

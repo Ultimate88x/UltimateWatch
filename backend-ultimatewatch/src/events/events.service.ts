@@ -692,8 +692,8 @@ export class EventsService {
     const request: EventAccessRequest =
       await this.requestsService.findEventAccessRequestById(id);
 
-    const eventOwner: Member | undefined = request.event.members.find(
-      (member: Member) => member.role === MemberRole.OWNER,
+    const eventOwner: Member = await this.membersService.getOwnerFromEvent(
+      request.event.id,
     );
     const isEventOwner: boolean = eventOwner?.user.id === userId;
 

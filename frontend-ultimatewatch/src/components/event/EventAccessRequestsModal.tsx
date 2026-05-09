@@ -11,9 +11,10 @@ interface EventAccessRequestsModalProps {
   isOpen: boolean;
   onClose: () => void;
   eventId: string | undefined;
+  onAccept: () => void;
 }
 
-export const EventAccessRequestsModal = ({ isOpen, onClose, eventId }: EventAccessRequestsModalProps) => {
+export const EventAccessRequestsModal = ({ isOpen, onClose, eventId, onAccept }: EventAccessRequestsModalProps) => {
   const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -57,8 +58,8 @@ export const EventAccessRequestsModal = ({ isOpen, onClose, eventId }: EventAcce
 
   const handleResolveRequest = async (requestId: number, accept: boolean) => {
     try {
-      const response = await fetch(`http://localhost:3000/requests/resolve/event/${requestId}`, {
-        method: 'POST',
+      const response = await fetch(`http://localhost:3000/events/event-access-request/resolve/${requestId}`, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`,
@@ -75,12 +76,14 @@ export const EventAccessRequestsModal = ({ isOpen, onClose, eventId }: EventAcce
 
       toast.success(accept ? "Request accepted" : "Request declined");
       
-      // Filtramos la solicitud de la lista actual
       setRequests(prev => prev.filter(req => req.id !== requestId));
       
-      // Si la lista queda vacía y no es la primera página, retrocedemos
       if (requests.length === 1 && page > 1) {
         setPage(p => p - 1);
+      }
+
+      if (accept) {
+        onAccept();
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'An unexpected error occurred';

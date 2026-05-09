@@ -102,7 +102,7 @@ export class RequestsService {
   async findEventAccessRequestById(id: number): Promise<EventAccessRequest> {
     const request = await this.eventAccessRequestRepository.findOne({
       where: { id },
-      relations: ['sender', 'event', 'event.members'],
+      relations: ['sender', 'event'],
     });
 
     if (!request) {
@@ -559,6 +559,10 @@ export class RequestsService {
   ): Promise<void> {
     const request: EventAccessRequest =
       await this.findEventAccessRequestById(requestId);
+
+    if (request.accepted) {
+      throw new BadRequestException('You cannot delete an accepted request');
+    }
 
     const isSender: boolean = request.sender.id === userId;
 

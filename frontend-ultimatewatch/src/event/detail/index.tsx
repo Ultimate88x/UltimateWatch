@@ -337,6 +337,7 @@ export default function EventDetail() {
       toast.success(data.message);
 
       fetchEvent();
+      if (event?.visibility === EventVisibilityEnum.REQUEST_ONLY) fetchAccessRequest();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error';
       toast.error(message);
@@ -903,6 +904,7 @@ export default function EventDetail() {
         isOpen={isAccessRequestsModalOpen}
         onClose={() => setIsAccessRequestsModalOpen(false)}
         eventId={id}
+        onAccept={fetchMembers}
       />
 
       <div className="h-500">

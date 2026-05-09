@@ -67,6 +67,25 @@ export class MembersService {
     return member;
   }
 
+  async findOwnerFromEvent(eventId: number): Promise<Member | null> {
+    const eventOwner: Member | null = await this.membersRepository.findOne({
+      where: { event: { id: eventId }, role: MemberRole.OWNER },
+      relations: ['user'],
+    });
+
+    return eventOwner;
+  }
+
+  async getOwnerFromEvent(eventId: number): Promise<Member> {
+    const eventOwner: Member | null = await this.findOwnerFromEvent(eventId);
+
+    if (!eventOwner) {
+      throw new ResourceNotFoundException('Owner', 'EVENT_ID', `${eventId}`);
+    }
+
+    return eventOwner;
+  }
+
   async retrieveByUserIdAndEventId(
     userId: number,
     eventId: number,

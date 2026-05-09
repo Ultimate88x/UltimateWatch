@@ -53,34 +53,32 @@ export default function EventInvitationRequests() {
     fetchRequests();
   }, [fetchRequests]);
 
-  const handleAction = async (requestId: number, action: 'accept' | 'reject') => {
-    const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+  const handleAction = async (requestId: number, accept: boolean) => {
     setIsActionLoading(true);
-
     try {
-      const isAccepting = action === 'accept';
-      const [response] = await Promise.all([
-        fetch(
-          `http://localhost:3000/events/event-invite-request/resolve/${requestId}`, {
-          method: 'PATCH',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}` 
-          },
-          body: JSON.stringify({ accept: isAccepting })
-        }),
-        wait(750)
-      ]);
+      const response = await fetch(`http://localhost:3000/events/event-invite-request/resolve/${requestId}`, {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}` 
+        },
+        body: JSON.stringify({ accept })
+      })
 
       const data = await response.json();
 
       if (!response.ok) {
-        toast.error(data.message || "Failed to perform action");
+        toast.error(data.message || "Failed to resolve request");
         return;
       }
 
-      toast.success(data.message || `Request ${action}ed successfully`);
-      await fetchRequests(); 
+      toast.success(data.message);
+
+      setRequests(prev => prev.filter(req => req.id !== requestId));
+      
+      if (requests.length === 1 && page > 1) {
+        setPage(p => p - 1);
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'An unexpected error occurred';
       toast.error(message);
@@ -201,7 +199,7 @@ export default function EventInvitationRequests() {
                       variant="success"
                       icon={Check}
                       className="w-auto px-6 rounded-2xl group/btn overflow-hidden transition-all duration-500 font-black uppercase italic tracking-widest text-[10px]"
-                      onClick={() => handleAction(request.id, 'accept')}
+                      onClick={() => handleAction(request.id, true)}
                       disabled={isActionLoading}
                     >
                       <span className="max-w-0 overflow-hidden group-hover/btn:max-w-xs transition-all duration-500 ease-in-out whitespace-nowrap">
@@ -214,7 +212,7 @@ export default function EventInvitationRequests() {
                       variant="solid-error"
                       icon={X}
                       className="w-auto px-4 rounded-2xl group/btn overflow-hidden transition-all duration-500 font-black uppercase italic tracking-widest text-[10px]"
-                      onClick={() => handleAction(request.id, 'reject')}
+                      onClick={() => handleAction(request.id, false)}
                       disabled={isActionLoading}
                     >
                       <span className="max-w-0 overflow-hidden group-hover/btn:max-w-xs transition-all duration-500 ease-in-out whitespace-nowrap">

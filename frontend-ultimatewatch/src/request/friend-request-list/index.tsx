@@ -54,34 +54,33 @@ export default function FriendRequests() {
     fetchRequests();
   }, [fetchRequests]);
 
-  const handleAction = async (requestId: number, action: 'accept' | 'reject') => {
-    const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+  const handleAction = async (requestId: number, accept: boolean) => {
     setIsActionLoading(true);
 
     try {
-      const isAccepting = action === 'accept';
-      const [response] = await Promise.all([
-        fetch(
-          `http://localhost:3000/requests/friend-request/resolve/${requestId}`, {
-          method: 'PATCH',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}` 
-          },
-          body: JSON.stringify({ accept: isAccepting })
-        }),
-        wait(750)
-      ]);
+      const response = await fetch(`http://localhost:3000/requests/friend-request/resolve/${requestId}`, {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}` 
+        },
+        body: JSON.stringify({ accept })
+      });
 
       const data = await response.json();
 
       if (!response.ok) {
-        toast.error(data.message || "Failed to perform action");
+        toast.error(data.message || "Failed to resolve request");
         return;
       }
 
-      toast.success(data.message || `Request ${action}ed successfully`);
-      await fetchRequests(); 
+      toast.success(data.message);
+
+      setRequests(prev => prev.filter(req => req.id !== requestId));
+      
+      if (requests.length === 1 && page > 1) {
+        setPage(p => p - 1);
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'An unexpected error occurred';
       toast.error(message);
@@ -245,7 +244,7 @@ export default function FriendRequests() {
                           className="w-auto px-3 group/btn overflow-hidden transition-all duration-500"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleAction(request.id, 'accept');
+                            handleAction(request.id, true);
                           }}
                           disabled={isActionLoading}
                         >
@@ -261,7 +260,7 @@ export default function FriendRequests() {
                           className="w-auto px-3 group/btn overflow-hidden transition-all duration-500"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleAction(request.id, 'reject');
+                            handleAction(request.id, false);
                           }}
                           disabled={isActionLoading}
                         >

@@ -24,6 +24,7 @@ import EventDetail from "./event/detail";
 import CreateEvent from "./event/create";
 import EventRoom from "./event/room";
 import EventInvitationRequests from "./request/event-invitation-list";
+import CalendarPage from "./event/calendar";
 
 function App() {
   return (
@@ -79,6 +80,7 @@ function App() {
             <Route path="/events/create" element={<CreateEvent />} />
             <Route path="/events/:id/room" element={<EventRoom />} />
             <Route path="/event-invitations" element={<EventInvitationRequests />} />
+            <Route path="/events-calendar" element={<CalendarPage />} />
           </Route>
 
           <Route path="/" element={<Home />} />

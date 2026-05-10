@@ -35,7 +35,8 @@ export default function EventList() {
       const data = await response.json();
 
       if (!response.ok) {
-        toast.error(data.message || "Failed to fetch available events");
+        toast.error(data.message || "Failed to fetch events");
+        setIsLoading(false);
         return;
       }
 
@@ -44,7 +45,6 @@ export default function EventList() {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error';
       toast.error(message);
-      setIsLoading(false);
     } finally {
       setTimeout(() => setIsLoading(false), 400);
     }
@@ -273,7 +273,7 @@ export default function EventList() {
                         icon={Eye}
                         showShine={true}
                         className={`w-full py-4 rounded-2xl font-black uppercase text-[10px] ${!isFinished && 'shadow-[0_0_20px_rgba(168,85,247,0.15)]'}`}
-                        onClick={() => smartNavigate(`/events/${event.id}`)}
+                        onClick={(e) => smartNavigate(`/events/${event.id}`, e)}
                       >
                         Details
                       </Button>

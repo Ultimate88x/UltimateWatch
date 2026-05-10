@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, History, PlayCircle, ListOrdered } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { MediaCard } from './MediaCard';
 import type { EventMediaRoom } from '../../types/event-media-room';
 
@@ -13,6 +14,28 @@ export function PlaylistModal({ isOpen, onClose, media }: PlaylistModalProps) {
   const history = media.filter(m => ['watched', 'skipped'].includes(m.status)).sort((a, b) => b.order - a.order);
   const current = media.filter(m => m.status === 'current');
   const pending = media.filter(m => m.status === 'pending').sort((a, b) => a.order - b.order);
+
+  const onDragEnd = (result: DropResult) => {
+    const { source, destination, draggableId } = result;
+
+    if (!destination) return;
+    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
+
+    const movedItem = media.find(m => String(m.id) === draggableId);
+    if (!movedItem) return;
+
+    let newStatus = movedItem.status;
+    
+    if (destination.droppableId === 'archive') newStatus = 'watched';
+    if (destination.droppableId === 'now-playing') newStatus = 'current';
+    if (destination.droppableId === 'up-next') newStatus = 'pending';
+
+    console.log(`🚀 Moviendo "${movedItem.title}"`);
+    console.log(`De: ${source.droppableId} (index ${source.index})`);
+    console.log(`A: ${destination.droppableId} (index ${destination.index})`);
+    console.log(`Nuevo estado: ${newStatus}`);
+    
+  };
 
   return (
     <AnimatePresence>
@@ -35,55 +58,111 @@ export function PlaylistModal({ isOpen, onClose, media }: PlaylistModalProps) {
                 <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">
                   Event <span className="text-purple-main">Manifest</span>
                 </h2>
-                <div className="flex gap-4 mt-1">
-                   <span className="text-[10px] font-mono text-white/20 uppercase">Total: {media.length} items</span>
-                </div>
               </div>
               <button onClick={onClose} className="p-3 hover:bg-white/5 rounded-full text-white/20 hover:text-white transition-colors cursor-pointer">
                 <X size={24} />
               </button>
             </div>
 
-            <div className="flex-1 grid grid-cols-1 md:grid-cols-3 overflow-hidden min-h-0">
-              
-              <div className="flex flex-col border-r border-white/5 bg-black/20 min-h-0">
-                <div className="p-5 border-b border-white/5 flex items-center gap-3 text-white/40 shrink-0">
-                  <History size={18} />
-                  <span className="text-xs font-black uppercase tracking-widest">Archive</span>
-                </div>
-                <div className="flex-1 overflow-y-auto p-6 space-y-4 media-scrollbar">
-                  {history.map(m => <MediaCard key={m.id} media={m} />)}
-                </div>
-              </div>
-
-              <div className="flex flex-col bg-purple-main/3 min-h-0">
-                <div className="p-5 border-b border-purple-main/10 flex items-center gap-3 text-purple-main shrink-0">
-                  <PlayCircle size={18} />
-                  <span className="text-xs font-black uppercase tracking-widest">Now Playing</span>
-                </div>
-                <div className="flex-1 p-8 overflow-y-auto media-scrollbar">
-                  {current.map(m => (
-                    <div key={m.id} className="scale-110 origin-top mb-8">
-                      <MediaCard media={m} />
+            <DragDropContext onDragEnd={onDragEnd}>
+              <div className="flex-1 grid grid-cols-3 overflow-hidden min-h-0">  
+                <Droppable droppableId="archive">
+                  {(provided, snapshot) => (
+                    <div 
+                      className={`flex flex-col border-r border-white/5 transition-colors h-full min-h-0 ${
+                        snapshot.isDraggingOver ? 'bg-white/5' : 'bg-black/20'
+                      }`}
+                    >
+                      <div className="p-5 border-b border-white/5 flex items-center gap-3 text-white/40 shrink-0">
+                        <History size={18} />
+                        <span className="text-xs font-black uppercase tracking-widest">Archive</span>
+                      </div>
+                      
+                      <div 
+                        {...provided.droppableProps}
+                        ref={provided.innerRef}
+                        className="flex-1 overflow-y-auto p-6 space-y-4 media-scrollbar min-h-0"
+                        style={{ display: 'flex', flexDirection: 'column' }}
+                      >
+                        {history.map((m, index) => (
+                          <DraggableMedia key={m.id} media={m} index={index} />
+                        ))}
+                        {provided.placeholder}
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </div>
+                  )}
+                </Droppable>
 
-              <div className="flex flex-col border-l border-white/5 bg-black/20 min-h-0">
-                <div className="p-5 border-b border-white/5 flex items-center gap-3 text-white/40 shrink-0">
-                  <ListOrdered size={18} />
-                  <span className="text-xs font-black uppercase tracking-widest">Up Next</span>
-                </div>
-                <div className="flex-1 overflow-y-auto p-6 space-y-4 media-scrollbar">
-                  {pending.map((m, i) => <MediaCard key={m.id} media={m} isNext={i === 0} />)}
-                </div>
-              </div>
+                <Droppable droppableId="now-playing">
+                  {(provided, snapshot) => (
+                    <div 
+                      {...provided.droppableProps}
+                      ref={provided.innerRef}
+                      className={`flex flex-col transition-colors ${snapshot.isDraggingOver ? 'bg-purple-main/5' : 'bg-purple-main/3'}`}
+                    >
+                      <div className="p-5 border-b border-purple-main/10 flex items-center gap-3 text-purple-main shrink-0">
+                        <PlayCircle size={18} />
+                        <span className="text-xs font-black uppercase tracking-widest">Now Playing</span>
+                      </div>
+                      <div className="flex-1 p-8 overflow-y-auto media-scrollbar">
+                        {current.map((m, index) => (
+                          <DraggableMedia key={m.id} media={m} index={index} />
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    </div>
+                  )}
+                </Droppable>
 
-            </div>
+                <Droppable droppableId="up-next">
+                  {(provided, snapshot) => (
+                    <div 
+                      className={`flex flex-col border-l border-white/5 transition-colors h-full min-h-0 ${
+                        snapshot.isDraggingOver ? 'bg-white/2' : 'bg-black/20'
+                      }`}
+                    >
+                      <div className="p-5 border-b border-white/5 flex items-center gap-3 text-white/40 shrink-0">
+                        <ListOrdered size={18} />
+                        <span className="text-xs font-black uppercase tracking-widest">Up Next</span>
+                      </div>
+
+                      <div 
+                        {...provided.droppableProps}
+                        ref={provided.innerRef}
+                        className="flex-1 overflow-y-auto p-6 space-y-4 media-scrollbar min-h-0 custom-drag-area"
+                      >
+                        {pending.map((m, index) => (
+                          <DraggableMedia key={m.id} media={m} index={index} isNext={index === 0} />
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    </div>
+                  )}
+                </Droppable>
+              </div>
+            </DragDropContext>
           </motion.div>
         </div>
       )}
     </AnimatePresence>
+  );
+}
+
+function DraggableMedia({ media, index, isNext }: { media: EventMediaRoom; index: number; isNext?: boolean }) {
+  return (
+    <Draggable draggableId={String(media.id)} index={index}>
+      {(provided, snapshot) => (
+        <div
+          ref={provided.innerRef}
+          {...provided.draggableProps}
+          {...provided.dragHandleProps}
+          className={`cursor-grab active:cursor-grabbing transition-shadow ${
+            snapshot.isDragging ? 'z-50 shadow-2xl opacity-80' : ''
+          }`}
+        >
+          <MediaCard media={media} isNext={isNext} />
+        </div>
+      )}
+    </Draggable>
   );
 }

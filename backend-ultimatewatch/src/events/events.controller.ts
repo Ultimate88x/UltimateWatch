@@ -86,8 +86,8 @@ export class EventsController {
   @UseGuards(AuthGuard)
   async findMediaEventsFromEvent(
     @Param('id') id: string,
-  ): Promise<MediaEventDto[] | VotingMediaEventDto[] | null> {
-    const mediasEvent: MediaEventDto[] | VotingMediaEventDto[] | null =
+  ): Promise<MediaEventDto[] | VotingMediaEventDto[]> {
+    const mediasEvent: MediaEventDto[] | VotingMediaEventDto[] =
       await this.eventsService.getMediasEventFromEvent(+id);
 
     return mediasEvent;
@@ -99,7 +99,7 @@ export class EventsController {
     @GetUser('userId') userId: number,
     @Body() createEventDto: CreateStandardEventDto,
   ): Promise<{ message: string }> {
-    await this.eventsService.createStandardEvent(createEventDto, userId);
+    await this.eventsService.handleCreateStandardEvent(createEventDto, userId);
 
     return { message: 'Event succesfully created!' };
   }
@@ -110,7 +110,7 @@ export class EventsController {
     @GetUser('userId') userId: number,
     @Body() createVotingEvent: CreateVotingEventDto,
   ): Promise<{ message: string }> {
-    await this.eventsService.createVotingEvent(createVotingEvent, userId);
+    await this.eventsService.handleCreateVotingEvent(createVotingEvent, userId);
 
     return { message: 'Event succesfully created!' };
   }

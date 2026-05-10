@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
 import { format, parseISO, getDay, getWeekOfMonth } from "date-fns";
-import { Users, Clock, HelpCircle } from "lucide-react";
+import { Users, Clock, HelpCircle, LayoutList } from "lucide-react";
 import type { EventItem } from "../../types/event-item";
+import { EventTypeEnum } from "../../enums/EventTypeEnum";
 
 interface Props {
   event: EventItem;
@@ -40,7 +41,10 @@ export const EventPreviewCard = ({ event }: Props) => {
             <img src={event.mainImagePath} className="w-full h-full object-cover opacity-80" />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center">
-              <HelpCircle size={88} className="text-purple-main/50" />
+              {event.type === EventTypeEnum.VOTING ? (
+                <LayoutList size={88} className="text-purple-main/50 group-hover:text-purple-main/75 transition-all duration-250 ease-in-out" />                          ) : (
+                <HelpCircle size={88} className="text-purple-main/50 group-hover:text-purple-main/75 transition-all duration-250 ease-in-out" />
+              )}
             </div>
           )}
           <div className="absolute inset-0 bg-linear-to-t from-[#0c0c0c] to-transparent" />

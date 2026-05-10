@@ -7,7 +7,8 @@ import {
 import { 
   ChevronLeft, ChevronRight, Calendar as CalendarIcon, 
   ExternalLink, Clock, Users, X, 
-  HelpCircle
+  HelpCircle,
+  LayoutList
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -16,6 +17,7 @@ import type { EventItem } from '../../types/event-item';
 import { useAdvancedNavigation } from '../../components/utilities/SmartNavigate';
 import { getGoogleCalendarLink } from '../../components/utilities/CalendarUtils';
 import { Button } from '../../components/Button';
+import { EventTypeEnum } from '../../enums/EventTypeEnum';
 
 export default function CalendarPage() {
   const { smartNavigate } = useAdvancedNavigation();
@@ -253,7 +255,10 @@ export default function CalendarPage() {
                     <img src={selectedEvent.mainImagePath} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <HelpCircle size={200} className="text-purple-main/50" />
+                      {selectedEvent.type === EventTypeEnum.VOTING ? (
+                        <LayoutList size={200} className="text-purple-main/50 group-hover:text-purple-main/75 transition-all duration-250 ease-in-out" />                          ) : (
+                        <HelpCircle size={200} className="text-purple-main/50 group-hover:text-purple-main/75 transition-all duration-250 ease-in-out" />
+                      )}
                     </div>
                   )}
                 </div>

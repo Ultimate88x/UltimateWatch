@@ -20,6 +20,8 @@ const INITIAL_STANDARD = {
   maxMembers: 5,
   mediaIds: [] as number[],
   visibility: EventVisibilityEnum.PUBLIC,
+  isRecurring: false,
+  weeks: '' as number | string | null,
 };
 
 const INITIAL_VOTING = {
@@ -32,6 +34,8 @@ const INITIAL_VOTING = {
   votingEndDate: new Date(new Date(Date.now() + 300000 * 6).setSeconds(0, 0)),
   proposedMediaIds: [] as number[],
   visibility: EventVisibilityEnum.PUBLIC,
+  isRecurring: false,
+  weeks: '' as number | string | null,
 };
 
 export default function CreateEvent() {
@@ -48,16 +52,29 @@ export default function CreateEvent() {
   const [votingData, setVotingData] = useState(INITIAL_VOTING);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type: inputType } = e.target;
-    let finalValue: string | number | Date = inputType === 'number' ? Number(value) : value;
+    const target = e.target as HTMLInputElement;
+    const { name, value, type: inputType, checked } = target;
 
-    if (inputType === 'datetime-local' && value) {
+    let finalValue: string | number | Date | boolean = value;
+
+    if (inputType === 'number') {
+      finalValue = Number(value);
+    } else if (inputType === 'checkbox') {
+      finalValue = checked;
+    } else if (inputType === 'datetime-local' && value) {
       const dateValue = new Date(value);
       dateValue.setSeconds(0, 0);
       finalValue = dateValue;
     }
 
-    const commonFields = ['name', 'description', 'eventDate', 'maxMembers'];
+    const commonFields = [
+      'name', 
+      'description', 
+      'eventDate', 
+      'maxMembers', 
+      'isRecurring', 
+      'weeks'
+    ];
 
     if (commonFields.includes(name)) {
       setFormData(prev => ({ ...prev, [name]: finalValue }));
@@ -237,6 +254,43 @@ export default function CreateEvent() {
                 placeholder="Optional description..."
                 error={error}
               />
+
+              <div className="flex flex-col gap-4 border-l-2 border-blue-400/30 pl-4 py-2 my-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-col">
+                    <h4 className="text-[9px] font-black uppercase text-blue-400 tracking-widest">Recurrence</h4>
+                    <p className="text-xs text-white/50">Repeat this event weekly</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      name="isRecurring"
+                      checked={data.isRecurring}
+                      onChange={handleChange}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-main"></div>
+                  </label>
+                </div>
+
+                {data.isRecurring && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="mt-2"
+                  >
+                    <Input
+                      label="Number of Weeks"
+                      name="weeks"
+                      type="number"
+                      value={data.weeks?.toString() || ""}
+                      onChange={handleChange}
+                      placeholder="Enter weeks (min. 2)"
+                      error={error}
+                    />
+                  </motion.div>
+                )}
+              </div>
 
               <div className="grid grid-cols-1 gap-4">
                 {type === EventTypeEnum.VOTING && (

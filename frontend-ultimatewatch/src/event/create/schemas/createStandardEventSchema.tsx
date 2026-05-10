@@ -36,4 +36,23 @@ export const createStandardEventSchema = z.object({
     .refine((items) => new Set(items).size === items.length, {
       message: "Media List must contain unique IDs",
     }),
+
+  isRecurring: z.boolean().default(false),
+  
+  weeks: z
+    .coerce.number()
+    .int()
+    .min(2, "Minimum 2 weeks for recurring events")
+    .max(12, "Maximum 12 weeks allowed")
+    .optional()
+    .nullable(),
+
+}).refine((data) => {
+  if (data.isRecurring) {
+    return data.weeks !== null && data.weeks !== undefined;
+  }
+  return true;
+}, {
+  message: "Weeks is required when event is recurring",
+  path: ["weeks"],
 });

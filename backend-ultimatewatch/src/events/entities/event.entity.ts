@@ -91,6 +91,9 @@ export class Event extends BaseEntity {
   @Max(50)
   maxMembers: number;
 
+  @Column({ nullable: true })
+  recurringGroupId?: string;
+
   @Index()
   @Column()
   @IsEnum(EventStatus)

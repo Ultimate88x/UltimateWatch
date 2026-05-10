@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { Member } from '../../types/member';
 import { EmptyState } from '../../components/EmptyState';
-import { Film, Calendar, Users, Info, Shield, ChevronLeft, ChevronRight, Trophy, LogOut, Play, UserPlus, Trash, AlertTriangle, Settings } from 'lucide-react';
+import { Film, Calendar, Users, Info, Shield, ChevronLeft, ChevronRight, Trophy, LogOut, Play, UserPlus, Trash, AlertTriangle, Settings, Clapperboard } from 'lucide-react';
 import { Button } from '../../components/Button';
 import { getRelativeDate } from '../../components/utilities/RelativeDate';
 import { useAdvancedNavigation } from '../../components/utilities/SmartNavigate';
@@ -701,17 +701,28 @@ export default function EventDetail() {
                   </div>
                 ) : (
                   <div className="grid gap-4">
-                    {mediaList?.map((m) => (
-                      <MediaEventCard
-                        key={m.id}
-                        media={m}
-                        event={event!}
-                        isMember={isMember}
-                        votedMediaIds={votedMediaIds}
-                        onEventUpdate={fetchMedia} 
-                        isOwner={isOwner}
+                    {mediaList && mediaList.length > 0 ? (
+                      mediaList.map((m) => (
+                        <MediaEventCard
+                          key={m.id}
+                          media={m}
+                          event={event!}
+                          isMember={isMember}
+                          votedMediaIds={votedMediaIds}
+                          onEventUpdate={fetchMedia}
+                          isOwner={isOwner}
+                        />
+                      ))
+                    ) : (
+                      <EmptyState
+                        title="No media found"
+                        description="It seems this event doesn't have any content yet."
+                        icon={Clapperboard}
+                        actionLabel="Add Content"
+                        showBackButton={false}
+                        fullPage={false}
                       />
-                    ))}
+                    )}
                   </div>
                 )}
               </div>

@@ -46,6 +46,8 @@ import { Request } from 'src/requests/entities/request.entity';
 import { EventAccessRequest } from 'src/requests/entities/event-access-request.entity';
 import { UpdateStandardEventDto } from './dto/update-standard-event-dto';
 import { UpdateVotingEventDto } from './dto/update-voting-event-dto';
+import { v4 as uuidv4 } from 'uuid';
+import { addWeeks } from 'date-fns';
 
 interface SubMediaEventWithSort extends SubMediaEventDto {
   sortKey: string;
@@ -89,6 +91,7 @@ export class EventsService {
   async createStandardEvent(
     createEventDto: CreateStandardEventDto,
     userId: number,
+    recurringGroupId?: string,
   ): Promise<StandardEvent> {
     const { creator }: { creator: Member } =
       await this.mapEventCommonValues(userId);
@@ -97,8 +100,11 @@ export class EventsService {
       createEventDto.mediaIds,
     );
 
+    const { isRecurring: _, weeks: __, ...eventData } = createEventDto;
+
     const event: StandardEvent = this.standardEventsRepository.create({
-      ...createEventDto,
+      ...eventData,
+      recurringGroupId,
       members: [creator],
       media: mediaList,
       timer: 0,
@@ -116,6 +122,7 @@ export class EventsService {
   async createVotingEvent(
     createEventDto: CreateVotingEventDto,
     userId: number,
+    recurringGroupId?: string,
   ): Promise<VotingEvent> {
     const { creator }: { creator: Member } =
       await this.mapEventCommonValues(userId);
@@ -124,8 +131,11 @@ export class EventsService {
       createEventDto.proposedMediaIds,
     );
 
+    const { isRecurring: _, weeks: __, ...eventData } = createEventDto;
+
     const event: VotingEvent = this.votingEventsRepository.create({
-      ...createEventDto,
+      ...eventData,
+      recurringGroupId,
       members: [creator],
       proposedMedia: proposedMediaList,
       timer: 0,
@@ -139,6 +149,74 @@ export class EventsService {
     );
 
     return await this.saveVotingEvent(event);
+  }
+
+  private async createRecurringInstances<
+    T extends CreateStandardEventDto | CreateVotingEventDto,
+  >(
+    dto: T,
+    userId: number,
+    createSingleFn: (
+      d: T,
+      u: number,
+      groupId?: string,
+    ) => Promise<StandardEvent | VotingEvent>,
+  ): Promise<(StandardEvent | VotingEvent)[]> {
+    const instances: (StandardEvent | VotingEvent)[] = [];
+
+    const shouldRepeat = dto.isRecurring && dto.weeks && dto.weeks > 1;
+    const groupId = shouldRepeat ? uuidv4() : undefined;
+
+    const iterations = shouldRepeat ? (dto.weeks as number) : 1;
+
+    for (let i = 0; i < iterations; i++) {
+      const instanceDto: T = { ...dto };
+
+      instanceDto.eventDate = addWeeks(new Date(dto.eventDate), i);
+
+      if ('votingEndDate' in dto && dto.votingEndDate instanceof Date) {
+        (instanceDto as CreateVotingEventDto).votingEndDate = addWeeks(
+          new Date(dto.votingEndDate),
+          i,
+        );
+      }
+
+      if (i > 0 && 'proposedMediaIds' in instanceDto) {
+        instanceDto.proposedMediaIds = [];
+      }
+
+      if (i > 0 && 'mediaIds' in instanceDto) {
+        instanceDto.mediaIds = [];
+      }
+
+      const event = await createSingleFn(instanceDto, userId, groupId);
+
+      instances.push(event);
+    }
+
+    return instances;
+  }
+
+  async handleCreateStandardEvent(
+    createEventDto: CreateStandardEventDto,
+    userId: number,
+  ): Promise<StandardEvent[]> {
+    return (await this.createRecurringInstances(
+      createEventDto,
+      userId,
+      (d, u, gid) => this.createStandardEvent(d, u, gid),
+    )) as StandardEvent[];
+  }
+
+  async handleCreateVotingEvent(
+    createEventDto: CreateVotingEventDto,
+    userId: number,
+  ): Promise<VotingEvent[]> {
+    return (await this.createRecurringInstances(
+      createEventDto,
+      userId,
+      (d, u, gid) => this.createVotingEvent(d, u, gid),
+    )) as VotingEvent[];
   }
 
   async updateStandardEvent(
@@ -658,7 +736,7 @@ export class EventsService {
         'is_finished',
       )
       .orderBy('is_finished', 'ASC')
-      .addOrderBy('event.eventDate', 'DESC')
+      .addOrderBy('event.eventDate', 'ASC')
       .setParameter('userId', userId)
       .setParameter('ownerRole', MemberRole.OWNER)
       .setParameter('finished', EventStatus.FINISHED)
@@ -709,7 +787,7 @@ export class EventsService {
         'is_finished',
       )
       .orderBy('is_finished', 'ASC')
-      .addOrderBy('event.eventDate', 'DESC')
+      .addOrderBy('event.eventDate', 'ASC')
       .setParameter('userId', userId)
       .setParameter('ownerRole', MemberRole.OWNER)
       .setParameter('finished', EventStatus.FINISHED)
@@ -865,11 +943,13 @@ export class EventsService {
 
   async getMediasEventFromEvent(
     eventId: number,
-  ): Promise<MediaEventDto[] | VotingMediaEventDto[] | null> {
+  ): Promise<MediaEventDto[] | VotingMediaEventDto[]> {
     const event: Event = await this.findBydId(eventId);
 
     if (event.type === EventType.STANDARD) {
-      return await this.createMediaEventDtoListForMediaList(event.media);
+      return (
+        (await this.createMediaEventDtoListForMediaList(event.media)) || []
+      );
     } else {
       const votingResults: VoteResultDto[] = await this.getResultsByEvent(
         eventId,
@@ -877,10 +957,10 @@ export class EventsService {
       );
 
       return event.status === EventStatus.VOTING
-        ? await this.createVotingMediaEventDtoListForProposedMediaList(
+        ? (await this.createVotingMediaEventDtoListForProposedMediaList(
             votingResults,
-          )
-        : await this.createMediaEventDtoListForMediaList(event.media);
+          )) || []
+        : (await this.createMediaEventDtoListForMediaList(event.media)) || [];
     }
   }
 

@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Clock, ChevronLeft, ChevronRight, Users, HelpCircle, Eye, RotateCw, Shield } from 'lucide-react';
+import { Clock, ChevronLeft, ChevronRight, Users, HelpCircle, Eye, RotateCw, Shield, LayoutList } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { EmptyState } from '../../components/EmptyState';
@@ -7,6 +7,7 @@ import { Button } from '../../components/Button';
 import { getRelativeDate } from '../../components/utilities/RelativeDate';
 import { useAdvancedNavigation } from '../../components/utilities/SmartNavigate';
 import type { EventItem } from '../../types/event-item';
+import { EventTypeEnum } from '../../enums/EventTypeEnum';
 
 export default function EventList() {
   const { smartNavigate } = useAdvancedNavigation();
@@ -204,7 +205,10 @@ export default function EventList() {
                         />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <HelpCircle size={88} className="text-purple-main/50 group-hover:text-purple-main/75 transition-all duration-250 ease-in-out" />
+                          {event.type === EventTypeEnum.VOTING ? (
+                            <LayoutList size={88} className="text-purple-main/50 group-hover:text-purple-main/75 transition-all duration-250 ease-in-out" />                          ) : (
+                            <HelpCircle size={88} className="text-purple-main/50 group-hover:text-purple-main/75 transition-all duration-250 ease-in-out" />
+                          )}
                         </div>
                       )}
                       <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent z-10" />

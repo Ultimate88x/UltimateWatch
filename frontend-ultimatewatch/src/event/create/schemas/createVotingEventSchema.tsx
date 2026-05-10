@@ -49,10 +49,28 @@ export const createVotingEventSchema = z.object({
     .min(1, "You must select at least one media to propose for voting")
     .max(50, "You cannot propose more than 50 media items"),
 
+  isRecurring: z.boolean().default(false),
+  
+  weeks: z
+    .coerce.number()
+    .int()
+    .min(2, "Minimum 2 weeks for recurring events")
+    .max(12, "Maximum 12 weeks allowed")
+    .optional()
+    .nullable(),
+
 }).refine((data) => data.votingEndDate < data.eventDate, {
   message: "Voting must end before the event starts",
   path: ["votingEndDate"],
 }).refine((data) => data.maxVotesPerMember <= data.proposedMediaIds.length, {
   message: "Votes per member cannot exceed the number of proposed media items",
   path: ["maxVotesPerMember"],
+}).refine((data) => {
+  if (data.isRecurring) {
+    return data.weeks !== null && data.weeks !== undefined;
+  }
+  return true;
+}, {
+  message: "Weeks is required when event is recurring",
+  path: ["weeks"],
 });

@@ -3,17 +3,18 @@ import { X, History, PlayCircle, ListOrdered } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { MediaCard } from './MediaCard';
 import type { EventMediaRoom } from '../../types/event-media-room';
-import toast from 'react-hot-toast';
 import { useEffect, useState } from 'react';
+import type { Socket } from 'socket.io-client';
 
 interface PlaylistModalProps {
   isOpen: boolean;
   onClose: () => void;
   media: EventMediaRoom[];
-  onUpdate: (updatedList: EventMediaRoom[]) => void;
+  socketRef: React.MutableRefObject<Socket | null>;
+  eventId: string | number | undefined;
 }
 
-export function PlaylistModal({ isOpen, onClose, media, onUpdate }: PlaylistModalProps) {
+export function PlaylistModal({ isOpen, onClose, media, socketRef, eventId }: PlaylistModalProps) {
   const [localMedia, setLocalMedia] = useState<EventMediaRoom[]>(media);
 
   useEffect(() => {
@@ -62,7 +63,6 @@ export function PlaylistModal({ isOpen, onClose, media, onUpdate }: PlaylistModa
     if (destination.droppableId === 'archive') {
       archives.splice(destination.index, 0, movedItem);
     } else if (destination.droppableId === 'now-playing') {
-      // Solo puede haber uno, pero lo metemos en su lista
       current.splice(0, 1, movedItem); 
     } else {
       pendings.splice(destination.index, 0, movedItem);
@@ -77,37 +77,15 @@ export function PlaylistModal({ isOpen, onClose, media, onUpdate }: PlaylistModa
 
     setLocalMedia(updatedMedia);
 
-    try {
-      const response = await fetch(
-        `http://localhost:3000/event-media/sort-order/`, 
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-          body: JSON.stringify({
-            items: updatedMedia.map(m => ({
-              id: m.id,
-              order: m.order,
-              status: m.status
-            }))
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        toast.error(data?.message || 'Failed to update manifest');
-        return;
-      }
-
-      toast.success(data.message);
-      onUpdate(updatedMedia);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'An unxepected error occurred';
-      toast.error(message);
+    if (socketRef.current) {
+      socketRef.current.emit('update-manifest', {
+        eventId: Number(eventId),
+        items: updatedMedia.map(m => ({
+          id: m.id,
+          order: m.order,
+          status: m.status
+        }))
+      });
     }
   };
 

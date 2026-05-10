@@ -133,6 +133,20 @@ export default function EventRoom() {
       setTimer(timerData);
     });
 
+    socketInstance.on('manifest-updated', (updatedItems: EventMediaRoom[]) => {
+      setEventMedia((prev) => {
+        const newMedia = prev.map((item) => {
+          const match = updatedItems.find((u) => u.id === item.id);
+          if (match) {
+            return { ...item, status: match.status, order: match.order };
+          }
+          return item;
+        });
+
+        return [...newMedia].sort((a, b) => a.order - b.order);
+      });
+    });
+
     socketInstance.on('exception', (error: { message: string }) => {
       const errorComment: Comment = {
         username: 'SYSTEM',
@@ -149,6 +163,7 @@ export default function EventRoom() {
       socketInstance.emit('leaveEvent', { eventId: Number(id) });
       socketInstance.off('event-chat');
       socketInstance.off('timer-update');
+      socketInstance.off('manifest-updated');
       socketInstance.off('exception');
       socketInstance.disconnect();
       socketRef.current = null;
@@ -477,8 +492,9 @@ export default function EventRoom() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         media={eventMedia} 
-        onUpdate={fetchEventMedia}
-        />
+        socketRef={socketRef}
+        eventId={id}
+      />
     </div>
   );
 }

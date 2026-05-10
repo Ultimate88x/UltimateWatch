@@ -7,6 +7,7 @@ interface Event {
   visibility: string;
   status: string;
   maxMembers: number;
+  isRecurring: string,
 }
 
 export type {Event}

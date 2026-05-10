@@ -1,5 +1,14 @@
 import { Type } from 'class-transformer';
-import { IsInt, Min, Max, Validate, IsDate, IsOptional } from 'class-validator';
+import {
+  IsInt,
+  Min,
+  Max,
+  Validate,
+  IsDate,
+  IsOptional,
+  IsNotEmpty,
+  IsBoolean,
+} from 'class-validator';
 import { IsBeforeDateConstraint } from 'src/common/validations/IsBeforeDateConstraint';
 import { CreateEventDto } from './create-event-dto';
 import { PartialType } from '@nestjs/mapped-types';
@@ -27,6 +36,10 @@ export class UpdateVotingEventDto extends PartialType(CreateEventDto) {
     'Voting End Date',
   ])
   votingEndDate: Date;
+
+  @IsNotEmpty()
+  @IsBoolean()
+  updateAll: boolean;
 
   constructor(init?: Partial<UpdateVotingEventDto>) {
     super();

@@ -165,6 +165,8 @@ export default function CreateEvent() {
           field = 'maxMedia';
         } else if (lowerMessage.includes('visibility')) {
           field = 'visibility';
+        } else if (lowerMessage.includes('week')) {
+          field = 'weeks';
         } else {
           toast.error(message);
         }

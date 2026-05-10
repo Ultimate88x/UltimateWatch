@@ -39,6 +39,7 @@ import {
   },
 })
 @Check(`"endDate" IS NULL OR "endDate" > "eventDate"`)
+@Index(['recurringGroupId', 'eventDate'])
 export class Event extends BaseEntity {
   @Column()
   @IsNotEmpty()

@@ -9,6 +9,9 @@ const standardBase = z.object({
   }),
   eventDate: z.preprocess((arg) => (typeof arg === "string" || arg instanceof Date ? new Date(arg) : arg), z.date()),
   maxMembers: z.coerce.number().int().min(2, "Minimum 2 members").max(50, "Maximum 50 members"),
+  updateAll: z.boolean({
+    message: "You must decide if you want to update all events"
+  }).default(false)
 });
 
 export const updateStandardEventSchema = standardBase.partial();

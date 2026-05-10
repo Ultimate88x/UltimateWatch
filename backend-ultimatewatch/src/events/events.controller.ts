@@ -288,7 +288,7 @@ export class EventsController {
     @Param('eventId') eventId: string,
     @Body() updateEventDto: UpdateStandardEventDto,
   ): Promise<{ message: string }> {
-    await this.eventsService.updateStandardEvent(
+    await this.eventsService.handleUpdateStandardEvent(
       userId,
       +eventId,
       updateEventDto,
@@ -303,7 +303,7 @@ export class EventsController {
     @Param('eventId') eventId: string,
     @Body() updateEventDto: UpdateVotingEventDto,
   ): Promise<{ message: string }> {
-    await this.eventsService.updateVotingEvent(
+    await this.eventsService.handleUpdateVotingEvent(
       userId,
       +eventId,
       updateEventDto,

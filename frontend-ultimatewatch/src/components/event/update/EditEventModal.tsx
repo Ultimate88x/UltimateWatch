@@ -26,6 +26,7 @@ type Form = {
   visibility: string,
   maxMedia: number | null | undefined,
   votingEndDate: Date | null | undefined,
+  updateAll: boolean,
 };
 
 export const EditEventModal = ({ isOpen, onClose, event, onUpdate }: EditEventModalProps) => {
@@ -35,8 +36,9 @@ export const EditEventModal = ({ isOpen, onClose, event, onUpdate }: EditEventMo
     eventDate: new Date(),
     maxMembers: 0,
     visibility: 'public',
-    maxMedia: null,
-    votingEndDate: null,
+    maxMedia: undefined,
+    votingEndDate: undefined,
+    updateAll: false,
   });
   const [error, setError] = useState<{ field: string; message: string } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -49,17 +51,22 @@ export const EditEventModal = ({ isOpen, onClose, event, onUpdate }: EditEventMo
         eventDate: new Date(event.eventDate),
         maxMembers: event.maxMembers,
         visibility: event.visibility,
-        maxMedia: event.maxMedia || 1,
-        votingEndDate: event.votingEndDate ? new Date(event.votingEndDate) : null,
+        maxMedia: event.type === EventTypeEnum.VOTING ? event.maxMedia : undefined,
+        votingEndDate: event.votingEndDate ? new Date(event.votingEndDate) : undefined,
+        updateAll: false,
       });
     }
   }, [event, isOpen]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type: inputType } = e.target;
-    let finalValue: string | number | Date = inputType === 'number' ? Number(value) : value;
+    const target = e.target as HTMLInputElement;
+    const { name, value, type: inputType, checked } = target;
+    
+    let finalValue: unknown = inputType === 'number' ? Number(value) : value;
 
-    if (inputType === 'datetime-local' && value) {
+    if (inputType === 'checkbox') {
+      finalValue = checked;
+    } else if (inputType === 'datetime-local' && value) {
       const dateValue = new Date(value);
       dateValue.setSeconds(0, 0);
       finalValue = dateValue;
@@ -138,6 +145,25 @@ export const EditEventModal = ({ isOpen, onClose, event, onUpdate }: EditEventMo
             </div>
 
             <form onSubmit={handleSubmit} className="p-8 flex flex-col gap-5 max-h-[70vh] overflow-y-auto media-scrollbar">
+              {event.isRecurring && (
+                <div className="bg-purple-main/5 border border-purple-main/20 p-4 rounded-2xl flex items-center justify-between gap-4 mb-2">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-black uppercase text-purple-main tracking-widest">Recurrence sync</span>
+                    <p className="text-[9px] text-white/40 italic leading-tight">Update all upcoming events in this series?</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      name="updateAll"
+                      checked={formData.updateAll}
+                      onChange={handleChange}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-white/10 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-main"></div>
+                  </label>
+                </div>
+              )}
+
               <Input
                 label="Event Name"
                 name="name"

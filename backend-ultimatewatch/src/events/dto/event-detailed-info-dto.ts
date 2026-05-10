@@ -11,6 +11,7 @@ export class EventDetailedInfoDto {
   visibility: EventVisibility;
   status: EventStatus;
   maxMembers: number;
+  isRecurring: boolean;
 
   constructor(init?: Partial<EventDetailedInfoDto>) {
     Object.assign(this, init);

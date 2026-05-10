@@ -4,7 +4,12 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Event } from './entities/event.entity';
-import { Brackets, LessThanOrEqual, Repository } from 'typeorm';
+import {
+  Brackets,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+  Repository,
+} from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UsersService } from 'src/users/users.service';
 import { User } from 'src/users/entities/user.entity';
@@ -47,7 +52,7 @@ import { EventAccessRequest } from 'src/requests/entities/event-access-request.e
 import { UpdateStandardEventDto } from './dto/update-standard-event-dto';
 import { UpdateVotingEventDto } from './dto/update-voting-event-dto';
 import { v4 as uuidv4 } from 'uuid';
-import { addWeeks } from 'date-fns';
+import { addWeeks, differenceInWeeks } from 'date-fns';
 
 interface SubMediaEventWithSort extends SubMediaEventDto {
   sortKey: string;
@@ -256,9 +261,11 @@ export class EventsService {
       }
     }
 
+    const { updateAll: _, ...data } = updateEventDto;
+
     const updatedEvent: StandardEvent = this.standardEventsRepository.merge(
       event,
-      updateEventDto,
+      data,
     );
 
     return await this.saveStandardEvent(updatedEvent);
@@ -321,12 +328,100 @@ export class EventsService {
       }
     }
 
+    const { updateAll: _, ...data } = updateEventDto;
+
     const updatedEvent: VotingEvent = this.votingEventsRepository.merge(
       event,
-      updateEventDto,
+      data,
     );
 
     return await this.saveVotingEvent(updatedEvent);
+  }
+
+  async handleUpdateStandardEvent(
+    userId: number,
+    eventId: number,
+    updateDto: UpdateStandardEventDto,
+  ): Promise<StandardEvent | StandardEvent[]> {
+    const event = await this.findStandardEventBydId(eventId);
+
+    if (updateDto.updateAll && event.recurringGroupId) {
+      const futureEvents =
+        await this.getFutureStandardEventsWithRecurringGroupId(
+          event.recurringGroupId,
+          event.eventDate,
+        );
+
+      return Promise.all(
+        futureEvents.map((e) => {
+          const instanceDto = { ...updateDto };
+
+          if (updateDto.eventDate) {
+            const weeksDiff = differenceInWeeks(
+              new Date(e.eventDate),
+              new Date(event.eventDate),
+            );
+            instanceDto.eventDate = addWeeks(
+              new Date(updateDto.eventDate),
+              weeksDiff,
+            );
+          }
+
+          return this.updateStandardEvent(userId, e.id, instanceDto);
+        }),
+      );
+    }
+
+    return this.updateStandardEvent(userId, eventId, updateDto);
+  }
+
+  async handleUpdateVotingEvent(
+    userId: number,
+    eventId: number,
+    updateDto: UpdateVotingEventDto,
+  ): Promise<VotingEvent | VotingEvent[]> {
+    const event = await this.findVotingEventBydId(eventId);
+
+    if (updateDto.updateAll && event.recurringGroupId) {
+      const futureEvents = await this.votingEventsRepository.find({
+        where: {
+          recurringGroupId: event.recurringGroupId,
+          eventDate: MoreThanOrEqual(event.eventDate),
+        },
+      });
+
+      return Promise.all(
+        futureEvents.map((e) => {
+          const instanceDto = { ...updateDto };
+
+          if (updateDto.eventDate) {
+            const weeksDiff = differenceInWeeks(
+              new Date(e.eventDate),
+              new Date(event.eventDate),
+            );
+            instanceDto.eventDate = addWeeks(
+              new Date(updateDto.eventDate),
+              weeksDiff,
+            );
+          }
+
+          if (updateDto.votingEndDate) {
+            const weeksDiff = differenceInWeeks(
+              new Date(e.eventDate),
+              new Date(event.eventDate),
+            );
+            instanceDto.votingEndDate = addWeeks(
+              new Date(updateDto.votingEndDate),
+              weeksDiff,
+            );
+          }
+
+          return this.updateVotingEvent(userId, e.id, instanceDto);
+        }),
+      );
+    }
+
+    return this.updateVotingEvent(userId, eventId, updateDto);
   }
 
   async deleteEvent(eventId: number): Promise<void> {
@@ -808,6 +903,35 @@ export class EventsService {
     });
   }
 
+  async getFutureStandardEventsWithRecurringGroupId(
+    recurringGroupId: string,
+    eventDate: Date,
+  ): Promise<StandardEvent[]> {
+    const futureEvents: StandardEvent[] =
+      await this.standardEventsRepository.find({
+        where: {
+          recurringGroupId: recurringGroupId,
+          eventDate: MoreThanOrEqual(eventDate),
+        },
+      });
+
+    return futureEvents;
+  }
+
+  async getFutureVotingEventsWithRecurringGroupId(
+    recurringGroupId: string,
+    eventDate: Date,
+  ): Promise<StandardEvent[]> {
+    const futureEvents: VotingEvent[] = await this.votingEventsRepository.find({
+      where: {
+        recurringGroupId: recurringGroupId,
+        eventDate: MoreThanOrEqual(eventDate),
+      },
+    });
+
+    return futureEvents;
+  }
+
   async joinEvent(userId: number, eventId: number): Promise<void> {
     const existingMember: Member | null =
       await this.membersService.findByUserIdAndEventId(userId, eventId);
@@ -921,6 +1045,7 @@ export class EventsService {
         visibility: event.visibility,
         status: event.status,
         maxMembers: event.maxMembers,
+        isRecurring: !!event.recurringGroupId,
       });
     } else {
       const votingEvent = event as VotingEvent;
@@ -937,6 +1062,7 @@ export class EventsService {
         maxMedia: votingEvent.maxMedia,
         maxVotesPerMember: votingEvent.maxVotesPerMember,
         votingEndDate: votingEvent.votingEndDate,
+        isRecurring: !!event.recurringGroupId,
       });
     }
   }

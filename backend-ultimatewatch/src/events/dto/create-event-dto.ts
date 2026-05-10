@@ -10,11 +10,8 @@ import {
   Max,
   Min,
   IsEnum,
-  IsBoolean,
-  Validate,
 } from 'class-validator';
 import { EventVisibility } from 'src/common/enums/event.visibility.enum';
-import { RequiredIfConstraint } from 'src/common/validations/RequiredIfConstraint';
 
 export class CreateEventDto {
   @IsNotEmpty()
@@ -49,17 +46,6 @@ export class CreateEventDto {
     ).join(', ')}`,
   })
   visibility: EventVisibility;
-
-  @IsNotEmpty()
-  @IsBoolean()
-  isRecurring: boolean;
-
-  @IsOptional()
-  @IsInt()
-  @Min(2, { message: 'Event needs to be recurring for at least two weeks' })
-  @Max(12, { message: 'An event can be recurring for up to twelve weeks' })
-  @Validate(RequiredIfConstraint, ['isRecurring', true])
-  weeks?: number;
 
   constructor(init?: Partial<CreateEventDto>) {
     Object.assign(this, init);

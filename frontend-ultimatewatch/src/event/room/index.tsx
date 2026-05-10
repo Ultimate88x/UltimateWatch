@@ -281,11 +281,12 @@ export default function EventRoom() {
     )
   }
 
-  if (!isLoading && (eventStatus === 'voting' || eventStatus === 'finished')) {
+  if (!isLoading && (eventStatus === 'voting' || eventStatus === 'finished' || eventMedia.length === 0)) {
     return (
       <div className="w-full h-screen overflow-hidden">
         <EmptyState 
             title="This event as either finished or hasn't started yet"
+            description="You are either too late or too soon."
             icon={ShieldAlert}
             fullPage={true} 
             showBackButton={true} 

@@ -55,6 +55,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { addWeeks, differenceInWeeks } from 'date-fns';
 import { EventMediaService } from 'src/event-media/event-media.service';
 import { EventMedia } from 'src/event-media/entities/event-media.entity';
+import { EventMediaRoomDto } from './dto/event-media-room-dto';
 
 interface SubMediaEventWithSort extends SubMediaEventDto {
   sortKey: string;
@@ -1107,6 +1108,35 @@ export class EventsService {
           )) || []
         : (await this.createMediaEventDtoListForMediaList(event.media)) || [];
     }
+  }
+
+  async getEventMediaForEventRoom(
+    eventId: number,
+  ): Promise<EventMediaRoomDto[]> {
+    const event: Event = await this.findBydId(eventId);
+
+    const sortedMedia = [...event.media].sort((a, b) => a.order - b.order);
+
+    return await Promise.all(
+      sortedMedia.map(async (eventMedia: EventMedia) => {
+        const formattedTitle = await this.formatSingleMediaTitle(
+          eventMedia.media.tmdbId,
+          eventMedia.media.title,
+          eventMedia.media.type,
+        );
+
+        return new EventMediaRoomDto({
+          id: eventMedia.id,
+          tmdbId: eventMedia.media.tmdbId,
+          title: formattedTitle,
+          imagePath: eventMedia.media.imagePath,
+          type: eventMedia.media.type,
+          status: eventMedia.status,
+          watchedAt: eventMedia.watchedAt,
+          order: eventMedia.order,
+        });
+      }),
+    );
   }
 
   private async createListEventDto(event: Event): Promise<ListEventDto> {

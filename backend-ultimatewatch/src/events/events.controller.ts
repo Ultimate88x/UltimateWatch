@@ -27,6 +27,7 @@ import { EventAccessRequestDto } from 'src/requests/dto/event-access-request-dto
 import { RequestResponseDto } from 'src/requests/dto/request-response-dto';
 import { UpdateStandardEventDto } from './dto/update-standard-event-dto';
 import { UpdateVotingEventDto } from './dto/update-voting-event-dto';
+import { EventMediaRoomDto } from './dto/event-media-room-dto';
 
 @Controller('events')
 export class EventsController {
@@ -91,6 +92,17 @@ export class EventsController {
       await this.eventsService.getMediasEventFromEvent(+id);
 
     return mediasEvent;
+  }
+
+  @Get('room/:id/media')
+  @UseGuards(AuthGuard)
+  async findEventMediaForEventRoom(
+    @Param('id') id: string,
+  ): Promise<EventMediaRoomDto[]> {
+    const eventMediaList: EventMediaRoomDto[] =
+      await this.eventsService.getEventMediaForEventRoom(+id);
+
+    return eventMediaList;
   }
 
   @Post('/standard')

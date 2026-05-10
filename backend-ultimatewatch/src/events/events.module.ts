@@ -13,6 +13,7 @@ import { EpisodeModule } from 'src/episodes/episodes.module';
 import { Media } from 'src/media/entities/media.entity';
 import { RequestsModule } from 'src/requests/requests.module';
 import { User } from 'src/users/entities/user.entity';
+import { EventMediaModule } from 'src/event-media/event-media.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { User } from 'src/users/entities/user.entity';
     SeasonModule,
     EpisodeModule,
     RequestsModule,
+    EventMediaModule,
   ],
   controllers: [EventsController],
   providers: [EventsService],

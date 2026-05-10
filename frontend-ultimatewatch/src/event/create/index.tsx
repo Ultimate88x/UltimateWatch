@@ -67,6 +67,21 @@ export default function CreateEvent() {
       finalValue = dateValue;
     }
 
+    if (name === 'isRecurring') {
+      const isNowRecurring = checked;
+      setFormData(prev => ({ 
+        ...prev, 
+        isRecurring: isNowRecurring, 
+        weeks: isNowRecurring ? prev.weeks : ''
+      }));
+      setVotingData(prev => ({ 
+        ...prev, 
+        isRecurring: isNowRecurring, 
+        weeks: isNowRecurring ? prev.weeks : ''
+      }));
+      return;
+    }
+
     const commonFields = [
       'name', 
       'description', 
@@ -285,7 +300,7 @@ export default function CreateEvent() {
                       label="Number of Weeks"
                       name="weeks"
                       type="number"
-                      value={data.weeks?.toString() || ""}
+                      value={data.weeks?.toString() || undefined}
                       onChange={handleChange}
                       placeholder="Enter weeks (min. 2)"
                       error={error}

@@ -53,6 +53,8 @@ import { UpdateStandardEventDto } from './dto/update-standard-event-dto';
 import { UpdateVotingEventDto } from './dto/update-voting-event-dto';
 import { v4 as uuidv4 } from 'uuid';
 import { addWeeks, differenceInWeeks } from 'date-fns';
+import { EventMediaService } from 'src/event-media/event-media.service';
+import { EventMedia } from 'src/event-media/entities/event-media.entity';
 
 interface SubMediaEventWithSort extends SubMediaEventDto {
   sortKey: string;
@@ -77,6 +79,7 @@ export class EventsService {
     private readonly usersRepository: Repository<User>,
     private readonly usersService: UsersService,
     private readonly mediaService: MediaService,
+    private readonly eventMediaService: EventMediaService,
     private readonly membersService: MembersService,
     private readonly seasonsService: SeasonService,
     private readonly episodesService: EpisodeService,
@@ -111,14 +114,17 @@ export class EventsService {
       ...eventData,
       recurringGroupId,
       members: [creator],
-      media: mediaList,
       timer: 0,
       status: EventStatus.WAITING,
     });
-    const updatedEvent: StandardEvent = await this.saveStandardEvent(event);
+    const savedEvent: StandardEvent = await this.saveStandardEvent(event);
 
-    updatedEvent.createdAt = new Date(
-      new Date(updatedEvent.createdAt).setSeconds(0, 0),
+    if (mediaList && mediaList.length > 0) {
+      await this.eventMediaService.createMany(savedEvent, mediaList);
+    }
+
+    savedEvent.createdAt = new Date(
+      new Date(savedEvent.createdAt).setSeconds(0, 0),
     );
 
     return await this.saveStandardEvent(event);
@@ -468,7 +474,7 @@ export class EventsService {
       );
     }
 
-    if (event.media?.some((media) => media.tmdbId === mediaId)) {
+    if (event.media?.some((media) => media.media.tmdbId === mediaId)) {
       throw new BadRequestException('Media already in lineup');
     }
 
@@ -479,8 +485,12 @@ export class EventsService {
     }
 
     const media: Media = await this.mediaService.findByTmdbId(mediaId);
+    const eventMedia: EventMedia = await this.eventMediaService.create(
+      event,
+      media,
+    );
 
-    event.media = [...(event.media || []), media];
+    event.media = [...(event.media || []), eventMedia];
 
     return this.saveStandardEvent(event);
   }
@@ -526,8 +536,8 @@ export class EventsService {
       );
     }
 
-    const media: Media | undefined = event.media?.find(
-      (media) => media.tmdbId === mediaId,
+    const media: EventMedia | undefined = event.media?.find(
+      (media) => media.media.tmdbId === mediaId,
     );
 
     if (!media) {
@@ -535,7 +545,7 @@ export class EventsService {
     }
 
     event.media = event.media?.filter(
-      (media: Media) => media.tmdbId !== mediaId,
+      (media: EventMedia) => media.media.tmdbId !== mediaId,
     );
 
     return this.saveStandardEvent(event);
@@ -594,8 +604,8 @@ export class EventsService {
             );
           }
 
-          const media: Media | undefined = event.media?.find(
-            (media) => media.tmdbId === mediaId,
+          const media: EventMedia | undefined = event.media?.find(
+            (media) => media.media.tmdbId === mediaId,
           );
 
           if (!media) {
@@ -614,7 +624,11 @@ export class EventsService {
 
           for (const v of voteResults) {
             const media: Media = await this.mediaService.findByTmdbId(v.id);
-            event.media.push(media);
+            const eventMedia: EventMedia = await this.eventMediaService.create(
+              event,
+              media,
+            );
+            event.media.push(eventMedia);
           }
         }
 
@@ -660,7 +674,9 @@ export class EventsService {
         members: {
           user: true,
         },
-        media: true,
+        media: {
+          media: true,
+        },
       },
     });
 
@@ -675,7 +691,7 @@ export class EventsService {
     const event: StandardEvent | null =
       await this.standardEventsRepository.findOne({
         where: { id },
-        relations: ['media', 'members'],
+        relations: ['media', 'media.media', 'members'],
       });
 
     if (!event) {
@@ -693,7 +709,7 @@ export class EventsService {
     const event: VotingEvent | null = await this.votingEventsRepository.findOne(
       {
         where: { id },
-        relations: ['media', 'proposedMedia', 'members'],
+        relations: ['media', 'media.media', 'proposedMedia', 'members'],
       },
     );
 
@@ -746,6 +762,7 @@ export class EventsService {
       )
       .leftJoinAndSelect('ownerMember.user', 'ownerUser')
       .leftJoinAndSelect('event.media', 'eventMedia')
+      .leftJoinAndSelect('eventMedia.media', 'actualMedia')
       .leftJoin(
         'request',
         'fr',
@@ -826,6 +843,7 @@ export class EventsService {
       )
       .leftJoinAndSelect('ownerMember.user', 'ownerUser')
       .leftJoinAndSelect('event.media', 'eventMedia')
+      .leftJoinAndSelect('eventMedia.media', 'actualMedia')
       .addSelect(
         `(CASE WHEN event.status = :finished THEN 1 ELSE 0 END)`,
         'is_finished',
@@ -877,6 +895,7 @@ export class EventsService {
       )
       .leftJoinAndSelect('ownerMember.user', 'ownerUser')
       .leftJoinAndSelect('event.media', 'eventMedia')
+      .leftJoinAndSelect('eventMedia.media', 'actualMedia')
       .addSelect(
         `(CASE WHEN event.status = :finished THEN 1 ELSE 0 END)`,
         'is_finished',
@@ -1448,7 +1467,7 @@ export class EventsService {
   }
 
   private async createMediaEventDtoListForMediaList(
-    mediaList: Media[] | undefined,
+    mediaList: EventMedia[] | undefined,
   ): Promise<MediaEventDto[] | null> {
     if (!mediaList) {
       return null;
@@ -1458,11 +1477,13 @@ export class EventsService {
 
     const mediaEventDtoList: MediaEventDto[] = [];
 
-    for (const media of mediaList) {
+    for (const eventMedia of mediaList) {
       let id: number;
       let title: string;
       let imagePath: string;
       let subMediaEvent: (SubMediaEventDto & { sortKey: string }) | null = null;
+
+      const media: Media = eventMedia.media;
 
       switch (media.type) {
         case MediaType.SEASON: {
@@ -1654,7 +1675,7 @@ export class EventsService {
   }
 
   private async formatMediaTitles(
-    mediaList: Media[] | null | undefined,
+    mediaList: EventMedia[] | null | undefined,
   ): Promise<string | null> {
     if (!mediaList) {
       return null;
@@ -1663,7 +1684,9 @@ export class EventsService {
     }
 
     const detailedMedia = await Promise.all(
-      mediaList.map(async (media) => {
+      mediaList.map(async (eventMedia: EventMedia) => {
+        const media: Media = eventMedia.media;
+
         let formattedTitle = media.title;
         let sortKey = media.title;
 
@@ -1700,7 +1723,7 @@ export class EventsService {
   }
 
   private async formatMainImagePath(
-    mediaList: Media[] | null | undefined,
+    mediaList: EventMedia[] | null | undefined,
   ): Promise<string | null> {
     if (!mediaList) {
       return null;
@@ -1708,7 +1731,8 @@ export class EventsService {
       return null;
     }
 
-    const mainMedia: Media = mediaList[0];
+    const eventMedia: EventMedia = mediaList[0];
+    const mainMedia: Media = eventMedia.media;
     let imagePath: string;
 
     switch (mainMedia.type) {

@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { EventsModule } from 'src/events/events.module';
-import { VotesModule } from 'src/votes/votes.module';
 import { MediaModule } from 'src/media/media.module';
 import { ResultsService } from './results.service';
+import { EventMediaModule } from 'src/event-media/event-media.module';
 
 @Module({
-  imports: [EventsModule, VotesModule, MediaModule],
+  imports: [EventsModule, MediaModule, EventMediaModule],
   providers: [ResultsService],
   exports: [ResultsService],
 })

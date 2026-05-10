@@ -4,7 +4,7 @@ import { Event } from '../../events/entities/event.entity';
 import { User } from 'src/users/entities/user.entity';
 
 @ChildEntity('event_invite_requests')
-@Check(`"senderId" <> "receiverId"`)
+@Check('CHK_INVITE_SENDER_RECEIVER', `"senderId" <> "receiverId"`)
 export class EventInviteRequest extends Request {
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   receiver: User;

@@ -77,9 +77,6 @@ export class Media extends TmdbEntity {
   @OneToMany(() => Vote, (vote) => vote.media)
   votes: Vote[];
 
-  @ManyToMany(() => Event, (event) => event.media)
-  includedInEvents: Event[];
-
   @ManyToMany(() => Event, (event) => (event as VotingEvent).proposedMedia)
   proposedInEvents: Event[];
 }

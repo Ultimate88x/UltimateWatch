@@ -1,12 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { EventStatus } from 'src/common/enums/event.status.enum';
+import { EventMedia } from 'src/event-media/entities/event-media.entity';
+import { EventMediaService } from 'src/event-media/event-media.service';
 import { VotingEvent } from 'src/events/entities/voting-event.entity';
 import { EventsService } from 'src/events/events.service';
 import { Media } from 'src/media/entities/media.entity';
 import { MediaService } from 'src/media/media.service';
 import { VoteResultDto } from 'src/votes/dto/vote-result.dto';
-import { VotesService } from 'src/votes/votes.service';
 
 @Injectable()
 export class ResultsService {
@@ -14,8 +15,8 @@ export class ResultsService {
 
   constructor(
     private readonly eventsService: EventsService,
-    private readonly votesService: VotesService,
     private readonly mediaService: MediaService,
+    private readonly eventMediaService: EventMediaService,
   ) {}
 
   @Cron(CronExpression.EVERY_MINUTE)
@@ -50,7 +51,10 @@ export class ResultsService {
       ),
     );
 
-    event.media = mediaList;
+    const eventMediaList: EventMedia[] =
+      await this.eventMediaService.createMany(event, mediaList);
+
+    event.media = eventMediaList;
     event.status = EventStatus.WAITING;
 
     await this.eventsService.saveVotingEvent(event);

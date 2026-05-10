@@ -40,19 +40,20 @@ export const createStandardEventSchema = z.object({
   isRecurring: z.boolean().default(false),
   
   weeks: z
-    .coerce.number()
-    .int()
-    .min(2, "Minimum 2 weeks for recurring events")
-    .max(12, "Maximum 12 weeks allowed")
+    .preprocess((val) => {
+      if (val === "" || val === null || val === undefined) return undefined;
+      return Number(val);
+    }, z.number().int().optional())
+    .nullable()
     .optional()
-    .nullable(),
 
 }).refine((data) => {
   if (data.isRecurring) {
-    return data.weeks !== null && data.weeks !== undefined;
+    if (data.weeks === null || data.weeks === undefined) return false;
+    return data.weeks >= 2 && data.weeks <= 12;
   }
   return true;
 }, {
-  message: "Weeks is required when event is recurring",
+  message: "Recurring events require between 2 and 12 weeks",
   path: ["weeks"],
 });

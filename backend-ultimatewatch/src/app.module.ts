@@ -28,6 +28,7 @@ import { ResultsModule } from './results/results.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CommentsModule } from './comments/comments.module';
 import { WebsocketsModule } from './websockets/websockets.module';
+import { EventMediaModule } from './event-media/event-media.module';
 
 @Module({
   imports: [
@@ -74,6 +75,7 @@ import { WebsocketsModule } from './websockets/websockets.module';
     ResultsModule,
     CommentsModule,
     WebsocketsModule,
+    EventMediaModule,
   ],
   controllers: [AppController],
   providers: [AppService],

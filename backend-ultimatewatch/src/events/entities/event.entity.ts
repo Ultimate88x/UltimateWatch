@@ -17,15 +17,13 @@ import { EventStatus } from 'src/common/enums/event.status.enum';
 import { EventType } from 'src/common/enums/event.type.enum';
 import { EventVisibility } from 'src/common/enums/event.visibility.enum';
 import { IsAfterDateConstraint } from 'src/common/validations/IsAfterDateConstraint';
-import { Media } from 'src/media/entities/media.entity';
+import { EventMedia } from 'src/event-media/entities/event-media.entity';
 import { Member } from 'src/members/entities/member.entity';
 import {
   Check,
   Column,
   Entity,
   Index,
-  JoinTable,
-  ManyToMany,
   OneToMany,
   TableInheritance,
 } from 'typeorm';
@@ -105,11 +103,6 @@ export class Event extends BaseEntity {
   })
   members: Member[];
 
-  @ManyToMany(() => Media, { onDelete: 'CASCADE' })
-  @JoinTable({
-    name: 'event_media',
-    joinColumn: { name: 'eventId' },
-    inverseJoinColumn: { name: 'mediaId' },
-  })
-  media?: Media[];
+  @OneToMany(() => EventMedia, (media) => media.event)
+  media: EventMedia[];
 }

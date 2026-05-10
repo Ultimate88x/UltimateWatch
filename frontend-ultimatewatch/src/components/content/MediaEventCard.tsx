@@ -166,8 +166,7 @@ export const MediaEventCard = ({
           </h4>
 
           <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-6">
-              
-              {(event.status === 'voting' || event.status === 'waiting') && isOwner && (
+              {(event.status === 'voting' || event.status === 'waiting') && isOwner && m.isVotable && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -226,11 +225,30 @@ export const MediaEventCard = ({
                     </h5>
                   </div>
 
-                  {isVoting && isMember && (
-                    <div onClick={(e) => e.stopPropagation()} className="inline-block">
-                       {renderVoteButton(sub.id)}
-                    </div>
-                  )}
+                  <div className="flex items-center gap-6">
+                    {(event.status === 'voting' || event.status === 'waiting') && isOwner && (
+                      <button
+                        title="Remove"
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/40 transition-all hover:border-red-500 hover:bg-red-500 hover:text-black active:translate-y-0.5 cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedMediaId(sub.id);
+                          setIsRemoveMediaModalOpen(true);
+                        }}
+                      >
+                        <X size={16} strokeWidth={3} />
+                      </button>
+                    )}
+
+                    {isVoting && isMember && (
+                      <div 
+                        className="inline-block" 
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {renderVoteButton(sub.id)}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             );

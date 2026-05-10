@@ -12,9 +12,10 @@ interface PlaylistModalProps {
   media: EventMediaRoom[];
   socketRef: React.MutableRefObject<Socket | null>;
   eventId: string | number | undefined;
+  isOwner: boolean;
 }
 
-export function PlaylistModal({ isOpen, onClose, media, socketRef, eventId }: PlaylistModalProps) {
+export function PlaylistModal({ isOpen, onClose, media, socketRef, eventId, isOwner }: PlaylistModalProps) {
   const [localMedia, setLocalMedia] = useState<EventMediaRoom[]>(media);
 
   useEffect(() => {
@@ -137,7 +138,7 @@ export function PlaylistModal({ isOpen, onClose, media, socketRef, eventId }: Pl
                         style={{ display: 'flex', flexDirection: 'column' }}
                       >
                         {history.map((m, index) => (
-                          <DraggableMedia key={m.id} media={m} index={index} />
+                          <DraggableMedia key={m.id} media={m} index={index} isOwner={isOwner} />
                         ))}
                         {provided.placeholder}
                       </div>
@@ -158,7 +159,7 @@ export function PlaylistModal({ isOpen, onClose, media, socketRef, eventId }: Pl
                       </div>
                       <div className="flex-1 p-8 overflow-y-auto media-scrollbar">
                         {current.map((m, index) => (
-                          <DraggableMedia key={m.id} media={m} index={index} />
+                          <DraggableMedia key={m.id} media={m} index={index} isOwner={isOwner} />
                         ))}
                         {provided.placeholder}
                       </div>
@@ -184,7 +185,7 @@ export function PlaylistModal({ isOpen, onClose, media, socketRef, eventId }: Pl
                         className="flex-1 overflow-y-auto p-6 space-y-4 media-scrollbar min-h-0 custom-drag-area"
                       >
                         {pending.map((m, index) => (
-                          <DraggableMedia key={m.id} media={m} index={index} isNext={index === 0} />
+                          <DraggableMedia key={m.id} media={m} index={index} isNext={index === 0} isOwner={isOwner} />
                         ))}
                         {provided.placeholder}
                       </div>
@@ -200,15 +201,17 @@ export function PlaylistModal({ isOpen, onClose, media, socketRef, eventId }: Pl
   );
 }
 
-function DraggableMedia({ media, index, isNext }: { media: EventMediaRoom; index: number; isNext?: boolean }) {
+function DraggableMedia({ media, index, isNext, isOwner }: { media: EventMediaRoom; index: number; isNext?: boolean; isOwner: boolean }) {
   return (
-    <Draggable draggableId={String(media.id)} index={index}>
+    <Draggable draggableId={String(media.id)} index={index} isDragDisabled={!isOwner}>
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          className={`cursor-grab active:cursor-grabbing transition-shadow ${
+          className={`transition-shadow ${
+            isOwner ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'
+          } ${
             snapshot.isDragging ? 'z-50 shadow-2xl opacity-80' : ''
           }`}
         >

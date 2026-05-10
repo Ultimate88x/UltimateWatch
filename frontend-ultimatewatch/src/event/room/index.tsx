@@ -491,9 +491,10 @@ export default function EventRoom() {
       <PlaylistModal 
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        media={eventMedia} 
+        media={eventMedia}
         socketRef={socketRef}
         eventId={id}
+        isOwner={member?.role === "owner"}
       />
     </div>
   );

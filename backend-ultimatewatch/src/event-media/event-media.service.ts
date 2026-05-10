@@ -81,7 +81,9 @@ export class EventMediaService {
         await this.membersService.getOwnerFromEvent(eventId);
 
       if (!ownerMember || userId !== ownerMember.user.id) {
-        throw new ForbiddenException(`Sin permiso para el evento ${eventId}`);
+        throw new ForbiddenException(
+          'You are not allowed to modify this event',
+        );
       }
     }
 

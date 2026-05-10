@@ -6,7 +6,7 @@ import { useParams } from 'react-router-dom';
 import { Button } from '../../components/Button';
 import { formatTime } from '../../components/utilities/FormatTime';
 import toast from 'react-hot-toast';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { EmptyState } from '../../components/EmptyState';
 import type { Timer } from '../../types/timer';
 import type { Member } from '../../types/member';
@@ -18,6 +18,7 @@ const SOCKET_URL = 'http://localhost:3000';
 
 export default function EventRoom() {
   const { id } = useParams();
+  const [eventStatus, setEventStatus] = useState<string | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [message, setMessage] = useState('');
   const [member, setMember] = useState<Member | null>(null);
@@ -78,6 +79,37 @@ export default function EventRoom() {
     fetchMember();
   }, [id]);
 
+  useEffect(() => {
+    const fetchEventStatus = async () => {
+      try {
+        const response = await fetch(
+          `http://localhost:3000/events/status/${id}`,
+            {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${localStorage.getItem('token')}`,
+              },
+            }
+        );
+
+      const data = await response.text();
+
+      if (!response.ok) {
+        toast.error('Failed to fetch event status');
+        return;
+      }
+
+      setEventStatus(data);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Error';
+        toast.error(message);
+      }
+    }
+
+    if (member) fetchEventStatus();
+  }, [id, member]);
+
   const fetchEventMedia = useCallback(async () => {
     try {
       const response = await fetch(
@@ -108,13 +140,13 @@ export default function EventRoom() {
   }, [id]);
 
   useEffect(() => {
-    if (member) {
+    if (member || eventStatus === 'waiting' || eventStatus === 'started') {
       fetchEventMedia();
     }
-  }, [member, fetchEventMedia]);
+  }, [member, fetchEventMedia, eventStatus]);
 
   useEffect(() => {
-    if (!member) return;
+    if (!member || eventStatus === 'voting' || eventStatus === 'finished') return;
 
     const token = localStorage.getItem('token');
     const socketInstance = io(SOCKET_URL, {
@@ -168,7 +200,7 @@ export default function EventRoom() {
       socketInstance.disconnect();
       socketRef.current = null;
     };
-  }, [id, member]);
+  }, [id, member, eventStatus]);
 
   const previewData = useMemo(() => {
     const current = eventMedia.find(m => m.status === 'current');
@@ -239,8 +271,21 @@ export default function EventRoom() {
     return (
       <div className="w-full h-screen overflow-hidden">
         <EmptyState 
-            title="You are not a member of this event"
-            description="Please join the event to participate in the chat."
+            title="Event doesn't exist or you are not a member"
+            description="Please join the event to participate."
+            icon={ShieldAlert}
+            fullPage={true} 
+            showBackButton={true} 
+        />
+      </div>
+    )
+  }
+
+  if (!isLoading && (eventStatus === 'voting' || eventStatus === 'finished')) {
+    return (
+      <div className="w-full h-screen overflow-hidden">
+        <EmptyState 
+            title="This event as either finished or hasn't started yet"
             icon={ShieldAlert}
             fullPage={true} 
             showBackButton={true} 
@@ -352,7 +397,7 @@ export default function EventRoom() {
             </div>
           </div>
 
-          <div className="w-full mt-auto">
+          <div className="w-full mt-8">
             {member?.role?.toLowerCase() === 'owner' && (
               <div className="flex flex-col gap-6">
                 
@@ -390,40 +435,63 @@ export default function EventRoom() {
                   <div className="h-px flex-1 bg-linear-to-r from-transparent via-white/10 to-transparent" />
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    {!timer.isActive ? (
-                      <Button 
-                        onClick={() => handleTimerControl('start')}
-                        variant="solid-accent" 
-                        className="h-20! px-12! bg-green-500/10! border-green-500/20! text-green-400! hover:bg-green-500/20! text-sm font-black italic tracking-widest rounded-2xl! shadow-[0_0_30px_rgba(74,222,128,0.05)]"
-                        icon={Play}
-                      > START </Button>
-                    ) : (
-                      <Button 
-                        onClick={() => handleTimerControl('pause')}
-                        variant="solid-accent" 
-                        className="h-20! px-12! bg-yellow-500/10! border-yellow-500/20! text-yellow-400! hover:bg-yellow-500/20! text-sm font-black italic tracking-widest rounded-2xl!"
-                        icon={Pause}
-                      > PAUSE </Button>
+                <div className="flex flex-col gap-4">
+                  <AnimatePresence mode="wait">
+                    {member?.role?.toLowerCase() === 'owner' && eventStatus === 'waiting' && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="flex items-center gap-2 px-2"
+                      >
+                        <div className="w-1.5 h-1.5 bg-purple-main rounded-full animate-pulse shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
+                        <span className="text-[10px] font-black text-purple-main/80 uppercase tracking-[0.25em] italic">
+                          Press to start the event
+                        </span>
+                      </motion.div>
                     )}
-                    
-                    <Button 
-                      onClick={() => handleTimerControl('reset')}
-                      variant="ghost" 
-                      className="h-20! px-8! border-white/5! text-white/20 hover:text-red-danger! hover:bg-red-danger/5! text-xs font-black rounded-2xl!"
-                      icon={RotateCcw}
-                    > RESET </Button>
-                  </div>
+                  </AnimatePresence>
 
-                  <div className="flex items-center gap-6 pl-8 border-l border-white/5">
-                    <div className="text-right">
-                      <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] block mb-0.5">Authorized</span>
-                      <span className="text-xl font-black text-white italic uppercase tracking-tighter">
-                        {member?.name}
-                      </span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      {!timer.isActive ? (
+                        <Button 
+                          onClick={() => { 
+                            handleTimerControl('start')
+                            if (eventStatus === 'waiting') setEventStatus('started');
+                          }}
+                          variant="solid-accent" 
+                          className="h-20! px-12! bg-green-500/10! border-green-500/20! text-green-400! hover:bg-green-500/20! text-sm font-black italic tracking-widest rounded-2xl! shadow-[0_0_30px_rgba(74,222,128,0.05)]"
+                          icon={Play}
+                        > 
+                          START
+                        </Button>
+                      ) : (
+                        <Button 
+                          onClick={() => handleTimerControl('pause')}
+                          variant="solid-accent" 
+                          className="h-20! px-12! bg-yellow-500/10! border-yellow-500/20! text-yellow-400! hover:bg-yellow-500/20! text-sm font-black italic tracking-widest rounded-2xl!"
+                          icon={Pause}
+                        > PAUSE </Button>
+                      )}
+                      
+                      <Button 
+                        onClick={() => handleTimerControl('reset')}
+                        variant="ghost" 
+                        className="h-20! px-8! border-white/5! text-white/20 hover:text-red-danger! hover:bg-red-danger/5! text-xs font-black rounded-2xl!"
+                        icon={RotateCcw}
+                      > RESET </Button>
                     </div>
-                    <div className="h-12 w-1 bg-purple-main shadow-[0_0_15px_rgba(168,85,247,0.5)] rounded-full" />
+
+                    <div className="flex items-center gap-6 pl-8 border-l border-white/5">
+                      <div className="text-right">
+                        <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] block mb-0.5">Authorized</span>
+                        <span className="text-xl font-black text-white italic uppercase tracking-tighter">
+                          {member?.name}
+                        </span>
+                      </div>
+                      <div className="h-12 w-1 bg-purple-main shadow-[0_0_15px_rgba(168,85,247,0.5)] rounded-full" />
+                    </div>
                   </div>
                 </div>
               </div>

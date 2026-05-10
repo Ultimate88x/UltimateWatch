@@ -94,6 +94,17 @@ export class EventsController {
     return mediasEvent;
   }
 
+  @Get('/status/:id')
+  @UseGuards(AuthGuard)
+  async getEventStatus(
+    @GetUser('userId') userId: number,
+    @Param('id') id: string,
+  ): Promise<string> {
+    const status: string = await this.eventsService.getEventStatus(userId, +id);
+
+    return status;
+  }
+
   @Get('room/:id/media')
   @UseGuards(AuthGuard)
   async findEventMediaForEventRoom(

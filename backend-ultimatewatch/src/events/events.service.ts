@@ -1447,8 +1447,35 @@ export class EventsService {
     );
   }
 
+  async getEventStatus(userId: number, eventId: number): Promise<string> {
+    const isMember: boolean =
+      !!(await this.membersService.findByUserIdAndEventId(userId, eventId));
+
+    if (!isMember) {
+      throw new ForbiddenException('You do not belong to this event');
+    }
+
+    const event: Event = await this.findBydId(eventId);
+
+    return event.status;
+  }
+
   async updateTimer(id: number, seconds: number) {
-    return await this.eventsRepository.update(id, { timer: seconds });
+    const event: Event = await this.findBydId(id);
+
+    if (
+      event.status === EventStatus.VOTING ||
+      event.status === EventStatus.FINISHED
+    ) {
+      throw new BadRequestException(
+        'You cannot modify the timer of a not started event',
+      );
+    }
+
+    return await this.eventsRepository.update(id, {
+      timer: seconds,
+      status: EventStatus.STARTED,
+    });
   }
 
   private async getConflictiveIds(

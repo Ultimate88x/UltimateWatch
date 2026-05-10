@@ -3,38 +3,112 @@ import { X, History, PlayCircle, ListOrdered } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { MediaCard } from './MediaCard';
 import type { EventMediaRoom } from '../../types/event-media-room';
+import toast from 'react-hot-toast';
+import { useEffect, useState } from 'react';
 
 interface PlaylistModalProps {
   isOpen: boolean;
   onClose: () => void;
   media: EventMediaRoom[];
+  onUpdate: (updatedList: EventMediaRoom[]) => void;
 }
 
-export function PlaylistModal({ isOpen, onClose, media }: PlaylistModalProps) {
-  const history = media.filter(m => ['watched', 'skipped'].includes(m.status)).sort((a, b) => b.order - a.order);
-  const current = media.filter(m => m.status === 'current');
-  const pending = media.filter(m => m.status === 'pending').sort((a, b) => a.order - b.order);
+export function PlaylistModal({ isOpen, onClose, media, onUpdate }: PlaylistModalProps) {
+  const [localMedia, setLocalMedia] = useState<EventMediaRoom[]>(media);
 
-  const onDragEnd = (result: DropResult) => {
+  useEffect(() => {
+    setLocalMedia(media);
+  }, [media]);
+
+  const history = localMedia.filter(m => ['watched', 'skipped'].includes(m.status)).sort((a, b) => b.order - a.order);
+  const current = localMedia.filter(m => m.status === 'current');
+  const pending = localMedia.filter(m => m.status === 'pending').sort((a, b) => a.order - b.order);
+
+  const onDragEnd = async (result: DropResult) => {
     const { source, destination, draggableId } = result;
 
     if (!destination) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
-    const movedItem = media.find(m => String(m.id) === draggableId);
-    if (!movedItem) return;
+    let items = Array.from(localMedia);
 
-    let newStatus = movedItem.status;
-    
-    if (destination.droppableId === 'archive') newStatus = 'watched';
-    if (destination.droppableId === 'now-playing') newStatus = 'current';
-    if (destination.droppableId === 'up-next') newStatus = 'pending';
+    if (destination.droppableId === 'now-playing') {
+      items = items.map(m => {
+        if (m.status === 'current' && String(m.id) !== draggableId) {
+          return { ...m, status: 'watched', order: 0 };
+        }
+        return m;
+      });
+    }
 
-    console.log(`🚀 Moviendo "${movedItem.title}"`);
-    console.log(`De: ${source.droppableId} (index ${source.index})`);
-    console.log(`A: ${destination.droppableId} (index ${destination.index})`);
-    console.log(`Nuevo estado: ${newStatus}`);
+    const movedItemIndex = items.findIndex(m => String(m.id) === draggableId);
+    const [movedItem] = items.splice(movedItemIndex, 1);
+
+    const statusMap: Record<string, string> = {
+      'archive': 'watched',
+      'now-playing': 'current',
+      'up-next': 'pending'
+    };
+    movedItem.status = statusMap[destination.droppableId];
+
+    const archives = items.filter(m => ['watched', 'skipped'].includes(m.status))
+      .sort((a, b) => b.order - a.order);
     
+    const current = items.filter(m => m.status === 'current');
+    
+    const pendings = items.filter(m => m.status === 'pending')
+      .sort((a, b) => a.order - b.order);
+
+    if (destination.droppableId === 'archive') {
+      archives.splice(destination.index, 0, movedItem);
+    } else if (destination.droppableId === 'now-playing') {
+      // Solo puede haber uno, pero lo metemos en su lista
+      current.splice(0, 1, movedItem); 
+    } else {
+      pendings.splice(destination.index, 0, movedItem);
+    }
+
+    const finalSortedItems = [...archives, ...current, ...pendings];
+
+    const updatedMedia = finalSortedItems.map((item, idx) => ({
+      ...item,
+      order: idx
+    }));
+
+    setLocalMedia(updatedMedia);
+
+    try {
+      const response = await fetch(
+        `http://localhost:3000/event-media/sort-order/`, 
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify({
+            items: updatedMedia.map(m => ({
+              id: m.id,
+              order: m.order,
+              status: m.status
+            }))
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data?.message || 'Failed to update manifest');
+        return;
+      }
+
+      toast.success(data.message);
+      onUpdate(updatedMedia);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'An unxepected error occurred';
+      toast.error(message);
+    }
   };
 
   return (

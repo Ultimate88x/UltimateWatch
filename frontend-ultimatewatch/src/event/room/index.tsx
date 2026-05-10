@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { List, Pause, Play, RotateCcw, Send, ShieldAlert, Terminal } from 'lucide-react';
 import type { Comment } from '../../types/comment';
@@ -78,38 +78,40 @@ export default function EventRoom() {
     fetchMember();
   }, [id]);
 
-  useEffect(() => {
-    const fetchEventMedia = async () => {
-      try {
-        const response = await fetch(
-          `http://localhost:3000/events/room/${id}/media`,
-            {
-              method: 'GET',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${localStorage.getItem('token')}`,
-              },
-            }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          toast.error(data?.message || 'Failed to fetch event media');
-          return;
+  const fetchEventMedia = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:3000/events/room/${id}/media`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
         }
+      );
 
-        setEventMedia(data);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Error';
-        toast.error(message);
-      } finally {
-        setTimeout(() => setIsLoading(false), 400);
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data?.message || 'Failed to fetch event media');
+        return;
       }
-    }
 
-    if (member) fetchEventMedia();
-  }, [id, member]);
+      setEventMedia(data);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error';
+      toast.error(message);
+    } finally {
+      setTimeout(() => setIsLoading(false), 400);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    if (member) {
+      fetchEventMedia();
+    }
+  }, [member, fetchEventMedia]);
 
   useEffect(() => {
     if (!member) return;
@@ -472,10 +474,11 @@ export default function EventRoom() {
       </div>
 
       <PlaylistModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
         media={eventMedia} 
-      />
+        onUpdate={fetchEventMedia}
+        />
     </div>
   );
 }

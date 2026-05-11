@@ -87,6 +87,10 @@ export class EventsService {
     private readonly requestsService: RequestsService,
   ) {}
 
+  async saveEvent(event: Event): Promise<Event> {
+    return await this.eventsRepository.save(event);
+  }
+
   async saveStandardEvent(
     standardEvent: StandardEvent,
   ): Promise<StandardEvent> {
@@ -1448,6 +1452,54 @@ export class EventsService {
     );
   }
 
+  async changeEventStatus(
+    userId: number,
+    eventId: number,
+    status: EventStatus,
+  ): Promise<EventStatus> {
+    const event: Event = await this.findBydId(eventId);
+    event.status = status;
+
+    await this.saveEvent(event);
+
+    return status;
+  }
+
+  async startEvent(userId: number, eventId: number): Promise<EventStatus> {
+    const eventOwner: Member =
+      await this.membersService.getOwnerFromEvent(eventId);
+
+    if (eventOwner.user.id !== userId) {
+      throw new ForbiddenException('You are not allowed to update this event');
+    }
+
+    const event: Event = await this.findBydId(eventId);
+
+    if (event.status !== EventStatus.WAITING) {
+      throw new BadRequestException(
+        'The event cannot be started from this state',
+      );
+    }
+
+    if (!event.media || event.media.length === 0) {
+      throw new BadRequestException(
+        "An event cannot start if it doesn't have any media",
+      );
+    }
+
+    /*if (event.eventDate > new Date(Date.now())) {
+      throw new BadRequestException(
+        "It's still too soon to start the event. Either change its start date or wait.",
+      );
+    }*/
+
+    return await this.changeEventStatus(userId, eventId, EventStatus.STARTED);
+  }
+
+  async finishEvent(userId: number, eventId: number): Promise<EventStatus> {
+    return await this.changeEventStatus(userId, eventId, EventStatus.FINISHED);
+  }
+
   async getEventStatus(userId: number, eventId: number): Promise<string> {
     const isMember: boolean =
       !!(await this.membersService.findByUserIdAndEventId(userId, eventId));
@@ -1464,7 +1516,6 @@ export class EventsService {
   async updateTimer(id: number, seconds: number) {
     return await this.eventsRepository.update(id, {
       timer: seconds,
-      status: EventStatus.STARTED,
     });
   }
 

@@ -72,18 +72,6 @@ export class TimerGateway {
       );
     }
 
-    if (event.media.length === 0) {
-      throw new BadRequestException(
-        "An event cannot start if it doesn't have any media",
-      );
-    }
-
-    if (event.eventDate > new Date(Date.now())) {
-      throw new BadRequestException(
-        "It's still too soon to start the event. Either change its start date or wait.",
-      );
-    }
-
     if (!this.timers.has(eventId)) {
       this.timers.set(eventId, { seconds: event.timer || 0, isActive: false });
     }

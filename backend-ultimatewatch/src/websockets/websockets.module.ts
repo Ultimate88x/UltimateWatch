@@ -6,9 +6,10 @@ import { EventsModule } from 'src/events/events.module';
 import { TimerGateway } from './timer.gateway';
 import { EventMediaModule } from 'src/event-media/event-media.module';
 import { EventMediaGateway } from './event-media.gateway';
+import { EventGateway } from './event.gateway';
 
 @Module({
   imports: [CommentsModule, MembersModule, EventsModule, EventMediaModule],
-  providers: [ChatGateway, TimerGateway, EventMediaGateway],
+  providers: [ChatGateway, TimerGateway, EventMediaGateway, EventGateway],
 })
 export class WebsocketsModule {}

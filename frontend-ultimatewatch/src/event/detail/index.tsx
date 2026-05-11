@@ -790,17 +790,6 @@ export default function EventDetail() {
                 )}
               </div>
 
-              {isOwner && (event.status === 'voting' || event.status === 'waiting') && (
-                <Button
-                  variant="secondary"
-                  fullWidth
-                  icon={Settings}
-                  onClick={() => setIsEditEventModalOpen(true)}
-                >
-                  Manage Event Settings
-                </Button>
-              )}
-
               {isOwner && event.visibility === EventVisibilityEnum.REQUEST_ONLY && (
                 <Button
                   variant="outline"
@@ -822,6 +811,17 @@ export default function EventDetail() {
                   className="rounded-2xl border-white/20 text-white hover:border-amber-400! hover:text-amber-400"
                 >
                   {event.status === 'finished' ? 'View Final Results' : 'Live Ranking'}
+                </Button>
+              )}
+
+              {isOwner && (event.status === 'voting' || event.status === 'waiting') && (
+                <Button
+                  variant="secondary"
+                  fullWidth
+                  icon={Settings}
+                  onClick={() => setIsEditEventModalOpen(true)}
+                >
+                  Manage Event Settings
                 </Button>
               )}
 

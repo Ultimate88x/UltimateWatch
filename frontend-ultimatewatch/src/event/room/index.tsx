@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { List, Pause, Play, RotateCcw, Send, ShieldAlert, Terminal } from 'lucide-react';
+import { Clock, List, Pause, Play, RotateCcw, Send, ShieldAlert, Terminal } from 'lucide-react';
 import type { Comment } from '../../types/comment';
 import { useParams } from 'react-router-dom';
 import { Button } from '../../components/Button';
@@ -40,6 +40,8 @@ export default function EventRoom() {
   }, [comments]);
 
   useEffect(() => {
+    if (!id) return;
+
     const fetchMember = async () => {
       try {
         const response = await fetch(
@@ -79,19 +81,20 @@ export default function EventRoom() {
     fetchMember();
   }, [id]);
 
-  useEffect(() => {
-    const fetchEventStatus = async () => {
-      try {
-        const response = await fetch(
-          `http://localhost:3000/events/status/${id}`,
-            {
-              method: 'GET',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${localStorage.getItem('token')}`,
-              },
-            }
-        );
+  const fetchEventStatus = useCallback(async () => {
+    if (!id) return;
+    
+    try {
+      const response = await fetch(
+        `http://localhost:3000/events/status/${id}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
 
       const data = await response.text();
 
@@ -100,17 +103,17 @@ export default function EventRoom() {
         return;
       }
 
-      setEventStatus(data);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Error';
-        toast.error(message);
-      }
+      setEventStatus(data as 'waiting' | 'started' | 'finished');
+      
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error';
+      toast.error(message);
     }
-
-    if (member) fetchEventStatus();
-  }, [id, member]);
+  }, [id]);
 
   const fetchEventMedia = useCallback(async () => {
+    if (!id) return;
+
     try {
       const response = await fetch(
         `http://localhost:3000/events/room/${id}/media`,
@@ -139,6 +142,26 @@ export default function EventRoom() {
     }
   }, [id]);
 
+  const changeEventStatus = async (start: boolean) => {
+    if (!id) return;
+
+    if (!socketRef.current?.connected) return;
+
+    if (start) {
+      socketRef.current.emit('start-event', { 
+        eventId: Number(id) 
+      });
+    } else {
+      console.log('end');
+    }
+  };
+
+  useEffect(() => {
+    if (member) {
+      fetchEventStatus();
+    }
+  }, [member, fetchEventStatus]);
+
   useEffect(() => {
     if (member || eventStatus === 'waiting' || eventStatus === 'started') {
       fetchEventMedia();
@@ -155,7 +178,7 @@ export default function EventRoom() {
 
     socketRef.current = socketInstance;
 
-    socketInstance.emit('joinEvent', { eventId: Number(id) });
+    socketInstance.emit('join-event', { eventId: Number(id) });
 
     socketInstance.on('event-chat', (newComment: Comment) => {
       setComments((prev) => [...prev, newComment]);
@@ -163,6 +186,10 @@ export default function EventRoom() {
 
     socketInstance.on('timer-update', (timerData: Timer) => {
       setTimer(timerData);
+    });
+
+    socketInstance.on('event-status', (status: string) => {
+      setEventStatus(status);
     });
 
     socketInstance.on('manifest-updated', (updatedItems: EventMediaRoom[]) => {
@@ -192,9 +219,10 @@ export default function EventRoom() {
     });
 
     return () => {
-      socketInstance.emit('leaveEvent', { eventId: Number(id) });
+      socketInstance.emit('leave-event', { eventId: Number(id) });
       socketInstance.off('event-chat');
       socketInstance.off('timer-update');
+      socketInstance.off('event-status');
       socketInstance.off('manifest-updated');
       socketInstance.off('exception');
       socketInstance.disconnect();
@@ -293,6 +321,100 @@ export default function EventRoom() {
         />
       </div>
     )
+  }
+
+  if (!isLoading && eventStatus === 'waiting') {
+    return (
+      <div className="w-full h-[85vh] overflow-hidden flex items-center justify-center bg-blue-background">
+        {member?.role?.toLowerCase() === 'owner' ? (
+          <div className="flex flex-col items-center justify-center p-12 bg-white/2 border border-white/5 rounded-[40px] backdrop-blur-md">
+            
+            <div className="flex flex-col items-center gap-6 text-center">
+              <div className="flex flex-col items-center gap-2">
+                <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10">
+                  <div className="w-1.5 h-1.5 rounded-full bg-purple-main animate-pulse" />
+                  <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.2em]">
+                    Event Status: Waiting
+                  </span>
+                </div>
+                
+                <h2 className="text-6xl font-black text-white italic uppercase tracking-tighter mt-4">
+                  READY TO <span className="text-purple-main">START</span>
+                </h2>
+                
+                <p className="text-white/40 text-sm max-w-md mt-2">
+                  Click the button below to initialize the event for all participants.
+                </p>
+              </div>
+
+              <Button 
+                variant="primary"
+                size="lg"
+                showShine={true}
+                icon={Play}
+                onClick={() => changeEventStatus(true)}
+                className="mt-4"
+              >
+                Start Session
+              </Button>
+
+              <div className="flex items-center gap-3 opacity-20 mt-4">
+                <div className="w-8 h-px bg-white" />
+                <span className="text-[9px] font-black uppercase tracking-widest italic">
+                  Authorized Host: {member?.name}
+                </span>
+                <div className="w-8 h-px bg-white" />
+              </div>
+            </div>
+
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full w-full max-w-3xl mx-auto px-6 text-center">
+            <div className="relative mb-10 p-10 bg-white/1 border border-white/5 rounded-[50px] backdrop-blur-2xl">
+              <div className="relative z-10 flex flex-col items-center">
+                <div className="w-20 h-20 bg-purple-main/10 rounded-full flex items-center justify-center mb-6 shadow-[0_0_40px_rgba(168,85,247,0.15)]">
+                  <Clock size={40} className="text-purple-main" />
+                </div>
+
+                <div className="space-y-2">
+                  <span className="text-purple-main font-black uppercase tracking-[0.4em] text-[10px] italic">
+                    Coming Soon
+                  </span>
+                  <h2 className="text-6xl font-black text-white italic uppercase tracking-tighter leading-none">
+                    THE ROOM IS <br />
+                    <span className="text-white/20">NOT OPEN YET</span>
+                  </h2>
+                </div>
+              </div>
+              
+              <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-purple-main/5 blur-[100px] rounded-full" />
+            </div>
+
+            <div className="max-w-md">
+              <p className="text-white/50 text-lg font-medium leading-relaxed">
+                You're early! This event is scheduled, but the host hasn't opened the doors to the room yet.
+              </p>
+
+              <p className="mt-6 text-white/20 text-sm italic">
+                Once the countdown ends and the host starts the session, 
+                this page will transform into the live experience.
+              </p>
+            </div>
+
+            <div className="mt-12 flex flex-col items-center gap-4">
+              <Button 
+                variant="secondary" 
+                size="md" 
+                onClick={() => window.history.back()}
+                className="text-white/60 hover:text-white"
+              >
+                Return
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -457,10 +579,7 @@ export default function EventRoom() {
                     <div className="flex items-center gap-4">
                       {!timer.isActive ? (
                         <Button 
-                          onClick={() => { 
-                            handleTimerControl('start')
-                            if (eventStatus === 'waiting') setEventStatus('started');
-                          }}
+                          onClick={() => handleTimerControl('start')}
                           variant="solid-accent" 
                           className="h-20! px-12! bg-green-500/10! border-green-500/20! text-green-400! hover:bg-green-500/20! text-sm font-black italic tracking-widest rounded-2xl! shadow-[0_0_30px_rgba(74,222,128,0.05)]"
                           icon={Play}

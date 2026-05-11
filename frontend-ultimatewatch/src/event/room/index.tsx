@@ -162,6 +162,19 @@ export default function EventRoom() {
     }
   };
 
+  const handleTimerControl = useCallback((action: 'start' | 'pause' | 'reset' | 'update', value?: number) => {
+    if (!socketRef.current?.connected) {
+      console.warn("Socket not connected, cannot control timer");
+      return;
+    }
+
+    socketRef.current.emit('timer-control', {
+      eventId: Number(id),
+      action,
+      value
+    });
+  }, [id]);
+
   useEffect(() => {
     if (member) {
       fetchEventStatus();
@@ -232,15 +245,11 @@ export default function EventRoom() {
 
     return () => {
       socketInstance.emit('leave-event', { eventId: Number(id) });
-      socketInstance.off('event-chat');
-      socketInstance.off('timer-update');
-      socketInstance.off('event-status');
-      socketInstance.off('manifest-updated');
-      socketInstance.off('exception');
+      socketRef.current?.removeAllListeners();
       socketInstance.disconnect();
       socketRef.current = null;
     };
-  }, [id, member, navigate]);
+  }, [handleTimerControl, id, member, navigate]);
 
   const previewData = useMemo(() => {
     const current = eventMedia.find(m => m.status === 'current');
@@ -264,15 +273,6 @@ export default function EventRoom() {
     });
 
     setMessage('');
-  };
-
-  const handleTimerControl = (action: 'start' | 'pause' | 'reset' | 'update', value?: number) => {
-    if (!socketRef.current?.connected) return;
-    socketRef.current.emit('timer-control', {
-      eventId: Number(id),
-      action,
-      value
-    });
   };
 
   const formatTimer = (totalSeconds: number) => {

@@ -22,6 +22,7 @@ import { Event } from 'src/events/entities/event.entity';
 import { ChatCommentDto } from 'src/comments/dto/chat-comment-dto';
 import { OnEvent } from '@nestjs/event-emitter';
 import { KickMemberDto } from 'src/members/dto/kick-member-dto';
+import { Member } from 'src/members/entities/member.entity';
 
 declare module 'socket.io' {
   interface SocketData {
@@ -48,10 +49,25 @@ export class EventGateway {
     @MessageBody('eventId') eventId: number,
     @ConnectedSocket() client: Socket,
   ) {
-    await this.membersService.getByUserIdAndEventId(userId, eventId);
-    await client.join(`event_${eventId}`);
+    const member: Member = await this.membersService.getByUserIdAndEventId(
+      userId,
+      eventId,
+    );
+
+    const roomName: string = `event_${eventId}`;
+    await client.join(roomName);
     (client.data as SocketData).user = { id: userId };
     const event: Event = await this.eventsService.findBydId(eventId);
+
+    this.server.to(roomName).emit(
+      'event-chat',
+      new ChatCommentDto({
+        username: 'SYSTEM',
+        userRole: 'NOTICE',
+        message: `${member.user.username} has joined the session.`,
+        createdAt: new Date(),
+      }),
+    );
 
     client.emit(
       'timer-update',
@@ -65,10 +81,29 @@ export class EventGateway {
   @SubscribeMessage('leave-event')
   @UseGuards(AuthGuard)
   async handleLeaveEvent(
+    @GetUser('userId') userId: number,
     @MessageBody('eventId') eventId: number,
     @ConnectedSocket() client: Socket,
   ) {
-    await client.leave(`event_${eventId}`);
+    const roomName: string = `event_${eventId}`;
+
+    await client.leave(roomName);
+    client.disconnect(true);
+
+    const member: Member = await this.membersService.getByUserIdAndEventId(
+      userId,
+      eventId,
+    );
+
+    this.server.to(roomName).emit(
+      'event-chat',
+      new ChatCommentDto({
+        username: 'SYSTEM',
+        userRole: 'NOTICE',
+        message: `${member.user.username} has left the session.`,
+        createdAt: new Date(),
+      }),
+    );
   }
 
   @SubscribeMessage('start-event')
@@ -130,15 +165,5 @@ export class EventGateway {
         socket.emit('event-status', 'kicked');
       }
     }
-
-    this.server.to(roomName).emit(
-      'event-chat',
-      new ChatCommentDto({
-        username: 'SYSTEM',
-        userRole: 'NOTICE',
-        message: `A member has been removed from the session.`,
-        createdAt: new Date(),
-      }),
-    );
   }
 }

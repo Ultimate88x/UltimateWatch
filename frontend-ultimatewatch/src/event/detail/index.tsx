@@ -21,6 +21,7 @@ import { EventVisibilityEnum } from '../../enums/EventVisibility';
 import { EventAccessRequestsModal } from '../../components/event/EventAccessRequestsModal';
 import { EventTypeEnum } from '../../enums/EventTypeEnum';
 import { EditEventModal } from '../../components/event/update/EditEventModal';
+import { MemberRoleEnum, type MemberRole } from '../../enums/MemberRoleEnum';
 
 export default function EventDetail() {
   const { smartNavigate } = useAdvancedNavigation();
@@ -47,6 +48,8 @@ export default function EventDetail() {
 
   const [showResults, setShowResults] = useState(false);
 
+  const [kickedMember, setKickedMember] = useState<Member | null>(null);
+
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
@@ -56,6 +59,7 @@ export default function EventDetail() {
   const [isAccessRequestsModalOpen, setIsAccessRequestsModalOpen] = useState(false);
   const [isDeleteEventModalOpen, setIsDeleteEventModalOpen] = useState(false);
   const [isEditEventModalOpen, setIsEditEventModalOpen] = useState(false);
+  const [isKickingMemberModalOpen, setIsKickingMemberModalOpen] = useState(false);
   
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -171,7 +175,6 @@ export default function EventDetail() {
         }
       );
       const data = await response.json();
-
       if (!response.ok) {
         toast.error(data.message || "Failed to fetch members");
         return;
@@ -470,8 +473,8 @@ export default function EventDetail() {
     }
   };
 
-  const handleKickMember = async (targetMember: Member) => {
-    if (!window.confirm(`Are you sure you want to kick ${targetMember.name}?`)) return;
+  const handleKickMember = async () => {
+    if (!kickedMember)  return;
 
     setIsActionLoading(true);
     try {
@@ -484,7 +487,7 @@ export default function EventDetail() {
             Authorization: `Bearer ${localStorage.getItem('token')}`,
           },
           body: JSON.stringify({
-            kickedUserId: targetMember.userId,
+            kickedUserId: kickedMember.userId,
             eventId: id
           }),
         }
@@ -494,6 +497,48 @@ export default function EventDetail() {
 
       if (!response.ok) {
         toast.error(data.message || "Failed to kick member");
+        setIsActionLoading(false);
+        return;
+      }
+
+      toast.success(data.message);
+
+      setKickedMember(null);
+      setIsKickingMemberModalOpen(false);
+      fetchMembers(); 
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error';
+      toast.error(message);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+    const handleChangeRole = async (targetMember: Member, role: MemberRole) => {
+    if (!window.confirm(`Are you sure you want to kick ${targetMember.name}?`)) return;
+
+    setIsActionLoading(true);
+    try {
+      const response = await fetch(
+        `http://localhost:3000/members/update-role`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify({
+            targetUserId: targetMember.userId,
+            eventId: id,
+            role
+          }),
+        }
+      );
+      
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.message || "Failed to update member's role");
         setIsActionLoading(false);
         return;
       }
@@ -1001,24 +1046,44 @@ export default function EventDetail() {
                                 <span className="text-[11px] font-black uppercase italic truncate group-hover:text-purple-300 transition-colors leading-none mb-1">
                                   {m.name}
                                 </span>
-                                <span className="text-[8px] font-bold uppercase text-white/20 tracking-tighter">
+                                <span className={`text-[8px] font-bold uppercase tracking-tighter ${m.role === 'moderator' ? 'text-blue-400' : 'text-white/20'}`}>
                                   {m.role}
                                 </span>
                               </div>
                             </button>
 
-                            {isOwner && m.userId !== member?.userId && m.role !== 'owner' && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleKickMember(m);
-                                }}
-                                className="opacity-0 group-hover:opacity-100 ml-2 p-2 text-white/20 hover:text-red-danger hover:bg-red-danger/10 rounded-lg transition-all duration-200 cursor-pointer"
-                                title="Kick member"
-                              >
-                                <UserMinus size={14} />
-                              </button>
-                            )}
+                            <div className="flex items-center gap-1">
+                              {isOwner && m.userId !== member?.userId && (
+                                <div className="flex opacity-0 group-hover:opacity-100 transition-all duration-200">
+                                  {Object.values(MemberRoleEnum)
+                                    .filter((role) => role !== m.role)
+                                    .map((role) => (
+                                      <button
+                                        key={role}
+                                        onClick={() => handleChangeRole(m, role)}
+                                        className="p-1.5 text-[7px] font-black uppercase text-white/40 hover:text-purple-main hover:bg-purple-main/10 rounded-md transition-all cursor-pointer"
+                                        title={`Make ${role}`}
+                                      >
+                                        {role === 'moderator' ? 'MOD' : role === 'owner' ? 'OWN' : 'MEM'}
+                                      </button>
+                                    ))}
+                                </div>
+                              )}
+
+                              {member?.role !== MemberRoleEnum.MEMBER && m.name !== member?.name && m.role !== 'owner' && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setKickedMember(m);
+                                    setIsKickingMemberModalOpen(true);
+                                  }}
+                                  className="opacity-0 group-hover:opacity-100 p-2 text-white/20 hover:text-red-danger hover:bg-red-danger/10 rounded-lg transition-all duration-200 cursor-pointer"
+                                  title="Kick member"
+                                >
+                                  <UserMinus size={14} />
+                                </button>
+                              )}
+                            </div>
                           </motion.div>
                         ))
                       ]
@@ -1157,6 +1222,20 @@ export default function EventDetail() {
         description="You are about to cancel this event and delete all its contents. Are you sure?"
         confirmText="Yes, Cancel"
         cancelText="Don't Cancel"
+        variant="danger"
+      />
+
+      <ConfirmModal
+        isOpen={isKickingMemberModalOpen}
+        onClose={() => { 
+          setKickedMember(null);
+          setIsKickingMemberModalOpen(false)
+        }}
+        onConfirm={handleKickMember}
+        title="Kick Member"
+        description="You are about to kick this member from the event. Are you sure?"
+        confirmText="Yes, Kick"
+        cancelText="Don't Kick"
         variant="danger"
       />
 

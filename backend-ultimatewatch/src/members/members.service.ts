@@ -198,6 +198,11 @@ export class MembersService {
 
     member.role = role;
 
+    if (role === MemberRole.OWNER) {
+      eventOwner.role = MemberRole.MODERATOR;
+      await this.save(eventOwner);
+    }
+
     await this.save(member);
   }
 

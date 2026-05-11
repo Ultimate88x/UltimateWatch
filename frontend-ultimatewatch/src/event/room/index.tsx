@@ -43,25 +43,24 @@ export default function EventRoom() {
     }
   }, [comments]);
 
-  useEffect(() => {
+  const fetchMember = useCallback(async () => {
     if (!id) return;
 
-    const fetchMember = async () => {
-      try {
-        const response = await fetch(
-          `http://localhost:3000/members/exists/${id}`,
-            {
-              method: 'GET',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${localStorage.getItem('token')}`,
-              },
-            }
-        );
+    try {
+      const response = await fetch(
+        `http://localhost:3000/members/exists/${id}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
 
       const contentType = response.headers.get("content-type");
       let data = null;
-      
+
       if (contentType && contentType.includes("application/json")) {
         data = await response.json();
       }
@@ -74,15 +73,12 @@ export default function EventRoom() {
       if (data) {
         setMember(data);
       }
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Error';
-        toast.error(message);
-      } finally {
-        setTimeout(() => setIsLoading(false), 400);
-      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error';
+      toast.error(message);
+    } finally {
+      setTimeout(() => setIsLoading(false), 400);
     }
-
-    fetchMember();
   }, [id]);
 
   const fetchEventStatus = useCallback(async () => {
@@ -176,6 +172,10 @@ export default function EventRoom() {
   }, [id]);
 
   useEffect(() => {
+    fetchMember();
+  }, [fetchMember]);
+
+  useEffect(() => {
     if (member) {
       fetchEventStatus();
     }
@@ -212,8 +212,14 @@ export default function EventRoom() {
 
       if (status === 'finished') {
         navigate('/');
-      } else if (status === 'kicked') {
+      }
+    });
+
+    socketInstance.on('event-action', (action: string) => {
+      if (action === 'kicked') {
         setMember(null);
+      } else if (action === 'role-updated') {
+        fetchMember();
       }
     });
 
@@ -249,7 +255,7 @@ export default function EventRoom() {
       socketInstance.disconnect();
       socketRef.current = null;
     };
-  }, [id, member, navigate]);
+  }, [fetchMember, id, member, navigate]);
 
   const previewData = useMemo(() => {
     const current = eventMedia.find(m => m.status === 'current');

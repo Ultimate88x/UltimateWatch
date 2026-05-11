@@ -1,5 +1,6 @@
 import {
-  UnauthorizedException,
+  BadRequestException,
+  ForbiddenException,
   UseFilters,
   UseGuards,
   UsePipes,
@@ -21,6 +22,7 @@ import { TimerDto } from './dto/timer-dto';
 import { WebsocketExceptionFilter } from './websocket-exception.filter';
 import { Member } from 'src/members/entities/member.entity';
 import { MemberRole } from 'src/common/enums/member.role.enum';
+import { EventStatus } from 'src/common/enums/event.status.enum';
 
 interface TimerState {
   seconds: number;
@@ -56,11 +58,33 @@ export class TimerGateway {
     );
 
     if (member.role !== MemberRole.OWNER) {
-      throw new UnauthorizedException('Only event owner can control the timer');
+      throw new ForbiddenException('Only event owner can control the timer');
+    }
+
+    const event = await this.eventsService.findBydId(eventId);
+
+    if (
+      event.status === EventStatus.VOTING ||
+      event.status === EventStatus.FINISHED
+    ) {
+      throw new BadRequestException(
+        'You cannot modify the timer of a not started event',
+      );
+    }
+
+    if (event.media.length === 0) {
+      throw new BadRequestException(
+        "An event cannot start if it doesn't have any media",
+      );
+    }
+
+    if (event.eventDate > new Date(Date.now())) {
+      throw new BadRequestException(
+        "It's still too soon to start the event. Either change its start date or wait.",
+      );
     }
 
     if (!this.timers.has(eventId)) {
-      const event = await this.eventsService.findBydId(eventId);
       this.timers.set(eventId, { seconds: event.timer || 0, isActive: false });
     }
 

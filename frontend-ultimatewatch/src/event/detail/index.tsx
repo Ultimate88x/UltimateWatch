@@ -773,7 +773,7 @@ export default function EventDetail() {
                       onClick={() => navigate(`/events/${event.id}/room`)}
                       icon={Play}
                       className="w-full bg-white text-purple-main hover:bg-white/60 py-6 rounded-2xl font-black shadow-lg"
-                      disabled={event.status === 'voting' || event.status === 'finished'}
+                      disabled={event.status === 'voting' || event.status === 'finished' || mediaList?.length === 0}
                     >
                       Join Session
                     </Button>

@@ -727,6 +727,7 @@ export class EventsService {
         status: EventStatus.VOTING,
         votingEndDate: LessThanOrEqual(new Date()),
       },
+      relations: ['proposedMedia'],
     });
 
     return events;
@@ -1461,17 +1462,6 @@ export class EventsService {
   }
 
   async updateTimer(id: number, seconds: number) {
-    const event: Event = await this.findBydId(id);
-
-    if (
-      event.status === EventStatus.VOTING ||
-      event.status === EventStatus.FINISHED
-    ) {
-      throw new BadRequestException(
-        'You cannot modify the timer of a not started event',
-      );
-    }
-
     return await this.eventsRepository.update(id, {
       timer: seconds,
       status: EventStatus.STARTED,

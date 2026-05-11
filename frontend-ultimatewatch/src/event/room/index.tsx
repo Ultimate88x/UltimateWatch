@@ -146,7 +146,7 @@ export default function EventRoom() {
   }, [member, fetchEventMedia, eventStatus]);
 
   useEffect(() => {
-    if (!member || eventStatus === 'voting' || eventStatus === 'finished') return;
+    if (!member) return;
 
     const token = localStorage.getItem('token');
     const socketInstance = io(SOCKET_URL, {
@@ -200,7 +200,7 @@ export default function EventRoom() {
       socketInstance.disconnect();
       socketRef.current = null;
     };
-  }, [id, member, eventStatus]);
+  }, [id, member]);
 
   const previewData = useMemo(() => {
     const current = eventMedia.find(m => m.status === 'current');

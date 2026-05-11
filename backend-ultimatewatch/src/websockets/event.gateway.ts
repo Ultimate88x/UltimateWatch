@@ -19,6 +19,7 @@ import { EventsService } from 'src/events/events.service';
 import { TimerDto } from './dto/timer-dto';
 import { MembersService } from 'src/members/members.service';
 import { Event } from 'src/events/entities/event.entity';
+import { ChatCommentDto } from 'src/comments/dto/chat-comment-dto';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 @UseFilters(new WebsocketExceptionFilter())
@@ -75,15 +76,34 @@ export class EventGateway {
 
   @SubscribeMessage('end-event')
   @UseGuards(AuthGuard)
-  async finishEvent(
+  finishEvent(
     @GetUser('userId') userId: number,
     @MessageBody('eventId') eventId: number,
+    @ConnectedSocket() client: Socket,
   ) {
-    const status: string = await this.eventsService.finishEvent(
-      userId,
-      eventId,
-    );
+    const countdownNotice = new ChatCommentDto({
+      username: 'SYSTEM',
+      userRole: 'NOTICE',
+      message:
+        'The event will conclude in 10 seconds. Thank you for participating!',
+      createdAt: new Date(),
+    });
+    this.server.to(`event_${eventId}`).emit('event-chat', countdownNotice);
 
-    this.server.to(`event_${eventId}`).emit('event-status', status);
+    setTimeout(() => {
+      void (async () => {
+        try {
+          const status = await this.eventsService.finishEvent(userId, eventId);
+
+          this.server.to(`event_${eventId}`).emit('event-status', status);
+        } catch (error) {
+          client.emit('exception', {
+            message:
+              'Error closing event: ' +
+              (error instanceof Error ? error.message : 'Unknown error'),
+          });
+        }
+      })();
+    }, 10000);
   }
 }

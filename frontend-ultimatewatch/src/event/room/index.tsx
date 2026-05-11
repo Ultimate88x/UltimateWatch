@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { Clock, List, Pause, Play, RotateCcw, Send, ShieldAlert, Terminal } from 'lucide-react';
 import type { Comment } from '../../types/comment';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '../../components/Button';
 import { formatTime } from '../../components/utilities/FormatTime';
 import toast from 'react-hot-toast';
@@ -19,6 +19,8 @@ const SOCKET_URL = 'http://localhost:3000';
 
 export default function EventRoom() {
   const { id } = useParams();
+  const navigate = useNavigate();
+
   const [eventStatus, setEventStatus] = useState<string | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [message, setMessage] = useState('');
@@ -194,6 +196,10 @@ export default function EventRoom() {
 
     socketInstance.on('event-status', (status: string) => {
       setEventStatus(status);
+
+      if (status === 'finished') {
+        navigate('/');
+      }
     });
 
     socketInstance.on('manifest-updated', (updatedItems: EventMediaRoom[]) => {
@@ -232,7 +238,7 @@ export default function EventRoom() {
       socketInstance.disconnect();
       socketRef.current = null;
     };
-  }, [id, member]);
+  }, [id, member, navigate]);
 
   const previewData = useMemo(() => {
     const current = eventMedia.find(m => m.status === 'current');
@@ -441,39 +447,59 @@ export default function EventRoom() {
             const isUser = comment.username === member?.name;
             const isError = comment.userRole === 'ERROR';
             const isSystem = comment.username === 'SYSTEM';
+            const isNotice = comment.userRole === 'NOTICE';
 
             return (
               <div 
                 key={index} 
                 className={`group flex flex-col px-4 py-2.5 rounded-xl transition-all duration-300 ${
                   isUser 
-                  ? 'bg-purple-main/10 border-l-2 border-purple-main/50' 
-                  : isError 
-                  ? 'bg-red-danger/5 border-l-2 border-red-danger/50'
-                  : 'hover:bg-white/3 border-l-2 border-transparent'
+                    ? 'bg-purple-main/10 border-l-2 border-purple-main/50' 
+                    : isError 
+                    ? 'bg-red-danger/5 border-l-2 border-red-danger/50'
+                    : isNotice
+                    ? 'bg-amber-500/5 border-l-2 border-amber-500/50 italic'
+                    : 'hover:bg-white/3 border-l-2 border-transparent'
                 }`}
               >
                 <div className="flex items-center gap-2 mb-0.5">
                   <span className={`text-[11px] font-black uppercase italic tracking-wider shrink-0 ${
-                    isUser ? 'text-white' : isError ? 'text-red-danger' : 'text-purple-main'
+                    isUser 
+                      ? 'text-white' 
+                      : isError
+                      ? 'text-red-danger' 
+                      : isNotice 
+                      ? 'text-amber-400' 
+                      : 'text-purple-main'
                   }`}>
-                    {isUser ? 'You' : comment.username}
+                    {isUser ? 'You' : isSystem ? 'System' : comment.username}
                   </span>
-                  {!isSystem && (
+
+                  {(!isSystem || isNotice) && (
                     <span className={`text-[8px] px-1.5 py-0.5 font-bold rounded uppercase italic shrink-0 border ${
                       isUser 
-                      ? 'bg-purple-main/20 border-purple-main/30 text-purple-200' 
-                      : 'bg-white/5 border-white/10 text-white/30'
+                        ? 'bg-purple-main/20 border-purple-main/30 text-purple-200' 
+                        : isNotice
+                        ? 'bg-amber-500/20 border-amber-500/30 text-amber-200'
+                        : 'bg-white/5 border-white/10 text-white/30'
                     }`}>
                       {comment.userRole}
                     </span>
                   )}
+
                   <span className="text-[9px] font-mono ml-auto opacity-30">
                     {formatTime(comment.createdAt)}
                   </span>
                 </div>
+
                 <p className={`text-sm leading-relaxed ${
-                  isError ? 'text-red-200/60 italic' : isUser ? 'text-white' : 'text-white/80'
+                  isError 
+                    ? 'text-red-200/60 italic' 
+                    : isNotice 
+                    ? 'text-amber-100/70' 
+                    : isUser 
+                    ? 'text-white' 
+                    : 'text-white/80'
                 }`}>
                   {comment.message}
                 </p>

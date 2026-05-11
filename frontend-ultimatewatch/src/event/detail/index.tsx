@@ -790,7 +790,7 @@ export default function EventDetail() {
                 )}
               </div>
 
-              {isOwner && event.visibility === EventVisibilityEnum.REQUEST_ONLY && (
+              {isOwner && event.visibility === EventVisibilityEnum.REQUEST_ONLY && event.status !== 'finished' && (
                 <Button
                   variant="outline"
                   fullWidth

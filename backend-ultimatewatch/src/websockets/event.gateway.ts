@@ -5,7 +5,7 @@ import {
   MessageBody,
   ConnectedSocket,
 } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
+import { Server, Socket, SocketData } from 'socket.io';
 import {
   UseFilters,
   UseGuards,
@@ -20,6 +20,14 @@ import { TimerDto } from './dto/timer-dto';
 import { MembersService } from 'src/members/members.service';
 import { Event } from 'src/events/entities/event.entity';
 import { ChatCommentDto } from 'src/comments/dto/chat-comment-dto';
+import { OnEvent } from '@nestjs/event-emitter';
+import { KickMemberDto } from 'src/members/dto/kick-member-dto';
+
+declare module 'socket.io' {
+  interface SocketData {
+    user?: { id: number };
+  }
+}
 
 @WebSocketGateway({ cors: { origin: '*' } })
 @UseFilters(new WebsocketExceptionFilter())
@@ -42,7 +50,7 @@ export class EventGateway {
   ) {
     await this.membersService.getByUserIdAndEventId(userId, eventId);
     await client.join(`event_${eventId}`);
-
+    (client.data as SocketData).user = { id: userId };
     const event: Event = await this.eventsService.findBydId(eventId);
 
     client.emit(
@@ -105,5 +113,32 @@ export class EventGateway {
         }
       })();
     }, 10000);
+  }
+
+  @OnEvent('member.kicked')
+  async kickMember(payload: { kickMemberDto: KickMemberDto }) {
+    const { kickedUserId, eventId } = payload.kickMemberDto;
+
+    const roomName = `event_${eventId}`;
+
+    const sockets = await this.server.in(roomName).fetchSockets();
+
+    for (const socket of sockets) {
+      const socketUserId = (socket.data as SocketData).user?.id;
+
+      if (socketUserId === kickedUserId) {
+        socket.emit('event-status', 'kicked');
+      }
+    }
+
+    this.server.to(roomName).emit(
+      'event-chat',
+      new ChatCommentDto({
+        username: 'SYSTEM',
+        userRole: 'NOTICE',
+        message: `A member has been removed from the session.`,
+        createdAt: new Date(),
+      }),
+    );
   }
 }

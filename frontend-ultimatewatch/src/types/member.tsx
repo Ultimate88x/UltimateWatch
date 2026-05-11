@@ -1,4 +1,5 @@
 type Member = {
+  userId: number,
   name: string;
   imagePath: string;
   role: string;

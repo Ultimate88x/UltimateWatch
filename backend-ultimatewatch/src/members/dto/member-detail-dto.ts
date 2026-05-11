@@ -1,4 +1,5 @@
 export class MemberDetailDto {
+  userId: number;
   name: string;
   imagePath: string;
   role: string;

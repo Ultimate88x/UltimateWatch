@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 import { Member } from './entities/member.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -8,6 +12,8 @@ import { Event } from 'src/events/entities/event.entity';
 import { MemberRole } from 'src/common/enums/member.role.enum';
 import { MemberDetailDto } from './dto/member-detail-dto';
 import { MemberListResponseDto } from './dto/member-list-response-dto';
+import { EventStatus } from 'src/common/enums/event.status.enum';
+import { KickMemberDto } from './dto/kick-member-dto';
 
 @Injectable()
 export class MembersService {
@@ -32,6 +38,25 @@ export class MembersService {
     await this.membersRepository.delete(id);
   }
 
+  async findById(id: number): Promise<Member | null> {
+    const member: Member | null = await this.membersRepository.findOne({
+      where: { id },
+      relations: ['event'],
+    });
+
+    return member;
+  }
+
+  async getById(id: number): Promise<Member> {
+    const member: Member | null = await this.findById(id);
+
+    if (!member) {
+      throw new ResourceNotFoundException('Member', 'ID', String(id));
+    }
+
+    return member;
+  }
+
   async findByUserIdAndEventId(
     userId: number,
     eventId: number,
@@ -41,7 +66,7 @@ export class MembersService {
         user: { id: userId },
         event: { id: eventId },
       },
-      relations: ['votes', 'votes.media', 'user'],
+      relations: ['votes', 'votes.media', 'user', 'event'],
     });
 
     return member;
@@ -154,11 +179,37 @@ export class MembersService {
     return currentMembers;
   }
 
+  async kickMemberFromEvent(
+    userId: number,
+    kickMemberDto: KickMemberDto,
+  ): Promise<void> {
+    const { kickedUserId, eventId } = kickMemberDto;
+
+    const member: Member = await this.getByUserIdAndEventId(
+      kickedUserId,
+      eventId,
+    );
+    const eventOwner: Member = await this.getOwnerFromEvent(eventId);
+
+    if (userId !== eventOwner.user.id) {
+      throw new ForbiddenException('You cannot perform this action');
+    }
+
+    if (member.event.status === EventStatus.FINISHED) {
+      throw new BadRequestException(
+        'You cannot kick a member from a finished event',
+      );
+    }
+
+    await this.delete(member.id);
+  }
+
   private createMemberDetailDto(
     member: Member,
     userId: number,
   ): MemberDetailDto {
     return new MemberDetailDto({
+      userId: member.user.id,
       name: member.user.username,
       imagePath: member.user.imagePath,
       role: member.role,

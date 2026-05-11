@@ -199,6 +199,8 @@ export default function EventRoom() {
 
       if (status === 'finished') {
         navigate('/');
+      } else if (status === 'kicked') {
+        setMember(null);
       }
     });
 

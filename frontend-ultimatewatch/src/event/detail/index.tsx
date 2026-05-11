@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { Member } from '../../types/member';
 import { EmptyState } from '../../components/EmptyState';
-import { Film, Calendar, Users, Info, Shield, ChevronLeft, ChevronRight, Trophy, LogOut, Play, UserPlus, Trash, AlertTriangle, Settings, Clapperboard } from 'lucide-react';
+import { Film, Calendar, Users, Info, Shield, ChevronLeft, ChevronRight, Trophy, LogOut, Play, UserPlus, Trash, AlertTriangle, Settings, Clapperboard, UserMinus } from 'lucide-react';
 import { Button } from '../../components/Button';
 import { getRelativeDate } from '../../components/utilities/RelativeDate';
 import { useAdvancedNavigation } from '../../components/utilities/SmartNavigate';
@@ -32,11 +32,11 @@ export default function EventDetail() {
   const [canAddContent, setCanAddContent] = useState<boolean>(false);
 
   const [members, setMembers] = useState<Member[]>([]);
-  const [isMember, setIsMember] = useState(false);
+  const [member, setMember] = useState<Member | null>(null);
   const [isOwner, setIsOwner] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
-  const [isMembersLoading, setIsMembersLoading] = useState(true);
+  const [membersLoading, setMembersLoading] = useState(true);
 
   const [mediaList, setMediaList] = useState<MediaEvent[] | null>(null);
   const [isMediaLoading, setIsMediaLoading] = useState(true);
@@ -122,8 +122,44 @@ export default function EventDetail() {
 
   }, [id]);
 
+  const fetchMember = useCallback(async () => {
+    if (!id) return;
+
+    try {
+      const response = await fetch(
+        `http://localhost:3000/members/exists/${id}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
+
+      const contentType = response.headers.get("content-type");
+      let data = null;
+
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      }
+
+      if (!response.ok) {
+        toast.error(data?.message || 'Failed to fetch user member');
+        return;
+      }
+
+      if (data) {
+        setMember(data);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error';
+      toast.error(message);
+    }
+  }, [id]);
+
   const fetchMembers = useCallback(async () => {
-    setIsMembersLoading(true);
+    setMembersLoading(true);
     try {
       const response = await fetch(
         `http://localhost:3000/members/event/${id}?page=${page}`,
@@ -141,20 +177,17 @@ export default function EventDetail() {
         return;
       }
 
-      const userMember = data.data.find(((member: Member) => member.isCurrentUser));
-
       setMembers(data.data);
-      setIsMember(!!userMember);
-      setIsOwner(!!userMember && userMember.role === "owner");
+      setIsOwner(member?.role === "owner");
       setTotalPages(data.lastPage || 1);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'An unexpected error occurred';
       toast.error(message);
       setIsLoading(false);
     } finally {
-      setTimeout(() => setIsMembersLoading(false), 250);
+      setTimeout(() => setMembersLoading(false), 250);
     }
-  }, [id, page]);
+  }, [id, page, member]);
 
   const fetchAccessRequest = useCallback(async () => {
     try {
@@ -277,6 +310,7 @@ export default function EventDetail() {
         return;
       }
 
+      fetchMember();
       fetchEvent();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error';
@@ -341,6 +375,7 @@ export default function EventDetail() {
 
       toast.success(data.message);
 
+      fetchMember();
       fetchEvent();
       if (event?.visibility === EventVisibilityEnum.REQUEST_ONLY) fetchAccessRequest();
     } catch (error) {
@@ -435,11 +470,56 @@ export default function EventDetail() {
     }
   };
 
+  const handleKickMember = async (targetMember: Member) => {
+    if (!window.confirm(`Are you sure you want to kick ${targetMember.name}?`)) return;
+
+    setIsActionLoading(true);
+    try {
+      const response = await fetch(
+        `http://localhost:3000/members/kick`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify({
+            kickedUserId: targetMember.userId,
+            eventId: id
+          }),
+        }
+      );
+      
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.message || "Failed to kick member");
+        setIsActionLoading(false);
+        return;
+      }
+
+      toast.success(data.message);
+
+      fetchMembers(); 
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error';
+      toast.error(message);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (canSeeEvent) {
       fetchEvent();
     }
   }, [fetchEvent, canSeeEvent]);
+
+  useEffect(() => {
+    if (canSeeEvent) {
+      fetchMember();
+    }
+  }, [fetchMember, canSeeEvent]);
 
   useEffect(() => {
     if (event) {
@@ -621,7 +701,7 @@ export default function EventDetail() {
                       {event.status === 'voting' ? 'VOTE' : 'LINEUP'}
                     </h3>
                     
-                    {event.status === 'voting' && isMember && event.maxVotesPerMember && (
+                    {event.status === 'voting' && member && event.maxVotesPerMember && (
                       <div className="flex flex-col items-end">
                         <span className="text-[8px] font-bold text-white/30 uppercase tracking-[0.2em]">Your Activity</span>
                         <div className="flex items-center gap-2">
@@ -638,7 +718,7 @@ export default function EventDetail() {
 
                   <p className="text-[9px] font-bold text-white/30 uppercase tracking-[0.3em] mt-1">
                     {event.status === 'voting' 
-                      ? isMember 
+                      ? member 
                         ? `Select up to ${event.maxVotesPerMember === 1 ? 'a' : event.maxVotesPerMember} title${event.maxVotesPerMember === 1 ? '' : 's'} you want to watch!` 
                         : 'Join the event to vote!' 
                       : 'Planned marathon lineup'}
@@ -647,7 +727,7 @@ export default function EventDetail() {
               </div>
 
               <div className="flex flex-col gap-4">
-                {isMember && (event.status === 'voting' || canAddContent && isOwner) && (
+                {member && (event.status === 'voting' || canAddContent && isOwner) && (
                   <motion.button 
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -707,7 +787,7 @@ export default function EventDetail() {
                           key={m.id}
                           media={m}
                           event={event!}
-                          isMember={isMember}
+                          isMember={!!member}
                           votedMediaIds={votedMediaIds}
                           onEventUpdate={fetchMedia}
                           isOwner={isOwner}
@@ -737,7 +817,7 @@ export default function EventDetail() {
               <h4 className="text-2xl font-black uppercase italic tracking-tighter">{event.status === 'finished' ? 'Marathon Complete!' : 'Ready for the marathon?'}</h4>
               <p className="text-white/80 text-xs font-bold leading-tight">{event.status === 'finished' ? 'The marathon has ended.' : 'Join the session to interact with the community.'}</p>
               <div className="w-full">
-                {!isMember && event.visibility !== EventVisibilityEnum.REQUEST_ONLY ? (
+                {!member && event.visibility !== EventVisibilityEnum.REQUEST_ONLY ? (
                   <Button 
                     variant="solid-accent" 
                     onClick={() => setIsJoinModalOpen(true)}
@@ -746,7 +826,7 @@ export default function EventDetail() {
                   >
                     Become a Member
                   </Button>
-                ) : !isMember && event.visibility === EventVisibilityEnum.REQUEST_ONLY ? (
+                ) : !member && event.visibility === EventVisibilityEnum.REQUEST_ONLY ? (
                   <div className="flex items-center gap-2">
                     <Button
                       variant="solid-accent"
@@ -849,7 +929,7 @@ export default function EventDetail() {
 
               <div className="flex flex-col gap-4">
                 <AnimatePresence mode="popLayout">
-                    {isMembersLoading ? (
+                    {membersLoading ? (
                       [...Array(10)].map((_, i) => (
                         <motion.div 
                           key={`skeleton-${i}`} 
@@ -867,7 +947,7 @@ export default function EventDetail() {
                       ))
                     ) : (
                       [
-                        isMember && event.status !== 'finished' && members.length < event.maxMembers && (
+                        member && event.status !== 'finished' && members.length < event.maxMembers && (
                           <motion.div
                             key="invite-button"
                             initial={{ opacity: 0, x: 10 }}
@@ -893,33 +973,52 @@ export default function EventDetail() {
                           </motion.div>
                         ),
 
-                        ...members.map((member) => (
+                        ...members.map((m) => (
                           <motion.div
-                            key={member.name}
+                            key={m.name}
                             initial={{ opacity: 0, x: 10 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, scale: 0.95 }}
                             layout
+                            className="group flex items-center justify-between px-3 py-2 rounded-xl hover:bg-white/3 transition-all duration-200"
                           >
                             <button 
-                              className="relative flex items-center gap-3 group cursor-pointer"
-                              onClick={(e) => smartNavigate(`/users/${member.name}`, e)}
+                              className="flex items-center gap-3 min-w-0 cursor-pointer"
+                              onClick={(e) => smartNavigate(`/users/${m.name}`, e)}
                             >
                               <div className="relative shrink-0">
-                                <img src={member.imagePath} className="w-10 h-10 rounded-xl object-cover border border-white/10" alt={member.name} />
-                                {member.role === 'owner' && (
-                                  <div className="absolute -top-1 -right-1 bg-purple-main w-3 h-3 rounded-full border-2 border-[#0a0a0a]" />
+                                <img 
+                                  src={m.imagePath} 
+                                  className="w-10 h-10 rounded-xl object-cover border border-white/10 group-hover:border-purple-main/30 transition-colors" 
+                                  alt={m.name} 
+                                />
+                                {m.role === 'owner' && (
+                                  <div className="absolute -top-1 -right-1 bg-purple-main w-3 h-3 rounded-full border-2 border-[#0a0a0a] shadow-lg shadow-purple-main/20" />
                                 )}
                               </div>
-                              <div className="flex flex-col min-w-0">
-                                <span className="flex text-[11px] font-black uppercase italic truncate group-hover:text-purple-300 transition-colors">
-                                  {member.name}
+                              
+                              <div className="flex flex-col min-w-0 text-left">
+                                <span className="text-[11px] font-black uppercase italic truncate group-hover:text-purple-300 transition-colors leading-none mb-1">
+                                  {m.name}
                                 </span>
-                                <span className="flex text-[8px] font-bold uppercase text-white/20">
-                                  {member.role}
+                                <span className="text-[8px] font-bold uppercase text-white/20 tracking-tighter">
+                                  {m.role}
                                 </span>
                               </div>
                             </button>
+
+                            {isOwner && m.userId !== member?.userId && m.role !== 'owner' && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleKickMember(m);
+                                }}
+                                className="opacity-0 group-hover:opacity-100 ml-2 p-2 text-white/20 hover:text-red-danger hover:bg-red-danger/10 rounded-lg transition-all duration-200 cursor-pointer"
+                                title="Kick member"
+                              >
+                                <UserMinus size={14} />
+                              </button>
+                            )}
                           </motion.div>
                         ))
                       ]

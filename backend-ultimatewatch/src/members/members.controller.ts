@@ -1,13 +1,26 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { MembersService } from './members.service';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { MemberListResponseDto } from './dto/member-list-response-dto';
 import { GetUser } from 'src/common/decorators/get-user.decorator';
 import { MemberDetailDto } from './dto/member-detail-dto';
+import { KickMemberDto } from './dto/kick-member-dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Controller('members')
 export class MembersController {
-  constructor(private readonly membersService: MembersService) {}
+  constructor(
+    private readonly membersService: MembersService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   @Get('/event/:id')
   @UseGuards(AuthGuard)
@@ -33,5 +46,18 @@ export class MembersController {
       await this.membersService.retrieveByUserIdAndEventId(userId, +eventId);
 
     return member;
+  }
+
+  @Post('kick')
+  @UseGuards(AuthGuard)
+  async kickMember(
+    @GetUser('userId') userId: number,
+    @Body() kickMemberDto: KickMemberDto,
+  ) {
+    await this.membersService.kickMemberFromEvent(userId, kickMemberDto);
+
+    this.eventEmitter.emit('member.kicked', { kickMemberDto });
+
+    return { message: 'Member kicked successfully' };
   }
 }

@@ -105,17 +105,6 @@ export class EventsController {
     return status;
   }
 
-  @Patch('/start/:id')
-  @UseGuards(AuthGuard)
-  async startEvent(
-    @GetUser('userId') userId: number,
-    @Param('id') id: string,
-  ): Promise<{ message: string }> {
-    await this.eventsService.startEvent(userId, +id);
-
-    return { message: 'Event started!' };
-  }
-
   @Get('room/:id/media')
   @UseGuards(AuthGuard)
   async findEventMediaForEventRoom(

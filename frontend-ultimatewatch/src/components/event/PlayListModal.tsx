@@ -51,7 +51,12 @@ export function PlaylistModal({ isOpen, onClose, media, socketRef, eventId, isOw
       'now-playing': 'current',
       'up-next': 'pending'
     };
-    movedItem.status = statusMap[destination.droppableId];
+
+    if (source.droppableId === 'up-next' && destination.droppableId === 'archive') {
+      movedItem.status = 'skipped';
+    } else {
+      movedItem.status = statusMap[destination.droppableId];
+    }
 
     const archives = items.filter(m => ['watched', 'skipped'].includes(m.status))
       .sort((a, b) => b.order - a.order);

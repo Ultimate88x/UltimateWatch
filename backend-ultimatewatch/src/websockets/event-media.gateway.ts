@@ -40,12 +40,9 @@ export class EventMediaGateway {
   ) {
     const event = await this.eventsService.findBydId(data.eventId);
 
-    if (
-      event.status === EventStatus.VOTING ||
-      event.status === EventStatus.FINISHED
-    ) {
+    if (event.status !== EventStatus.STARTED) {
       throw new BadRequestException(
-        'You cannot modify the media order of the event in its current state',
+        'You cannot modify the media order of this event in its current state',
       );
     }
 

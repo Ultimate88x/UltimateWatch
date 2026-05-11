@@ -72,4 +72,18 @@ export class EventGateway {
 
     this.server.to(`event_${eventId}`).emit('event-status', status);
   }
+
+  @SubscribeMessage('end-event')
+  @UseGuards(AuthGuard)
+  async finishEvent(
+    @GetUser('userId') userId: number,
+    @MessageBody('eventId') eventId: number,
+  ) {
+    const status: string = await this.eventsService.finishEvent(
+      userId,
+      eventId,
+    );
+
+    this.server.to(`event_${eventId}`).emit('event-status', status);
+  }
 }

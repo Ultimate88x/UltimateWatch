@@ -13,6 +13,7 @@ import type { Member } from '../../types/member';
 import type { EventMediaRoom } from '../../types/event-media-room';
 import { MediaCard } from '../../components/event/MediaCard';
 import { PlaylistModal } from '../../components/event/PlayListModal';
+import { ConfirmModal } from '../../components/ConfirmModal';
 
 const SOCKET_URL = 'http://localhost:3000';
 
@@ -27,6 +28,7 @@ export default function EventRoom() {
   const [timer, setTimer] = useState<Timer>({ seconds: 0, isActive: false });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEndEventModalOpen, setIsEndEventModalOpen] = useState(false);
 
   const [isLoading, setIsLoading] = useState(true);
   
@@ -152,7 +154,9 @@ export default function EventRoom() {
         eventId: Number(id) 
       });
     } else {
-      console.log('end');
+      socketRef.current.emit('end-event', { 
+        eventId: Number(id) 
+      });
     }
   };
 
@@ -592,7 +596,9 @@ export default function EventRoom() {
                           variant="solid-accent" 
                           className="h-20! px-12! bg-yellow-500/10! border-yellow-500/20! text-yellow-400! hover:bg-yellow-500/20! text-sm font-black italic tracking-widest rounded-2xl!"
                           icon={Pause}
-                        > PAUSE </Button>
+                        > 
+                          PAUSE 
+                        </Button>
                       )}
                       
                       <Button 
@@ -600,7 +606,20 @@ export default function EventRoom() {
                         variant="ghost" 
                         className="h-20! px-8! border-white/5! text-white/20 hover:text-red-danger! hover:bg-red-danger/5! text-xs font-black rounded-2xl!"
                         icon={RotateCcw}
-                      > RESET </Button>
+                      > 
+                        RESET 
+                      </Button>
+
+                      <div className="w-px h-16 bg-white/5 mx-2" />
+  
+                      <Button 
+                        onClick={() => setIsEndEventModalOpen(true)}
+                        variant="solid-error" 
+                        className="h-20! px-10! text-xs font-black rounded-2xl!"
+                        icon={ShieldAlert}
+                      >
+                        FINISH EVENT
+                      </Button>
                     </div>
 
                     <div className="flex items-center gap-6 pl-8 border-l border-white/5">
@@ -683,6 +702,17 @@ export default function EventRoom() {
         socketRef={socketRef}
         eventId={id}
         isOwner={member?.role === "owner"}
+      />
+
+      <ConfirmModal
+        isOpen={isEndEventModalOpen}
+        onClose={() => setIsEndEventModalOpen(false)}
+        onConfirm={() => changeEventStatus(false)}
+        title="End Event"
+        description="You are about to end this event. All participants will be redirected out of the event in 10 seconds. Are you sure?"
+        confirmText="Yes, End"
+        cancelText="Not yet"
+        variant="danger"
       />
     </div>
   );

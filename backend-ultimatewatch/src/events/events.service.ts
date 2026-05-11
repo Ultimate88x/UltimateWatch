@@ -56,6 +56,7 @@ import { addWeeks, differenceInWeeks } from 'date-fns';
 import { EventMediaService } from 'src/event-media/event-media.service';
 import { EventMedia } from 'src/event-media/entities/event-media.entity';
 import { EventMediaRoomDto } from './dto/event-media-room-dto';
+import { EventMediaStatus } from 'src/common/enums/event.media.status.enum';
 
 interface SubMediaEventWithSort extends SubMediaEventDto {
   sortKey: string;
@@ -1487,16 +1488,51 @@ export class EventsService {
       );
     }
 
-    /*if (event.eventDate > new Date(Date.now())) {
+    if (event.eventDate > new Date(Date.now())) {
       throw new BadRequestException(
         "It's still too soon to start the event. Either change its start date or wait.",
       );
-    }*/
+    }
 
     return await this.changeEventStatus(userId, eventId, EventStatus.STARTED);
   }
 
   async finishEvent(userId: number, eventId: number): Promise<EventStatus> {
+    const eventOwner: Member =
+      await this.membersService.getOwnerFromEvent(eventId);
+
+    if (eventOwner.user.id !== userId) {
+      throw new ForbiddenException('You are not allowed to update this event');
+    }
+
+    const event: Event = await this.findBydId(eventId);
+
+    if (event.status !== EventStatus.STARTED) {
+      throw new BadRequestException('The event cannot end from this state');
+    }
+
+    const mediaToUpdate = event.media
+      .filter(
+        (em) =>
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
+          em.status === EventMediaStatus.PENDING ||
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
+          em.status === EventMediaStatus.CURRENT,
+      )
+      .map((em) => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
+        if (em.status === EventMediaStatus.PENDING) {
+          em.status = EventMediaStatus.SKIPPED;
+        } else {
+          em.status = EventMediaStatus.WATCHED;
+        }
+        return em;
+      });
+
+    if (mediaToUpdate.length > 0) {
+      await this.eventMediaService.saveMany(mediaToUpdate);
+    }
+
     return await this.changeEventStatus(userId, eventId, EventStatus.FINISHED);
   }
 

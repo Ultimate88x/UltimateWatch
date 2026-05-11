@@ -28,6 +28,13 @@ export class ResultsService {
 
     for (const event of expiredVotingEvents) {
       try {
+        if (!event.proposedMedia || event.proposedMedia.length === 0) {
+          this.logger.warn(
+            `Event ${event.id} has no proposed media, skipping...`,
+          );
+          continue;
+        }
+
         await this.processVotingClosure(event.id);
         this.logger.log(`Voting for event ${event.id} closed succesfully`);
       } catch (error) {

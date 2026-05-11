@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -14,6 +15,7 @@ import { GetUser } from 'src/common/decorators/get-user.decorator';
 import { MemberDetailDto } from './dto/member-detail-dto';
 import { KickMemberDto } from './dto/kick-member-dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { UpdateMemberRoleDto } from './dto/update-member-role-dto';
 
 @Controller('members')
 export class MembersController {
@@ -59,5 +61,18 @@ export class MembersController {
     this.eventEmitter.emit('member.kicked', { kickMemberDto });
 
     return { message: 'Member kicked successfully' };
+  }
+
+  @Patch('update-role')
+  @UseGuards(AuthGuard)
+  async updateMemberRole(
+    @GetUser('userId') userId: number,
+    @Body() updateMemberRoleDto: UpdateMemberRoleDto,
+  ) {
+    await this.membersService.updateMemberRole(userId, updateMemberRoleDto);
+
+    this.eventEmitter.emit('member.role-updated', { updateMemberRoleDto });
+
+    return { message: 'Member role changed successfully' };
   }
 }

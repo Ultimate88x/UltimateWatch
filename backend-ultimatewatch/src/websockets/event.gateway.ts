@@ -23,6 +23,7 @@ import { ChatCommentDto } from 'src/comments/dto/chat-comment-dto';
 import { OnEvent } from '@nestjs/event-emitter';
 import { KickMemberDto } from 'src/members/dto/kick-member-dto';
 import { Member } from 'src/members/entities/member.entity';
+import { UpdateMemberRoleDto } from 'src/members/dto/update-member-role-dto';
 
 declare module 'socket.io' {
   interface SocketData {
@@ -162,7 +163,26 @@ export class EventGateway {
       const socketUserId = (socket.data as SocketData).user?.id;
 
       if (socketUserId === kickedUserId) {
-        socket.emit('event-status', 'kicked');
+        socket.emit('event-action', 'kicked');
+      }
+    }
+  }
+
+  @OnEvent('member.role-updated')
+  async updateMemberRole(payload: {
+    updateMemberRoleDto: UpdateMemberRoleDto;
+  }) {
+    const { targetUserId, eventId } = payload.updateMemberRoleDto;
+
+    const roomName = `event_${eventId}`;
+
+    const sockets = await this.server.in(roomName).fetchSockets();
+
+    for (const socket of sockets) {
+      const socketUserId = (socket.data as SocketData).user?.id;
+
+      if (socketUserId === targetUserId) {
+        socket.emit('event-action', 'role-updated');
       }
     }
   }

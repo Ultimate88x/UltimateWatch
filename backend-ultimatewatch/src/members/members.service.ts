@@ -14,6 +14,7 @@ import { MemberDetailDto } from './dto/member-detail-dto';
 import { MemberListResponseDto } from './dto/member-list-response-dto';
 import { EventStatus } from 'src/common/enums/event.status.enum';
 import { KickMemberDto } from './dto/kick-member-dto';
+import { UpdateMemberRoleDto } from './dto/update-member-role-dto';
 
 @Injectable()
 export class MembersService {
@@ -179,14 +180,14 @@ export class MembersService {
     return currentMembers;
   }
 
-  async kickMemberFromEvent(
+  async updateMemberRole(
     userId: number,
-    kickMemberDto: KickMemberDto,
+    updateMemberRoleDto: UpdateMemberRoleDto,
   ): Promise<void> {
-    const { kickedUserId, eventId } = kickMemberDto;
+    const { targetUserId, eventId, role } = updateMemberRoleDto;
 
     const member: Member = await this.getByUserIdAndEventId(
-      kickedUserId,
+      targetUserId,
       eventId,
     );
     const eventOwner: Member = await this.getOwnerFromEvent(eventId);
@@ -194,6 +195,31 @@ export class MembersService {
     if (userId !== eventOwner.user.id) {
       throw new ForbiddenException('You cannot perform this action');
     }
+
+    member.role = role;
+
+    await this.save(member);
+  }
+
+  async kickMemberFromEvent(
+    userId: number,
+    kickMemberDto: KickMemberDto,
+  ): Promise<void> {
+    const { kickedUserId, eventId } = kickMemberDto;
+
+    const userMember: Member = await this.getByUserIdAndEventId(
+      userId,
+      eventId,
+    );
+
+    if (userMember.role === MemberRole.MEMBER) {
+      throw new ForbiddenException('You cannot perform this action');
+    }
+
+    const member: Member = await this.getByUserIdAndEventId(
+      kickedUserId,
+      eventId,
+    );
 
     if (member.event.status === EventStatus.FINISHED) {
       throw new BadRequestException(

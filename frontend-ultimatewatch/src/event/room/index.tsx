@@ -249,7 +249,7 @@ export default function EventRoom() {
       socketInstance.disconnect();
       socketRef.current = null;
     };
-  }, [handleTimerControl, id, member, navigate]);
+  }, [id, member, navigate]);
 
   const previewData = useMemo(() => {
     const current = eventMedia.find(m => m.status === 'current');

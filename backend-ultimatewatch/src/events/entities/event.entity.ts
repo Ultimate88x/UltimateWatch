@@ -98,6 +98,9 @@ export class Event extends BaseEntity {
   @IsEnum(EventStatus)
   status: EventStatus;
 
+  @Column({ default: 0 })
+  peakConcurrentMembers: number;
+
   @OneToMany(() => Member, (member) => member.event, {
     cascade: true,
   })

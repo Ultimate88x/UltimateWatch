@@ -1056,6 +1056,26 @@ export class EventsService {
     }
   }
 
+  async checkAndUpdatePeak(
+    eventId: number,
+    currentMembers: number,
+  ): Promise<void> {
+    const event: Event | null = await this.eventsRepository.findOne({
+      where: { id: eventId },
+      select: ['id', 'peakConcurrentMembers'],
+    });
+
+    if (!event) {
+      throw new ResourceNotFoundException('Event', 'ID', eventId.toString());
+    }
+
+    if (currentMembers > event.peakConcurrentMembers) {
+      await this.eventsRepository.update(eventId, {
+        peakConcurrentMembers: currentMembers,
+      });
+    }
+  }
+
   async getEventDetailedInformation(
     eventId: number,
   ): Promise<EventDetailedInfoDto | VotingEventDetailedInfoDto> {

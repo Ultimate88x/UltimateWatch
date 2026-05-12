@@ -7,6 +7,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket, SocketData } from 'socket.io';
 import {
+  Logger,
   UseFilters,
   UseGuards,
   UsePipes,
@@ -35,6 +36,7 @@ declare module 'socket.io' {
 @UseFilters(new WebsocketExceptionFilter())
 @UsePipes(new ValidationPipe({ transform: true }))
 export class EventGateway {
+  private readonly logger = new Logger(EventGateway.name);
   @WebSocketServer()
   server: Server;
 
@@ -59,6 +61,17 @@ export class EventGateway {
     await client.join(roomName);
     (client.data as SocketData).user = { id: userId };
     const event: Event = await this.eventsService.findBydId(eventId);
+
+    const sockets = await this.server.in(roomName).fetchSockets();
+    const currentMembersCount = sockets.length;
+
+    this.eventsService
+      .checkAndUpdatePeak(eventId, currentMembersCount)
+      .catch((err) => {
+        this.logger.error(
+          `Error updating peak members for event ${eventId}: ${err}`,
+        );
+      });
 
     this.server.to(roomName).emit(
       'event-chat',

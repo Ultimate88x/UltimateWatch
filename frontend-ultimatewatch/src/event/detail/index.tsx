@@ -155,6 +155,7 @@ export default function EventDetail() {
 
       if (data) {
         setMember(data);
+        setIsOwner(data.role === MemberRoleEnum.OWNER);
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error';
@@ -181,7 +182,6 @@ export default function EventDetail() {
       }
 
       setMembers(data.data);
-      setIsOwner(member?.role === "owner");
       setTotalPages(data.lastPage || 1);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'An unexpected error occurred';
@@ -190,7 +190,7 @@ export default function EventDetail() {
     } finally {
       setTimeout(() => setMembersLoading(false), 250);
     }
-  }, [id, page, member]);
+  }, [id, page]);
 
   const fetchAccessRequest = useCallback(async () => {
     try {

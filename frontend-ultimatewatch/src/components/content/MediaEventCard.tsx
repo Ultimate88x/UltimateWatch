@@ -166,7 +166,7 @@ export const MediaEventCard = ({
           </h4>
 
           <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-6">
-              {(event.status === 'voting' || event.status === 'waiting') && isOwner && m.isVotable && (
+              {(event.status === 'voting' || event.status === 'waiting') && isOwner && (!m.isVotable || m.isVotable === true) && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();

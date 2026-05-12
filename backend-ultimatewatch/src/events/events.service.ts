@@ -1280,13 +1280,12 @@ export class EventsService {
           request.event.id,
         );
 
+      await this.joinEvent(userId, request.event.id);
       await Promise.all(
         requests.map((request: Request) =>
           this.requestsService.resolveRequest(request, accept),
         ),
       );
-
-      await this.joinEvent(userId, request.event.id);
     } else {
       await this.requestsService.resolveRequest(request, accept);
     }

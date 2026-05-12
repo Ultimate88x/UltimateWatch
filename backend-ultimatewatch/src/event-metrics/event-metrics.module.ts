@@ -4,12 +4,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventMetric } from './entities/event-metric.entity';
 import { WebsocketsModule } from 'src/websockets/websockets.module';
 import { EventsModule } from 'src/events/events.module';
+import { CommentsModule } from 'src/comments/comments.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([EventMetric]),
     WebsocketsModule,
     EventsModule,
+    CommentsModule,
   ],
   providers: [EventMetricsService],
   exports: [EventMetricsService],

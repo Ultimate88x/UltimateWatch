@@ -1400,6 +1400,15 @@ export class EventsService {
     };
   }
 
+  async getActiveEvents(): Promise<Event[]> {
+    const events: Event[] = await this.eventsRepository.find({
+      where: { status: EventStatus.STARTED },
+      select: ['id'],
+    });
+
+    return events;
+  }
+
   async requestAccessToEvent(userId: number, eventId: number): Promise<void> {
     const event: Event = await this.findBydId(eventId);
 

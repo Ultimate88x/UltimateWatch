@@ -25,6 +25,7 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { KickMemberDto } from 'src/members/dto/kick-member-dto';
 import { Member } from 'src/members/entities/member.entity';
 import { UpdateMemberRoleDto } from 'src/members/dto/update-member-role-dto';
+import { EventStatus } from 'src/common/enums/event.status.enum';
 
 declare module 'socket.io' {
   interface SocketData {
@@ -62,34 +63,36 @@ export class EventGateway {
     (client.data as SocketData).user = { id: userId };
     const event: Event = await this.eventsService.findBydId(eventId);
 
-    const sockets = await this.server.in(roomName).fetchSockets();
-    const currentMembersCount = sockets.length;
+    if (event.status === EventStatus.STARTED) {
+      const sockets = await this.server.in(roomName).fetchSockets();
+      const currentMembersCount = sockets.length;
 
-    this.eventsService
-      .checkAndUpdatePeak(eventId, currentMembersCount)
-      .catch((err) => {
-        this.logger.error(
-          `Error updating peak members for event ${eventId}: ${err}`,
-        );
-      });
+      this.eventsService
+        .checkAndUpdatePeak(eventId, currentMembersCount)
+        .catch((err) => {
+          this.logger.error(
+            `Error updating peak members for event ${eventId}: ${err}`,
+          );
+        });
 
-    this.server.to(roomName).emit(
-      'event-chat',
-      new ChatCommentDto({
-        username: 'SYSTEM',
-        userRole: 'NOTICE',
-        message: `${member.user.username} has joined the session.`,
-        createdAt: new Date(),
-      }),
-    );
+      this.server.to(roomName).emit(
+        'event-chat',
+        new ChatCommentDto({
+          username: 'SYSTEM',
+          userRole: 'NOTICE',
+          message: `${member.user.username} has joined the session.`,
+          createdAt: new Date(),
+        }),
+      );
 
-    client.emit(
-      'timer-update',
-      new TimerDto({
-        seconds: event.timer || 0,
-        isActive: false,
-      }),
-    );
+      client.emit(
+        'timer-update',
+        new TimerDto({
+          seconds: event.timer || 0,
+          isActive: false,
+        }),
+      );
+    }
   }
 
   @SubscribeMessage('leave-event')

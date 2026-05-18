@@ -1483,7 +1483,6 @@ export class EventsService {
   }
 
   async changeEventStatus(
-    userId: number,
     eventId: number,
     status: EventStatus,
   ): Promise<EventStatus> {
@@ -1523,7 +1522,8 @@ export class EventsService {
       );
     }
 
-    return await this.changeEventStatus(userId, eventId, EventStatus.STARTED);
+    event.startDate = new Date();
+    return await this.changeEventStatus(eventId, EventStatus.STARTED);
   }
 
   async finishEvent(userId: number, eventId: number): Promise<EventStatus> {
@@ -1562,7 +1562,8 @@ export class EventsService {
       await this.eventMediaService.saveMany(mediaToUpdate);
     }
 
-    return await this.changeEventStatus(userId, eventId, EventStatus.FINISHED);
+    event.endDate = new Date();
+    return await this.changeEventStatus(eventId, EventStatus.FINISHED);
   }
 
   async getEventStatus(userId: number, eventId: number): Promise<string> {

@@ -75,6 +75,8 @@ export class EventGateway {
           );
         });
 
+      await this.membersService.markAsJoined(member.id);
+
       this.server.to(roomName).emit(
         'event-chat',
         new ChatCommentDto({

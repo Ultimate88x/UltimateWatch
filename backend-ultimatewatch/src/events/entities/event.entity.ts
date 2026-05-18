@@ -63,10 +63,17 @@ export class Event extends BaseEntity {
   eventDate: Date;
 
   @Column({ type: 'timestamp', nullable: true })
-  @IsOptional()
+  @IsNotEmpty()
   @Type(() => Date)
   @IsDate()
   @Validate(IsAfterDateConstraint, ['eventDate'])
+  startDate: Date | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  @Validate(IsAfterDateConstraint, ['startDate'])
   endDate?: Date | null;
 
   @Column({ default: 0 })

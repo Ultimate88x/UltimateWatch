@@ -235,6 +235,22 @@ export class MembersService {
     await this.delete(member.id);
   }
 
+  async markAsJoined(memberId: number): Promise<void> {
+    await this.membersRepository.update(
+      { id: memberId, hasJoined: false },
+      { hasJoined: true },
+    );
+  }
+
+  async countTotalUniqueFromEvent(eventId: number): Promise<number> {
+    return await this.membersRepository.count({
+      where: {
+        event: { id: eventId },
+        hasJoined: true,
+      },
+    });
+  }
+
   private createMemberDetailDto(
     member: Member,
     userId: number,

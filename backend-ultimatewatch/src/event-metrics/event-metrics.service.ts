@@ -96,26 +96,31 @@ export class EventMetricsService {
 
     const startDate: Date = event.startDate || event.eventDate;
     const durationMs = event.endDate.getTime() - startDate.getTime();
-    const durationInMinutes = Math.max(0, Math.round(durationMs / (1000 * 60)));
+    const durationInSeconds = Math.max(0, Math.round(durationMs / 1000));
+
+    const uniqueFromEvent: number =
+      await this.membersService.countTotalUniqueFromEvent(eventId);
 
     return new EventMetricsDto({
       maxViewerCount: Math.max(
         ...eventMetrics.map((metric: EventMetric) => metric.viewerCount),
-        0,
+        uniqueFromEvent,
       ),
-      uniqueViewersCount:
-        await this.membersService.countTotalUniqueFromEvent(eventId),
+      uniqueViewersCount: uniqueFromEvent,
       viewersPerMinute: Math.round(averageViewers),
-      messagesPerMinute: Math.round(
-        eventMetrics[eventMetrics.length - 1].messagesPerMinute,
-      ),
+      messagesPerMinute:
+        eventMetrics.length > 0
+          ? Math.round(
+              eventMetrics[eventMetrics.length - 1].messagesPerMinute || 0,
+            )
+          : 0,
       totalMessages: await this.commentsService.countFromEvent(event.id),
-      duration: durationInMinutes,
+      duration: durationInSeconds,
       metricsDetails: eventMetrics.map(
         (metric: EventMetric) =>
           new EventMetricsDetailDto({
             viewerCount: metric.viewerCount,
-            messageCount: metric.accumulatedMessages,
+            messageCount: metric.messagesPerMinute,
           }),
       ),
     });

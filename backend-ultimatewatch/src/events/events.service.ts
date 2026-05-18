@@ -1488,6 +1488,12 @@ export class EventsService {
     const event: Event = await this.findBydId(eventId);
     event.status = status;
 
+    if (status === EventStatus.STARTED) {
+      event.startDate = new Date();
+    } else if (status === EventStatus.FINISHED) {
+      event.endDate = new Date();
+    }
+
     await this.saveEvent(event);
 
     return status;
@@ -1521,7 +1527,6 @@ export class EventsService {
       );
     }
 
-    event.startDate = new Date();
     return await this.changeEventStatus(eventId, EventStatus.STARTED);
   }
 
@@ -1561,7 +1566,6 @@ export class EventsService {
       await this.eventMediaService.saveMany(mediaToUpdate);
     }
 
-    event.endDate = new Date();
     return await this.changeEventStatus(eventId, EventStatus.FINISHED);
   }
 

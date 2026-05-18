@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { Member } from '../../types/member';
 import { EmptyState } from '../../components/EmptyState';
-import { Film, Calendar, Users, Info, Shield, ChevronLeft, ChevronRight, Trophy, LogOut, Play, UserPlus, Trash, AlertTriangle, Settings, Clapperboard, UserMinus } from 'lucide-react';
+import { Film, Calendar, Users, Info, Shield, ChevronLeft, ChevronRight, Trophy, LogOut, Play, UserPlus, Trash, AlertTriangle, Settings, Clapperboard, UserMinus, BarChart2 } from 'lucide-react';
 import { Button } from '../../components/Button';
 import { getRelativeDate } from '../../components/utilities/RelativeDate';
 import { useAdvancedNavigation } from '../../components/utilities/SmartNavigate';
@@ -22,6 +22,7 @@ import { EventAccessRequestsModal } from '../../components/event/EventAccessRequ
 import { EventTypeEnum } from '../../enums/EventTypeEnum';
 import { EditEventModal } from '../../components/event/update/EditEventModal';
 import { MemberRoleEnum, type MemberRole } from '../../enums/MemberRoleEnum';
+import { EventMetricsModal } from '../../components/event/EventMetricsModal';
 
 export default function EventDetail() {
   const { smartNavigate } = useAdvancedNavigation();
@@ -60,6 +61,7 @@ export default function EventDetail() {
   const [isDeleteEventModalOpen, setIsDeleteEventModalOpen] = useState(false);
   const [isEditEventModalOpen, setIsEditEventModalOpen] = useState(false);
   const [isKickingMemberModalOpen, setIsKickingMemberModalOpen] = useState(false);
+  const [isEventStatisticsModalOpen, setIsEventStatisticsModalOpen] = useState(false);
   
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -950,6 +952,17 @@ export default function EventDetail() {
                 </Button>
               )}
 
+              {isOwner && event.status === 'finished' && (
+                <Button
+                  variant="secondary"
+                  fullWidth
+                  icon={BarChart2}
+                  onClick={() => setIsEventStatisticsModalOpen(true)}
+                >
+                  Event Statistics
+                </Button>
+              )}
+
               {isOwner && event.status !== 'started' && (
                 <Button
                   variant="danger"
@@ -1244,6 +1257,12 @@ export default function EventDetail() {
         onClose={() => setIsEditEventModalOpen(false)} 
         event={event} 
         onUpdate={fetchEvent}
+      />
+
+      <EventMetricsModal 
+        isOpen={isEventStatisticsModalOpen}
+        onClose={() => setIsEventStatisticsModalOpen(false)}
+        eventId={event.id}
       />
     </div>
   );

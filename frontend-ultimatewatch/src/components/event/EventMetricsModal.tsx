@@ -5,7 +5,7 @@ import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianG
 import type { EventMetrics } from '../../types/event-metrics';
 import toast from 'react-hot-toast';
 import { EmptyState } from '../EmptyState';
-import { formatDurationFromSeconds } from '../utilities/FormatDuration';
+import { formatDurationFromSeconds } from '../utilities/formatDurationFromSeconds';
 
 interface EventMetricsModalProps {
   isOpen: boolean;

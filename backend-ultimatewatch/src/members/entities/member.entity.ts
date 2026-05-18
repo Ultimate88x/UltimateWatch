@@ -16,6 +16,9 @@ import { Comment } from 'src/comments/entities/comment.entity';
 @Entity('members')
 @Unique(['user', 'event'])
 export class Member extends BaseEntity {
+  @Column({ default: false })
+  hasJoined: boolean;
+
   @Column({
     type: 'enum',
     enum: MemberRole,

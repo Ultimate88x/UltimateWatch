@@ -11,5 +11,6 @@ import { EventGateway } from './event.gateway';
 @Module({
   imports: [CommentsModule, MembersModule, EventsModule, EventMediaModule],
   providers: [ChatGateway, TimerGateway, EventMediaGateway, EventGateway],
+  exports: [EventGateway],
 })
 export class WebsocketsModule {}

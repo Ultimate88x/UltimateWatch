@@ -210,7 +210,9 @@ export default function EventRoom() {
     socketInstance.on('event-status', (status: string) => {
       setEventStatus(status);
 
-      if (status === 'finished') {
+      if (status === 'started') {
+        fetchMember();
+      } else if (status === 'finished') {
         navigate('/');
       }
     });

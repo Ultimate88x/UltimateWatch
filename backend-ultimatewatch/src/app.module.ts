@@ -30,6 +30,7 @@ import { CommentsModule } from './comments/comments.module';
 import { WebsocketsModule } from './websockets/websockets.module';
 import { EventMediaModule } from './event-media/event-media.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { EventMetricsModule } from './event-metrics/event-metrics.module';
 
 @Module({
   imports: [
@@ -78,6 +79,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     CommentsModule,
     WebsocketsModule,
     EventMediaModule,
+    EventMetricsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

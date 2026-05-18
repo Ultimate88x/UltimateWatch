@@ -1056,6 +1056,26 @@ export class EventsService {
     }
   }
 
+  async checkAndUpdatePeak(
+    eventId: number,
+    currentMembers: number,
+  ): Promise<void> {
+    const event: Event | null = await this.eventsRepository.findOne({
+      where: { id: eventId },
+      select: ['id', 'peakConcurrentMembers'],
+    });
+
+    if (!event) {
+      throw new ResourceNotFoundException('Event', 'ID', eventId.toString());
+    }
+
+    if (currentMembers > event.peakConcurrentMembers) {
+      await this.eventsRepository.update(eventId, {
+        peakConcurrentMembers: currentMembers,
+      });
+    }
+  }
+
   async getEventDetailedInformation(
     eventId: number,
   ): Promise<EventDetailedInfoDto | VotingEventDetailedInfoDto> {
@@ -1379,6 +1399,15 @@ export class EventsService {
     };
   }
 
+  async getActiveEvents(): Promise<Event[]> {
+    const events: Event[] = await this.eventsRepository.find({
+      where: { status: EventStatus.STARTED },
+      select: ['id'],
+    });
+
+    return events;
+  }
+
   async requestAccessToEvent(userId: number, eventId: number): Promise<void> {
     const event: Event = await this.findBydId(eventId);
 
@@ -1453,7 +1482,6 @@ export class EventsService {
   }
 
   async changeEventStatus(
-    userId: number,
     eventId: number,
     status: EventStatus,
   ): Promise<EventStatus> {
@@ -1493,7 +1521,8 @@ export class EventsService {
       );
     }
 
-    return await this.changeEventStatus(userId, eventId, EventStatus.STARTED);
+    event.startDate = new Date();
+    return await this.changeEventStatus(eventId, EventStatus.STARTED);
   }
 
   async finishEvent(userId: number, eventId: number): Promise<EventStatus> {
@@ -1532,7 +1561,8 @@ export class EventsService {
       await this.eventMediaService.saveMany(mediaToUpdate);
     }
 
-    return await this.changeEventStatus(userId, eventId, EventStatus.FINISHED);
+    event.endDate = new Date();
+    return await this.changeEventStatus(eventId, EventStatus.FINISHED);
   }
 
   async getEventStatus(userId: number, eventId: number): Promise<string> {

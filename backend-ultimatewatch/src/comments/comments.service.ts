@@ -30,4 +30,12 @@ export class CommentsService {
     });
     return await this.save(comment);
   }
+
+  async countFromEvent(eventId: number): Promise<number> {
+    return await this.commentRepository.count({
+      where: {
+        member: { event: { id: eventId } },
+      },
+    });
+  }
 }

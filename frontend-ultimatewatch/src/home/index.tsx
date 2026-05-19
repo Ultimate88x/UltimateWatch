@@ -1,94 +1,77 @@
 import { useNavigate } from "react-router-dom";
-import { Button } from "../components/Button";
-import ListMedia from "../components/content/ListMedia";
-import { Banner } from "../components/Banner";
-import type { Media } from "../types/media-item";
+import { Film, Tv, Ticket, Users, User, ArrowUpRight } from "lucide-react";
 
 export default function Home() {
-  const token = localStorage.getItem("token");
+  const isLoggedIn = !!localStorage.getItem("token");
   const navigate = useNavigate();
 
-    const MOCK_MOVIES: Media[] = [
-    {
-      id: 1,
-      title: "Interstellar",
-      posterPath: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&q=80&w=400",
-    },
-    {
-      id: 2,
-      title: "Blade Runner 2049",
-      posterPath: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=400",
-    },
-    {
-      id: 3,
-      title: "The Dark Knight",
-      posterPath: "https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&q=80&w=400",
-    },
-    {
-      id: 4,
-      title: "Inception",
-      posterPath: "https://images.unsplash.com/photo-1533613220915-609f661a6fe1?auto=format&fit=crop&q=80&w=400",
-    },
-    {
-      id: 5,
-      title: "Mad Max: Fury Road",
-      posterPath: "https://images.unsplash.com/photo-1509281373149-e957c6296406?auto=format&fit=crop&q=80&w=400",
-    },
-    {
-      id: 6,
-      title: "The Martian",
-      posterPath: "https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?auto=format&fit=crop&q=80&w=400",
-    },
-    {
-      id: 7,
-      title: "Dune",
-      posterPath: "https://images.unsplash.com/photo-1506466010722-395aa2bef877?auto=format&fit=crop&q=80&w=400",
-    },
-    {
-      id: 8,
-      title: "Arrival",
-      posterPath: "https://images.unsplash.com/photo-1446941611757-91d2c3bd3d45?auto=format&fit=crop&q=80&w=400",
-    },
-    {
-      id: 9,
-      title: "Pulp Fiction",
-      posterPath: "https://images.unsplash.com/photo-1594909122845-11baa439b7bf?auto=format&fit=crop&q=80&w=400",
-    },
+  const NAV_ROUTES = [
+    { label: "Movies", path: "/movies", icon: <Film size={16} />, auth: false },
+    { label: "Series", path: "/series", icon: <Tv size={16} />, auth: false },
+    { label: "Events", path: "/events", icon: <Ticket size={16} />, auth: true },
+    { label: "Friends", path: "/friends", icon: <Users size={16} />, auth: true },
+    { label: "Profile", path: "/profile", icon: <User size={16} />, auth: true },
   ];
 
   return (
-    <div className="relative w-full bg-cover bg-blue-background flex flex-col justify-start items-center overflow-x-hidden">
-      <Banner subtitle="WELCOME BACK! WE'VE BEEN WAITING FOR YOU!" />
-      
-      <div className="relative w-full h-fit px-20 flex flex-col justify-start items-start gap-8">
-        <ListMedia title="Top-Rated Movies" mediaItems={MOCK_MOVIES} onClick={() => console.log("Clicked!")} />
-  
-        <ListMedia title="Top-Rated Series" mediaItems={MOCK_MOVIES} onClick={() => console.log("Clicked!")} />
+    <div className="w-full bg-blue-background text-white font-inter select-none flex flex-col justify-between p-12 relative overflow-hidden">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 h-150 bg-purple-main/8 rounded-full blur-[150px] pointer-events-none" />
+
+      <div className="w-full max-w-7xl mx-auto text-center my-auto z-10 py-12">
+        <h1 className="text-[12vw] font-black tracking-tighter uppercase italic leading-[0.8]">
+          ULTIMATE
+          <br />
+          <span className="text-transparent bg-clip-text bg-linear-to-r from-purple-main via-purple-500 to-fuchsia-500 drop-shadow-[0_0_50px_rgba(168,85,247,0.3)] inline-block pr-4">
+            WATCH
+          </span>
+        </h1>
+
+        <div className="mt-12 flex flex-wrap justify-center gap-3 max-w-4xl mx-auto">
+          {NAV_ROUTES.map((item, index) => {
+            const isLocked = item.auth && !isLoggedIn;
+
+            return (
+              <button
+                key={index}
+                disabled={isLocked}
+                onClick={() => navigate(item.path)}
+                className={`
+                  px-6 py-3.5 rounded-full flex items-center gap-3 transition-all duration-300 border text-sm font-bold tracking-tight group
+                  ${isLocked 
+                    ? "bg-black/40 border-white/5 text-white/20 opacity-30" 
+                    : "bg-white/2 border-white/5 hover:border-purple-main/40 hover:bg-white/5 text-white/70 hover:text-white hover:scale-105 cursor-pointer"
+                  }
+                `}
+              >
+                <span className={isLocked ? "text-white/10" : "text-purple-main"}>
+                  {item.icon}
+                </span>
+                <span>{item.label}</span>
+                {!isLocked && (
+                  <ArrowUpRight size={14} className="text-white/20 group-hover:text-purple-main group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
-      {!token && (<div className="relative mt-10 w-fit h-fit border-t flex flex-col justify-center items-start gap-2">
-        <h2 className="relative mt-5 text-4xl text-white font-semibold font-inter">Not Registered Yet? Join Us!</h2>
-        <div className="relative w-full h-fit px-20 flex justify-center items-start gap-8">
-          <Button 
-            onClick={() => navigate('/signup')} 
-            variant="primary" 
-            size="lg" 
-            fullWidth 
-            className="mt-4"
-            >
-              Sign Up
-          </Button>
-    
-          <Button 
-            onClick={() => navigate('/login')} 
-            variant="primary" 
-            size="lg" 
-            fullWidth 
-            className="mt-4"
+
+      {!isLoggedIn && (<div className="w-full flex items-center justify-end pt-6 border-t border-white/5 z-10">
+          <div className="flex items-center gap-6">
+            <button 
+              onClick={() => navigate("/login")}
+              className="text-xs font-bold uppercase tracking-wider text-purple-main hover:text-purple-400 transition-colors cursor-pointer"
             >
               Sign In
-          </Button>
-        </div>
+            </button>
+            <button 
+              onClick={() => navigate("/signup")}
+              className="px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer active:scale-95"
+            >
+              Register
+            </button>
+          </div>
       </div>)}
     </div>
-  )
+  );
 }

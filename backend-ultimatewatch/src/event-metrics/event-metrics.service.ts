@@ -16,6 +16,9 @@ import { EventMetricsDto } from './dto/event-metrics-dto';
 import { MembersService } from 'src/members/members.service';
 import { Member } from 'src/members/entities/member.entity';
 import { EventMetricsDetailDto } from './dto/event-metrics-detail-dto';
+import { UserMetricsDto } from './dto/user-metrics-dto';
+import { UsersService } from 'src/users/users.service';
+import { VotesService } from 'src/votes/votes.service';
 
 @Injectable()
 export class EventMetricsService {
@@ -25,6 +28,8 @@ export class EventMetricsService {
     private readonly eventsService: EventsService,
     private readonly commentsService: CommentsService,
     private readonly membersService: MembersService,
+    private readonly usersService: UsersService,
+    private readonly votesService: VotesService,
     private readonly eventGateway: EventGateway,
   ) {}
 
@@ -123,6 +128,17 @@ export class EventMetricsService {
             messageCount: metric.messagesPerMinute,
           }),
       ),
+    });
+  }
+
+  async getUserStatistics(userId: number): Promise<UserMetricsDto> {
+    await this.usersService.findById(userId);
+
+    return new UserMetricsDto({
+      createdEvents: (await this.eventsService.getCreatedEventsByUser(userId))
+        .total,
+      votes: await this.votesService.countFromUser(userId),
+      messages: await this.commentsService.countFromUser(userId),
     });
   }
 }

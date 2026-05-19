@@ -38,4 +38,12 @@ export class CommentsService {
       },
     });
   }
+
+  async countFromUser(userId: number): Promise<number> {
+    return await this.commentRepository.count({
+      where: {
+        member: { user: { id: userId } },
+      },
+    });
+  }
 }

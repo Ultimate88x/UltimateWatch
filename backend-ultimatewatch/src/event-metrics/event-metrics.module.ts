@@ -7,6 +7,8 @@ import { EventsModule } from 'src/events/events.module';
 import { CommentsModule } from 'src/comments/comments.module';
 import { MembersModule } from 'src/members/members.module';
 import { EventMetricsController } from './event-metrics.controller';
+import { UsersModule } from 'src/users/users.module';
+import { VotesModule } from 'src/votes/votes.module';
 
 @Module({
   imports: [
@@ -15,6 +17,8 @@ import { EventMetricsController } from './event-metrics.controller';
     EventsModule,
     CommentsModule,
     MembersModule,
+    UsersModule,
+    VotesModule,
   ],
   providers: [EventMetricsService],
   exports: [EventMetricsService],

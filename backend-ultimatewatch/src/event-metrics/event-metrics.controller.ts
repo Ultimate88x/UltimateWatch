@@ -3,6 +3,7 @@ import { EventMetricsService } from './event-metrics.service';
 import { GetUser } from 'src/common/decorators/get-user.decorator';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { EventMetricsDto } from './dto/event-metrics-dto';
+import { UserMetricsDto } from './dto/user-metrics-dto';
 
 @Controller('event-metrics')
 export class EventMetricsController {
@@ -18,5 +19,16 @@ export class EventMetricsController {
       await this.eventsMetricsService.getEventStatistics(userId, +eventId);
 
     return eventMetrics;
+  }
+
+  @Get('/user/:userId')
+  @UseGuards(AuthGuard)
+  async getUserStatistics(
+    @Param('userId') userId: string,
+  ): Promise<UserMetricsDto> {
+    const userMetrics: UserMetricsDto =
+      await this.eventsMetricsService.getUserStatistics(+userId);
+
+    return userMetrics;
   }
 }

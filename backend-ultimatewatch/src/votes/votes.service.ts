@@ -92,6 +92,16 @@ export class VotesService {
     return vote;
   }
 
+  async countFromUser(userId: number): Promise<number> {
+    const total: number = await this.votesRepository.count({
+      where: {
+        member: { user: { id: userId } },
+      },
+    });
+
+    return total;
+  }
+
   async findVotedMediaIdsByUserIdAndEventId(
     userId: number,
     eventId: number,

@@ -1158,20 +1158,18 @@ export default function EventDetail() {
         onAccept={fetchMembers}
       />
 
-      <div className="h-500">
-        <Modal 
-          isOpen={isAddModalOpen} 
-          onClose={() => setIsAddModalOpen(false)}
-        >
-          <SearchForMedia 
-            selectedMedia={mediaList as unknown as AddMedia[]}
-            onSelectMedia={(mediaId: number) => {
-              handleAddMedia(mediaId);
-            }}
-            cols={5}
-          />
-        </Modal>
-      </div>
+      <Modal 
+        isOpen={isAddModalOpen} 
+        onClose={() => setIsAddModalOpen(false)}
+      >
+        <SearchForMedia 
+          selectedMedia={mediaList as unknown as AddMedia[]}
+          onSelectMedia={(mediaId: number) => {
+            handleAddMedia(mediaId);
+          }}
+          cols={5}
+        />
+      </Modal>
 
       <EventResultsModal 
         eventId={event.id}

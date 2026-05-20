@@ -63,6 +63,20 @@ export class EventsController {
     return await this.eventsService.getCreatedEventsByUser(userId, page, limit);
   }
 
+  @Get('/created/:userId')
+  @UseGuards(AuthGuard)
+  async findVisibleCreatedEvents(
+    @Param('userId') userId: number,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 12,
+  ): Promise<ListEventResponseDto> {
+    return await this.eventsService.getVisibleCreatedEventsByUser(
+      userId,
+      page,
+      limit,
+    );
+  }
+
   @Get('/results/:eventId')
   @UseGuards(AuthGuard)
   async getEventVotingResults(

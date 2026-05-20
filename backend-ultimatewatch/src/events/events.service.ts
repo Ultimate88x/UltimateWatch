@@ -929,6 +929,61 @@ export class EventsService {
     });
   }
 
+  async getVisibleCreatedEventsByUser(
+    userId: number,
+    page: number = 1,
+    limit: number = 12,
+  ): Promise<ListEventResponseDto> {
+    await this.usersService.findById(userId);
+
+    const skip = (page - 1) * limit;
+
+    const query = this.eventsRepository
+      .createQueryBuilder('event')
+      .innerJoin(
+        'event.members',
+        'memberFilter',
+        'memberFilter.userId = :userId AND memberFilter.role = :role',
+        { userId, role: MemberRole.OWNER },
+      )
+      .leftJoinAndSelect(
+        'event.members',
+        'ownerMember',
+        'ownerMember.role = :ownerRole',
+        { ownerRole: MemberRole.OWNER },
+      )
+      .leftJoinAndSelect('ownerMember.user', 'ownerUser')
+      .leftJoinAndSelect('event.media', 'eventMedia')
+      .leftJoinAndSelect('eventMedia.media', 'actualMedia')
+      .addSelect(
+        `(CASE WHEN event.status = :finished THEN 1 ELSE 0 END)`,
+        'is_finished',
+      )
+      .andWhere('event.visibility IN (:...visibilities)', {
+        visibilities: [EventVisibility.PUBLIC, EventVisibility.REQUEST_ONLY],
+      })
+      .orderBy('is_finished', 'ASC')
+      .addOrderBy('event.eventDate', 'ASC')
+      .setParameter('userId', userId)
+      .setParameter('ownerRole', MemberRole.OWNER)
+      .setParameter('finished', EventStatus.FINISHED)
+      .skip(skip)
+      .take(limit);
+
+    const [events, total] = await query.getManyAndCount();
+
+    const listEventDtos: ListEventDto[] = await Promise.all(
+      events.map(async (event: Event) => this.createListEventDto(event)),
+    );
+
+    return new ListEventResponseDto({
+      data: listEventDtos,
+      total,
+      page,
+      lastPage: Math.ceil(total / limit),
+    });
+  }
+
   async getFutureStandardEventsWithRecurringGroupId(
     recurringGroupId: string,
     eventDate: Date,

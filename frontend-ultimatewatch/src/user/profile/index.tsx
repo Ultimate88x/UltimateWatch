@@ -11,8 +11,10 @@ import { ConfirmModal } from "../../components/ConfirmModal";
 import type { EventItem } from "../../types/event-item";
 import { EmptyState } from "../../components/EmptyState";
 import type { UserMetrics } from "../../types/user-metrics";
+import { useAdvancedNavigation } from "../../components/utilities/SmartNavigate";
 
 export default function UserProfile() {
+  const { smartNavigate } = useAdvancedNavigation();
   const userString = localStorage.getItem('user');
   const userData = userString ? JSON.parse(userString) : null;
   const userId = userData?.id;
@@ -93,7 +95,6 @@ export default function UserProfile() {
 
         if (!response.ok) {
           toast.error(data.message || "Failed to fetch events");
-          setIsLoading(false);
           return;
         }
 
@@ -589,7 +590,7 @@ export default function UserProfile() {
           <div className="flex flex-col gap-4 w-full">
             {events.length === 0 ? (
               <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <EmptyState title="No created events yet" description="You have yet to create an event" fullPage={false} showBackButton={false} />
+                <EmptyState title="No events created yet" description="You have yet to create an event" fullPage={false} showBackButton={false} />
               </motion.div>
             ) : (
               events.map((event) => {
@@ -608,7 +609,8 @@ export default function UserProfile() {
                 return (
                   <div 
                     key={event.id}
-                    className={`relative flex h-36 w-full overflow-hidden bg-white/1 border ${theme.border} rounded-xl transition-all duration-300 group`}
+                    className={`relative flex h-36 w-full overflow-hidden bg-white/1 border ${theme.border} rounded-xl transition-all duration-300 group cursor-pointer`}
+                    onClick={(e) => smartNavigate(`/events/${event.id}`, e)}
                   >
                     <div className="relative w-28 md:w-36 h-full overflow-hidden bg-zinc-900 shrink-0">
                       <img 

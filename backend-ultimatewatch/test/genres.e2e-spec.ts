@@ -5,6 +5,7 @@ import { AppModule } from '../src/app.module';
 import { GenresService } from '../src/genres/genres.service';
 import { App } from 'supertest/types';
 import { GenreDetailDto } from '../src/genres/dto/genre-list-dto';
+import { SeedService } from 'src/common/seed/seed.service';
 
 describe('GenresController (e2e)', () => {
   let app: INestApplication;
@@ -30,6 +31,11 @@ describe('GenresController (e2e)', () => {
     })
       .overrideProvider(GenresService)
       .useValue(mockGenresService)
+      .overrideProvider(SeedService)
+      .useValue({
+        onApplicationBootstrap: jest.fn(),
+        runSeed: jest.fn(),
+      })
       .compile();
 
     app = moduleFixture.createNestApplication();

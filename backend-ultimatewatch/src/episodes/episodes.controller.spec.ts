@@ -52,7 +52,7 @@ describe('EpisodeController', () => {
 
       expect(result).toEqual(mockResponse);
 
-      expect(service.findOrCreate).toHaveBeenCalledWith(123, 2);
+      expect(service.findOrCreate).toHaveBeenCalledWith(123, 2, 10);
     });
 
     it('should use default page value if not provided', async () => {
@@ -60,7 +60,7 @@ describe('EpisodeController', () => {
 
       await controller.getEpisodesBySeasonTmdbId(seasonId);
 
-      expect(service.findOrCreate).toHaveBeenCalledWith(123, 1);
+      expect(service.findOrCreate).toHaveBeenCalledWith(123, 1, 10);
     });
   });
 });

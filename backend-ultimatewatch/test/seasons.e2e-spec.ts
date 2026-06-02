@@ -10,6 +10,7 @@ import { AppModule } from './../src/app.module';
 import { SeasonService } from 'src/seasons/seasons.service';
 import { App } from 'supertest/types';
 import { SeasonDetailDto } from 'src/seasons/dto/season-detail-dto';
+import { SeedService } from 'src/common/seed/seed.service';
 
 describe('SeasonController (e2e)', () => {
   let app: INestApplication;
@@ -30,6 +31,11 @@ describe('SeasonController (e2e)', () => {
     })
       .overrideProvider(SeasonService)
       .useValue(mockSeasonService)
+      .overrideProvider(SeedService)
+      .useValue({
+        onApplicationBootstrap: jest.fn(),
+        runSeed: jest.fn(),
+      })
       .compile();
 
     app = moduleFixture.createNestApplication();

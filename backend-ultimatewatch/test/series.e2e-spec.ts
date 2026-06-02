@@ -7,6 +7,7 @@ import { SeriesService } from 'src/series/series.service';
 import { App } from 'supertest/types';
 import { MediaType } from 'src/common/enums/media.type.enum';
 import { ProvidersService } from 'src/providers/providers.service';
+import { SeedService } from 'src/common/seed/seed.service';
 
 describe('SeriesController (e2e) - TMDB', () => {
   let app: INestApplication;
@@ -47,6 +48,11 @@ describe('SeriesController (e2e) - TMDB', () => {
       .useValue(mockSeriesService)
       .overrideProvider(ProvidersService)
       .useValue(mockProvidersService)
+      .overrideProvider(SeedService)
+      .useValue({
+        onApplicationBootstrap: jest.fn(),
+        runSeed: jest.fn(),
+      })
       .compile();
 
     app = moduleFixture.createNestApplication();

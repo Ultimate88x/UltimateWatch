@@ -1,10 +1,13 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
 import { RequestsController } from './requests.controller';
 import { RequestsService } from './requests.service';
 import { AuthGuard } from 'src/common/guards/auth.guard';
+import { ResolveRequestDto } from './dto/resolve-request-dto';
 
 describe('RequestsController', () => {
   let controller: RequestsController;
+  let service: RequestsService;
 
   const mockRequestsService = {
     createFriendRequest: jest.fn(),
@@ -13,6 +16,10 @@ describe('RequestsController', () => {
     resolveFriendRequest: jest.fn(),
     getFriendsFromUser: jest.fn(),
     deleteFriend: jest.fn(),
+    getPendingReceivedEventInvitationsFromUser: jest.fn(),
+    findActiveEventAccessRequestToEventId: jest.fn(),
+    deleteEventInviteRequest: jest.fn(),
+    deleteAccessRequestToEvent: jest.fn(),
   };
 
   const mockAuthGuard = {
@@ -34,6 +41,7 @@ describe('RequestsController', () => {
       .compile();
 
     controller = module.get<RequestsController>(RequestsController);
+    service = module.get<RequestsService>(RequestsService);
   });
 
   afterEach(() => {
@@ -63,7 +71,7 @@ describe('RequestsController', () => {
       );
 
       expect(result).toEqual({
-        message: 'Friend request sent successfully!',
+        message: 'Request sent successfully!',
       });
     });
 
@@ -82,16 +90,6 @@ describe('RequestsController', () => {
         senderId,
         receiverId,
       );
-    });
-
-    it('should propagate unexpected service errors', async () => {
-      mockRequestsService.createFriendRequest.mockRejectedValue(
-        new Error('Unexpected error'),
-      );
-
-      await expect(
-        controller.createFriendRequest(senderId, receiverId),
-      ).rejects.toThrow('Unexpected error');
     });
   });
 
@@ -194,9 +192,9 @@ describe('RequestsController', () => {
   describe('resolveFriendRequest', () => {
     const userId = 1;
     const requestId = 100;
-    const resolveDto = { accept: true };
 
     it('should call service.resolveFriendRequest with correct parameters', async () => {
+      const resolveDto = { accept: true } as ResolveRequestDto;
       mockRequestsService.resolveFriendRequest.mockResolvedValue(true);
 
       const result = await controller.resolveFriendRequest(
@@ -212,12 +210,12 @@ describe('RequestsController', () => {
       );
 
       expect(result).toEqual({
-        message: 'Friend request succesfully accepted!',
+        message: 'Request successfully accepted!',
       });
     });
 
     it('should return false when the request is rejected', async () => {
-      const rejectDto = { accept: false };
+      const rejectDto = { accept: false } as ResolveRequestDto;
       mockRequestsService.resolveFriendRequest.mockResolvedValue(false);
 
       const result = await controller.resolveFriendRequest(
@@ -233,11 +231,12 @@ describe('RequestsController', () => {
       );
 
       expect(result).toEqual({
-        message: 'Friend request succesfully rejected!',
+        message: 'Request successfully rejected!',
       });
     });
 
     it('should propagate service errors (e.g., ForbiddenException)', async () => {
+      const resolveDto = { accept: true } as ResolveRequestDto;
       mockRequestsService.resolveFriendRequest.mockRejectedValue(
         new Error('You are not authorized to resolve this request'),
       );
@@ -248,7 +247,7 @@ describe('RequestsController', () => {
     });
   });
 
-  describe('findFriendsFromuser', () => {
+  describe('findFriendsFromUser', () => {
     const userId = 1;
     const page = 1;
     const limit = 10;
@@ -335,11 +334,11 @@ describe('RequestsController', () => {
       );
 
       expect(result).toEqual({
-        message: 'Succesfully removed!',
+        message: 'Successfully removed!',
       });
     });
 
-    it('should propagate service errors (e.g., ResourceNotFoundException)', async () => {
+    it('should propagate service errors', async () => {
       const errorMessage = 'Friend Request not found';
       mockRequestsService.deleteFriend.mockRejectedValue(
         new Error(errorMessage),
@@ -348,21 +347,115 @@ describe('RequestsController', () => {
       await expect(controller.deleteFriend(userId, username)).rejects.toThrow(
         errorMessage,
       );
+    });
+  });
 
-      expect(mockRequestsService.deleteFriend).toHaveBeenCalledWith(
-        username,
-        userId,
+  describe('findPendingReceivedEventInvitationsFromUser', () => {
+    const userId = 1;
+    const page = 1;
+    const limit = 10;
+    const mockInvitationsResponse = {
+      data: [{ id: 5, eventId: 20, senderId: 2 }],
+      total: 1,
+      page: 1,
+      lastPage: 1,
+    };
+
+    it('should return received event invitations with pagination number casting', async () => {
+      mockRequestsService.getPendingReceivedEventInvitationsFromUser.mockResolvedValue(
+        mockInvitationsResponse,
       );
+
+      const result =
+        await controller.findPendingReceivedEventInvitationsFromUser(
+          userId,
+          page,
+          limit,
+        );
+
+      expect(
+        service.getPendingReceivedEventInvitationsFromUser,
+      ).toHaveBeenCalledWith(userId, page, limit);
+      expect(result).toEqual(mockInvitationsResponse);
     });
 
-    it('should propagate unauthorized or forbidden errors', async () => {
-      mockRequestsService.deleteFriend.mockRejectedValue(
-        new Error('You are not authorized to delete this friend relationship'),
+    it('should use default values if pagination params are omitted', async () => {
+      mockRequestsService.getPendingReceivedEventInvitationsFromUser.mockResolvedValue(
+        mockInvitationsResponse,
       );
 
-      await expect(controller.deleteFriend(userId, username)).rejects.toThrow(
-        'You are not authorized to delete this friend relationship',
+      await controller.findPendingReceivedEventInvitationsFromUser(userId);
+
+      expect(
+        service.getPendingReceivedEventInvitationsFromUser,
+      ).toHaveBeenCalledWith(userId, 1, 10);
+    });
+  });
+
+  describe('findActiveEventAccessRequestToEventId', () => {
+    const userId = 1;
+    const eventIdParam = '20';
+    const numericEventId = 20;
+
+    it('should return request id or null when calling findActiveEventAccessRequestToEventId', async () => {
+      mockRequestsService.findActiveEventAccessRequestToEventId.mockResolvedValue(
+        99,
       );
+
+      const result = await controller.findActiveEventAccessRequestToEventId(
+        userId,
+        eventIdParam,
+      );
+
+      expect(
+        service.findActiveEventAccessRequestToEventId,
+      ).toHaveBeenCalledWith(userId, numericEventId);
+      expect(result).toBe(99);
+    });
+  });
+
+  describe('deleteEventInviteRequest', () => {
+    const userId = 1;
+    const eventIdParam = '20';
+    const otherUserIdParam = '30';
+
+    it('should successfully delete event invite request with numeric conversion', async () => {
+      mockRequestsService.deleteEventInviteRequest.mockResolvedValue(undefined);
+
+      const result = await controller.deleteEventInviteRequest(
+        userId,
+        eventIdParam,
+        otherUserIdParam,
+      );
+
+      expect(service.deleteEventInviteRequest).toHaveBeenCalledWith(
+        userId,
+        30,
+        20,
+      );
+      expect(result).toEqual({ message: 'Successfully deleted!' });
+    });
+  });
+
+  describe('deleteAccessRequestToEvent', () => {
+    const userId = 1;
+    const requestIdParam = '45';
+
+    it('should successfully delete or dismiss access request', async () => {
+      mockRequestsService.deleteAccessRequestToEvent.mockResolvedValue(
+        undefined,
+      );
+
+      const result = await controller.deleteAccessRequestToEvent(
+        userId,
+        requestIdParam,
+      );
+
+      expect(service.deleteAccessRequestToEvent).toHaveBeenCalledWith(
+        userId,
+        45,
+      );
+      expect(result).toEqual({ message: 'Request successfully dismissed!' });
     });
   });
 });

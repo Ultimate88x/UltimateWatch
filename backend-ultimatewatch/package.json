@@ -34,6 +34,7 @@
     "@nestjs/typeorm": "^11.0.0",
     "@nestjs/websockets": "^11.1.19",
     "@sendgrid/mail": "^8.1.6",
+    "@types/uuid": "^10.0.0",
     "axios": "^1.13.6",
     "bcrypt": "^6.0.0",
     "buffer-to-stream": "^1.0.0",
@@ -47,7 +48,7 @@
     "rxjs": "^7.8.1",
     "socket.io": "^4.8.3",
     "typeorm": "^0.3.28",
-    "uuid": "^14.0.0"
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
@@ -77,19 +78,13 @@
     "typescript-eslint": "^8.20.0"
   },
   "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
+    "moduleFileExtensions": ["js", "json", "ts"],
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
+    "collectCoverageFrom": ["**/*.(t|j)s"],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
     "moduleNameMapper": {

@@ -11,7 +11,7 @@ export class EventMedia extends BaseEntity {
     enum: EventMediaStatus,
     default: EventMediaStatus.PENDING,
   })
-  status: string;
+  status: EventMediaStatus;
 
   @Column({ type: 'timestamp', nullable: true })
   watchedAt: Date;

@@ -1602,13 +1602,10 @@ export class EventsService {
     const mediaToUpdate = event.media
       .filter(
         (em) =>
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
           em.status === EventMediaStatus.PENDING ||
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
           em.status === EventMediaStatus.CURRENT,
       )
       .map((em) => {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
         if (em.status === EventMediaStatus.PENDING) {
           em.status = EventMediaStatus.SKIPPED;
         } else {

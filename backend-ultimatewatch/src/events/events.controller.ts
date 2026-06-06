@@ -21,6 +21,8 @@ import { VotingMediaEventDto } from './dto/voting-media-event-dto';
 import { CreateEventInviteRequestDto } from 'src/requests/dto/create-event-invite-request-dto';
 import { FriendInviteResponseDto } from './dto/friend-invite-response-dto';
 import { ResolveRequestDto } from 'src/requests/dto/resolve-request-dto';
+import { EventAccessRequestDto } from 'src/requests/dto/event-access-request-dto';
+import { RequestResponseDto } from 'src/requests/dto/request-response-dto';
 
 @Controller('events')
 export class EventsController {
@@ -211,5 +213,24 @@ export class EventsController {
     return {
       message: `Request successfully ${accept ? 'accepted' : 'rejected'}!`,
     };
+  }
+
+  @Get('access-requests/:eventId')
+  @UseGuards(AuthGuard)
+  async getActiveAccessRequests(
+    @GetUser('userId') userId: number,
+    @Param('eventId') eventId: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ): Promise<RequestResponseDto<EventAccessRequestDto>> {
+    const activeAccessRequests: RequestResponseDto<EventAccessRequestDto> =
+      await this.eventsService.getActiveAccessRequestsFromEvent(
+        userId,
+        +eventId,
+        page,
+        limit,
+      );
+
+    return activeAccessRequests;
   }
 }

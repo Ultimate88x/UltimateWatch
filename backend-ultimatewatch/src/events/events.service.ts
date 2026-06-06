@@ -40,6 +40,8 @@ import { CreateEventInviteRequestDto } from 'src/requests/dto/create-event-invit
 import { FriendInviteItemDto } from './dto/friend-invite-item-dto';
 import { FriendInviteResponseDto } from './dto/friend-invite-response-dto';
 import { EventInviteRequest } from 'src/requests/entities/event-invite-request.entity';
+import { EventAccessRequestDto } from 'src/requests/dto/event-access-request-dto';
+import { RequestResponseDto } from 'src/requests/dto/request-response-dto';
 
 interface SubMediaEventWithSort extends SubMediaEventDto {
   sortKey: string;
@@ -749,6 +751,31 @@ export class EventsService {
     }
 
     await this.requestsService.createEventAccessRequest(userId, eventId);
+  }
+
+  async getActiveAccessRequestsFromEvent(
+    userId: number,
+    eventId: number,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<RequestResponseDto<EventAccessRequestDto>> {
+    const event: Event = await this.findBydId(eventId);
+
+    const owner: Member | undefined = event.members.find(
+      (m) => m.role === MemberRole.OWNER,
+    );
+
+    if (userId !== owner?.user.id) {
+      throw new ForbiddenException(
+        'You cannot retrieve access requests from this event',
+      );
+    }
+
+    return this.requestsService.findActiveEventAccessRequestsFromEvent(
+      eventId,
+      page,
+      limit,
+    );
   }
 
   async getFormattedResultsByEvent(

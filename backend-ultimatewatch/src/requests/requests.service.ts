@@ -21,6 +21,7 @@ import { EventStatus } from 'src/common/enums/event.status.enum';
 import { EventAccessRequest } from './entities/event-access-request.entity';
 import { Member } from 'src/members/entities/member.entity';
 import { MemberRole } from 'src/common/enums/member.role.enum';
+import { EventAccessRequestDto } from './dto/event-access-request-dto';
 
 @Injectable()
 export class RequestsService {
@@ -113,6 +114,45 @@ export class RequestsService {
     }
 
     return request;
+  }
+
+  async findActiveEventAccessRequestsFromEvent(
+    eventId: number,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<RequestResponseDto<EventAccessRequestDto>> {
+    const skip = (page - 1) * limit;
+
+    const [eventAccessRequests, total] =
+      await this.eventAccessRequestRepository.findAndCount({
+        where: {
+          event: { id: eventId },
+          accepted: false,
+        },
+        relations: ['sender'],
+        order: {
+          createdAt: 'DESC',
+        },
+        skip: skip,
+        take: limit,
+      });
+
+    const data = eventAccessRequests.map(
+      (request: EventAccessRequest) =>
+        new EventAccessRequestDto({
+          id: request.id,
+          username: request.sender.username,
+          userImagePath: request.sender.imagePath,
+          createdAt: request.createdAt.toISOString(),
+        }),
+    );
+
+    return new RequestResponseDto({
+      data: data,
+      total: total,
+      page: page,
+      lastPage: Math.ceil(total / limit) || 1,
+    });
   }
 
   async findActiveFriendRequestBetweenUsers(

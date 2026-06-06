@@ -32,6 +32,7 @@ describe('EpisodeService', () => {
 
   const mockSeasonsService = {
     findByTmdbId: jest.fn(),
+    getByTmdbId: jest.fn(),
     save: jest.fn(),
   };
 
@@ -111,7 +112,7 @@ describe('EpisodeService', () => {
     } as unknown as Season;
 
     it('should skip TMDB call if data is fresh', async () => {
-      seasonsService.findByTmdbId.mockResolvedValue(mockSeason);
+      seasonsService.getByTmdbId.mockResolvedValue(mockSeason);
 
       jest
         .spyOn(service, 'findFromSeasonByTmdbId')
@@ -137,7 +138,7 @@ describe('EpisodeService', () => {
         ],
       } as TmdbSeasonDto | Promise<TmdbSeasonDto>;
 
-      seasonsService.findByTmdbId.mockResolvedValue(staleSeason);
+      seasonsService.getByTmdbId.mockResolvedValue(staleSeason);
       tmdbApiService.getSeasonFromTmdb.mockResolvedValue(mockTmdbData);
 
       jest

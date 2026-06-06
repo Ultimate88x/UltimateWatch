@@ -14,10 +14,4 @@ export class Series extends Media {
   getSeasonsNumber(): number {
     return this.seasons.length;
   }
-
-  getEpisodesNumber(): number {
-    return this.seasons.reduce((total: number, season: Season) => {
-      return total + (season.getEpisodeNumber() || 0);
-    }, 0);
-  }
 }

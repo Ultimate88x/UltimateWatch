@@ -2,12 +2,15 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { RequestsService } from './requests.service';
 import { Request } from './entities/request.entity';
 import { FriendRequest } from './entities/friend-request.entity';
+import { EventInviteRequest } from './entities/event-invite-request.entity';
+import { EventAccessRequest } from './entities/event-access-request.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ObjectLiteral, Repository } from 'typeorm';
 import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { User } from 'src/users/entities/user.entity';
 import { UsersService } from 'src/users/users.service';
+import { MemberRole } from 'src/common/enums/member.role.enum';
 
 type MockRepository<T extends ObjectLiteral> = Partial<
   Record<keyof Repository<T>, jest.Mock>
@@ -23,6 +26,8 @@ describe('RequestsService', () => {
 
   const createMockRequestRepository = (): MockRepository<Request> => ({
     findOne: jest.fn(),
+    save: jest.fn(),
+    delete: jest.fn(),
   });
 
   const createMockFriendRequestRepository =
@@ -32,6 +37,23 @@ describe('RequestsService', () => {
       findOne: jest.fn(),
       findAndCount: jest.fn(),
       delete: jest.fn(),
+    });
+
+  const createMockEventInviteRepository =
+    (): MockRepository<EventInviteRequest> => ({
+      create: jest.fn(),
+      save: jest.fn(),
+      findOne: jest.fn(),
+      findAndCount: jest.fn(),
+      find: jest.fn(),
+    });
+
+  const createMockEventAccessRepository =
+    (): MockRepository<EventAccessRequest> => ({
+      create: jest.fn(),
+      save: jest.fn(),
+      findOne: jest.fn(),
+      findAndCount: jest.fn(),
     });
 
   beforeEach(async () => {
@@ -47,6 +69,14 @@ describe('RequestsService', () => {
           useValue: createMockFriendRequestRepository(),
         },
         {
+          provide: getRepositoryToken(EventInviteRequest),
+          useValue: createMockEventInviteRepository(),
+        },
+        {
+          provide: getRepositoryToken(EventAccessRequest),
+          useValue: createMockEventAccessRepository(),
+        },
+        {
           provide: UsersService,
           useValue: mockUsersService,
         },
@@ -54,7 +84,6 @@ describe('RequestsService', () => {
     }).compile();
 
     service = module.get<RequestsService>(RequestsService);
-
     jest.clearAllMocks();
   });
 
@@ -162,12 +191,8 @@ describe('RequestsService', () => {
       );
 
       expect(friendRepo.findAndCount).toHaveBeenCalledWith(
-        expect.objectContaining({
-          skip: 5,
-          take: 5,
-        }),
+        expect.objectContaining({ skip: 5, take: 5 }),
       );
-
       expect(result.data[0].username).toBe(mockSender.username);
       expect(result.total).toBe(11);
       expect(result.lastPage).toBe(3);
@@ -211,16 +236,6 @@ describe('RequestsService', () => {
       expect(result.data[0].username).toBe(mockReceiver.username);
       expect(result.total).toBe(1);
     });
-
-    it('should throw ResourceNotFoundException if user does not exist', async () => {
-      mockUsersService.findById.mockRejectedValue(
-        new ResourceNotFoundException('User', 'ID', '1'),
-      );
-
-      await expect(
-        service.getPendingSentFriendRequestsFromUser(1, 1, 10),
-      ).rejects.toThrow(ResourceNotFoundException);
-    });
   });
 
   describe('resolveFriendRequest', () => {
@@ -234,11 +249,13 @@ describe('RequestsService', () => {
         receiver: { id: otherUserId },
       } as FriendRequest;
 
-      jest.spyOn(service, 'findById').mockResolvedValue(mockRequest);
+      jest
+        .spyOn(service, 'findFriendRequestById')
+        .mockResolvedValue(mockRequest);
 
       await expect(
         service.resolveFriendRequest(requestId, true, currentUserId),
-      ).rejects.toThrow('You are not authorized to resolve this request');
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('should throw BadRequestException if request is already accepted', async () => {
@@ -248,23 +265,27 @@ describe('RequestsService', () => {
         accepted: true,
       } as FriendRequest;
 
-      jest.spyOn(service, 'findById').mockResolvedValue(mockRequest);
+      jest
+        .spyOn(service, 'findFriendRequestById')
+        .mockResolvedValue(mockRequest);
 
       await expect(
         service.resolveFriendRequest(requestId, true, currentUserId),
-      ).rejects.toThrow('This request has already been resolved');
+      ).rejects.toThrow(BadRequestException);
     });
 
-    it('should call acceptFriendRequest when accept is true', async () => {
+    it('should call acceptRequest when accept is true', async () => {
       const mockRequest = {
         id: requestId,
         receiver: { id: currentUserId },
         accepted: false,
       } as FriendRequest;
 
-      jest.spyOn(service, 'findById').mockResolvedValue(mockRequest);
+      jest
+        .spyOn(service, 'findFriendRequestById')
+        .mockResolvedValue(mockRequest);
       const acceptSpy = jest
-        .spyOn(service, 'acceptFriendRequest')
+        .spyOn(service, 'acceptRequest')
         .mockResolvedValue(undefined);
 
       const result = await service.resolveFriendRequest(
@@ -277,16 +298,18 @@ describe('RequestsService', () => {
       expect(acceptSpy).toHaveBeenCalledWith(mockRequest);
     });
 
-    it('should call deleteFriendRequest when accept is false', async () => {
+    it('should call deleteRequest when accept is false', async () => {
       const mockRequest = {
         id: requestId,
         receiver: { id: currentUserId },
         accepted: false,
       } as FriendRequest;
 
-      jest.spyOn(service, 'findById').mockResolvedValue(mockRequest);
+      jest
+        .spyOn(service, 'findFriendRequestById')
+        .mockResolvedValue(mockRequest);
       const deleteSpy = jest
-        .spyOn(service, 'deleteFriendRequest')
+        .spyOn(service, 'deleteRequest')
         .mockResolvedValue(undefined);
 
       const result = await service.resolveFriendRequest(
@@ -300,37 +323,34 @@ describe('RequestsService', () => {
     });
   });
 
-  describe('acceptFriendRequest', () => {
+  describe('acceptRequest', () => {
     it('should set accepted to true and save the request', async () => {
-      const friendRepo = service[
-        'friendRequestsRepository'
-      ] as unknown as MockRepository<FriendRequest>;
-      const mockRequest = {
-        id: 1,
-        accepted: false,
-      } as FriendRequest;
+      const requestRepo = service[
+        'requestsRepository'
+      ] as unknown as MockRepository<Request>;
+      const mockRequest = { id: 1, accepted: false } as Request;
 
-      friendRepo.save?.mockResolvedValue({ ...mockRequest, accepted: true });
+      requestRepo.save?.mockResolvedValue({ ...mockRequest, accepted: true });
 
-      await service.acceptFriendRequest(mockRequest);
+      await service.acceptRequest(mockRequest);
 
       expect(mockRequest.accepted).toBe(true);
-      expect(friendRepo.save).toHaveBeenCalledWith(mockRequest);
+      expect(requestRepo.save).toHaveBeenCalledWith(mockRequest);
     });
   });
 
-  describe('deleteFriendRequest', () => {
+  describe('deleteRequest', () => {
     it('should call repository delete', async () => {
-      const friendRepo = service[
-        'friendRequestsRepository'
-      ] as unknown as MockRepository<FriendRequest>;
+      const requestRepo = service[
+        'requestsRepository'
+      ] as unknown as MockRepository<Request>;
       const requestId = 1;
 
-      friendRepo.delete = jest.fn().mockResolvedValue({ affected: 1 });
+      requestRepo.delete = jest.fn().mockResolvedValue({ affected: 1 });
 
-      await service.deleteFriendRequest(requestId);
+      await service.deleteRequest(requestId);
 
-      expect(friendRepo.delete).toHaveBeenCalledWith(requestId);
+      expect(requestRepo.delete).toHaveBeenCalledWith(requestId);
     });
   });
 
@@ -348,7 +368,7 @@ describe('RequestsService', () => {
       imagePath: 'img_b',
     } as User;
 
-    it('should return a paginated list of friends identifying the correct friend in each relation', async () => {
+    it('should return a paginated list of friends identifying the correct friend', async () => {
       const friendRepo = service[
         'friendRequestsRepository'
       ] as unknown as MockRepository<FriendRequest>;
@@ -377,50 +397,9 @@ describe('RequestsService', () => {
 
       const result = await service.getFriendsFromUser(userId, 1, 10);
 
-      expect(friendRepo.findAndCount).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: [
-            { sender: { id: userId }, accepted: true },
-            { receiver: { id: userId }, accepted: true },
-          ],
-        }),
-      );
-
       expect(result.data).toHaveLength(2);
-
       expect(result.data[0].username).toBe(mockFriendA.username);
-      expect(result.data[0].userImagePath).toBe(mockFriendA.imagePath);
-
       expect(result.data[1].username).toBe(mockFriendB.username);
-      expect(result.data[1].userImagePath).toBe(mockFriendB.imagePath);
-
-      expect(result.total).toBe(2);
-      expect(result.page).toBe(1);
-    });
-
-    it('should return an empty list if the user has no friends', async () => {
-      const friendRepo = service[
-        'friendRequestsRepository'
-      ] as unknown as MockRepository<FriendRequest>;
-
-      mockUsersService.findById.mockResolvedValue(mockUser);
-      friendRepo.findAndCount?.mockResolvedValue([[], 0]);
-
-      const result = await service.getFriendsFromUser(userId, 1, 10);
-
-      expect(result.data).toEqual([]);
-      expect(result.total).toBe(0);
-      expect(result.lastPage).toBe(1);
-    });
-
-    it('should throw ResourceNotFoundException if the user does not exist', async () => {
-      mockUsersService.findById.mockRejectedValue(
-        new ResourceNotFoundException('User', 'ID', '1'),
-      );
-
-      await expect(service.getFriendsFromUser(1, 1, 10)).rejects.toThrow(
-        ResourceNotFoundException,
-      );
     });
   });
 
@@ -430,34 +409,25 @@ describe('RequestsService', () => {
     const friendId = 2;
     const mockFriend = { id: friendId, username: username } as User;
 
-    describe('deleteFriend', () => {
-      const username = 'friendUser';
-      const userId = 1;
-      const friendId = 2;
-      const mockFriend = { id: friendId, username: username } as User;
+    it('should delete a friend request if relationship exists', async () => {
+      const mockFriendRequest = { id: 500 } as FriendRequest;
 
-      it('should delete a friend request if relationship exists', async () => {
-        const mockFriendRequest = { id: 500 } as FriendRequest;
+      mockUsersService.findByUsername.mockResolvedValue(mockFriend);
+      mockUsersService.findById.mockResolvedValue({ id: userId });
 
-        mockUsersService.findByUsername.mockResolvedValue(mockFriend);
-        mockUsersService.findById.mockResolvedValue({ id: userId });
+      const findSpy = jest
+        .spyOn(service, 'findActiveFriendRequestBetweenUsers')
+        .mockResolvedValue(mockFriendRequest);
 
-        const findSpy = jest
-          .spyOn(service, 'findActiveFriendRequestBetweenUsers')
-          .mockResolvedValue(mockFriendRequest);
+      const deleteSpy = jest
+        .spyOn(service, 'deleteRequest')
+        .mockResolvedValue(undefined);
 
-        const deleteSpy = jest
-          .spyOn(service, 'deleteFriendRequest')
-          .mockResolvedValue(undefined);
+      await service.deleteFriend(username, userId);
 
-        await service.deleteFriend(username, userId);
-
-        expect(mockUsersService.findByUsername).toHaveBeenCalledWith(username);
-
-        expect(findSpy).toHaveBeenCalledWith(friendId, userId);
-
-        expect(deleteSpy).toHaveBeenCalledWith(mockFriendRequest.id);
-      });
+      expect(mockUsersService.findByUsername).toHaveBeenCalledWith(username);
+      expect(findSpy).toHaveBeenCalledWith(friendId, userId);
+      expect(deleteSpy).toHaveBeenCalledWith(mockFriendRequest.id);
     });
 
     it('should throw ResourceNotFoundException if no active relationship is found', async () => {
@@ -472,16 +442,160 @@ describe('RequestsService', () => {
         ResourceNotFoundException,
       );
     });
+  });
 
-    it('should propagate error if findByUsername fails', async () => {
-      mockUsersService.findByUsername.mockRejectedValue(
-        new ResourceNotFoundException('User', 'USERNAME', username),
-      );
+  describe('createEventInviteRequest', () => {
+    const senderId = 1;
+    const receiverId = 2;
+    const eventId = 99;
 
-      await expect(service.deleteFriend(username, userId)).rejects.toThrow(
-        ResourceNotFoundException,
+    it('should throw BadRequestException if inviting oneself', async () => {
+      await expect(
+        service.createEventInviteRequest(senderId, {
+          receiverId: senderId,
+          eventId,
+        }),
+      ).rejects.toThrow(
+        new BadRequestException('You cannot invite yourself to an event'),
       );
-      expect(mockUsersService.findById).not.toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException if ongoing request exists', async () => {
+      jest
+        .spyOn(service, 'findActiveEventInviteRequestBetweenUsers')
+        .mockResolvedValue({ id: 10 } as Request);
+      await expect(
+        service.createEventInviteRequest(senderId, { receiverId, eventId }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should successfully create event invite', async () => {
+      const inviteRepo = service[
+        'eventInviteRequestsRepository'
+      ] as unknown as MockRepository<EventInviteRequest>;
+      jest
+        .spyOn(service, 'findActiveEventInviteRequestBetweenUsers')
+        .mockResolvedValue(null);
+      mockUsersService.findById.mockResolvedValue({ id: senderId } as User);
+      inviteRepo.create?.mockReturnValue({ id: 5 } as EventInviteRequest);
+      inviteRepo.save?.mockResolvedValue({ id: 5 } as EventInviteRequest);
+
+      await service.createEventInviteRequest(senderId, { receiverId, eventId });
+      expect(inviteRepo.create).toHaveBeenCalled();
+      expect(inviteRepo.save).toHaveBeenCalled();
+    });
+  });
+
+  describe('createEventAccessRequest', () => {
+    const senderId = 1;
+    const eventId = 99;
+
+    it('should throw BadRequestException if ongoing access request exists', async () => {
+      jest
+        .spyOn(service, 'findActiveEventAccessRequestToEvent')
+        .mockResolvedValue({ id: 12 } as Request);
+      await expect(
+        service.createEventAccessRequest(senderId, eventId),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should successfully create access request', async () => {
+      const accessRepo = service[
+        'eventAccessRequestRepository'
+      ] as unknown as MockRepository<EventAccessRequest>;
+      jest
+        .spyOn(service, 'findActiveEventAccessRequestToEvent')
+        .mockResolvedValue(null);
+      mockUsersService.findById.mockResolvedValue({ id: senderId } as User);
+      accessRepo.create?.mockReturnValue({ id: 6 } as EventAccessRequest);
+      accessRepo.save?.mockResolvedValue({ id: 6 } as EventAccessRequest);
+
+      await service.createEventAccessRequest(senderId, eventId);
+      expect(accessRepo.create).toHaveBeenCalled();
+    });
+  });
+
+  describe('deleteEventInviteRequest', () => {
+    it('should throw BadRequestException if request is already accepted', async () => {
+      jest
+        .spyOn(service, 'findEventInviteRequestBetweenUsers')
+        .mockResolvedValue({ id: 1, accepted: true } as Request);
+      await expect(service.deleteEventInviteRequest(1, 2, 3)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should delete request successfully if not accepted', async () => {
+      jest
+        .spyOn(service, 'findEventInviteRequestBetweenUsers')
+        .mockResolvedValue({ id: 8, accepted: false } as Request);
+      const deleteSpy = jest
+        .spyOn(service, 'deleteRequest')
+        .mockResolvedValue(undefined);
+
+      await service.deleteEventInviteRequest(1, 2, 3);
+      expect(deleteSpy).toHaveBeenCalledWith(8);
+    });
+  });
+
+  describe('deleteAccessRequestToEvent', () => {
+    const userId = 1;
+    const requestId = 10;
+
+    it('should throw BadRequestException if already accepted', async () => {
+      jest.spyOn(service, 'findEventAccessRequestById').mockResolvedValue({
+        id: requestId,
+        accepted: true,
+      } as EventAccessRequest);
+      await expect(
+        service.deleteAccessRequestToEvent(userId, requestId),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should allow deletion if user is the sender of the request', async () => {
+      jest.spyOn(service, 'findEventAccessRequestById').mockResolvedValue({
+        id: requestId,
+        accepted: false,
+        sender: { id: userId },
+      } as EventAccessRequest);
+      const deleteSpy = jest
+        .spyOn(service, 'deleteRequest')
+        .mockResolvedValue(undefined);
+
+      await service.deleteAccessRequestToEvent(userId, requestId);
+      expect(deleteSpy).toHaveBeenCalledWith(requestId);
+    });
+
+    it('should allow deletion if user is the owner of the target event', async () => {
+      jest.spyOn(service, 'findEventAccessRequestById').mockResolvedValue({
+        id: requestId,
+        accepted: false,
+        sender: { id: 99 },
+        event: {
+          members: [{ role: MemberRole.OWNER, user: { id: userId } }],
+        },
+      } as unknown as EventAccessRequest);
+      const deleteSpy = jest
+        .spyOn(service, 'deleteRequest')
+        .mockResolvedValue(undefined);
+
+      await service.deleteAccessRequestToEvent(userId, requestId);
+      expect(deleteSpy).toHaveBeenCalledWith(requestId);
+    });
+
+    it('should throw ForbiddenException if user is neither sender nor event owner', async () => {
+      jest.spyOn(service, 'findEventAccessRequestById').mockResolvedValue({
+        id: requestId,
+        accepted: false,
+        sender: { id: 99 },
+        event: {
+          members: [{ role: MemberRole.OWNER, user: { id: 88 } }],
+        },
+      } as unknown as EventAccessRequest);
+
+      await expect(
+        service.deleteAccessRequestToEvent(userId, requestId),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 });

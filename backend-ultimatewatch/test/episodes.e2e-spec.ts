@@ -5,6 +5,7 @@ import { AppModule } from '../src/app.module';
 import { EpisodeService } from '../src/episodes/episodes.service';
 import { App } from 'supertest/types';
 import { EpisodeResponseDto } from '../src/episodes/dto/episode-response-dto';
+import { SeedService } from 'src/common/seed/seed.service';
 
 describe('EpisodeController (e2e)', () => {
   let app: INestApplication;
@@ -43,6 +44,11 @@ describe('EpisodeController (e2e)', () => {
     })
       .overrideProvider(EpisodeService)
       .useValue(mockEpisodeService)
+      .overrideProvider(SeedService)
+      .useValue({
+        onApplicationBootstrap: jest.fn(),
+        runSeed: jest.fn(),
+      })
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -73,7 +79,11 @@ describe('EpisodeController (e2e)', () => {
           expect(body.data[0].title).toBe('Winter Is Coming');
           expect(body.total).toBe(2);
 
-          expect(mockEpisodeService.findOrCreate).toHaveBeenCalledWith(3624, 1);
+          expect(mockEpisodeService.findOrCreate).toHaveBeenCalledWith(
+            3624,
+            1,
+            10,
+          );
         });
     });
 
@@ -93,7 +103,11 @@ describe('EpisodeController (e2e)', () => {
         .expect((res) => {
           const body = res.body as EpisodeResponseDto;
           expect(body.page).toBe(2);
-          expect(mockEpisodeService.findOrCreate).toHaveBeenCalledWith(3624, 2);
+          expect(mockEpisodeService.findOrCreate).toHaveBeenCalledWith(
+            3624,
+            2,
+            10,
+          );
         });
     });
 

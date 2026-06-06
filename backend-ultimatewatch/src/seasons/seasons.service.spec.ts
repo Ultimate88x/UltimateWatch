@@ -57,11 +57,11 @@ describe('SeasonService', () => {
     });
   });
 
-  describe('findByTmdbId', () => {
+  describe('getByTmdbId', () => {
     it('should return a season if found', async () => {
       repository.findOne?.mockResolvedValue(mockSeason);
 
-      const result = await service.findByTmdbId(123);
+      const result = await service.getByTmdbId(123);
 
       expect(repository.findOne).toHaveBeenCalledWith({
         where: { tmdbId: 123 },
@@ -73,7 +73,7 @@ describe('SeasonService', () => {
     it('should throw ResourceNotFoundException if not found', async () => {
       repository.findOne?.mockResolvedValue(null);
 
-      await expect(service.findByTmdbId(999)).rejects.toThrow(
+      await expect(service.getByTmdbId(999)).rejects.toThrow(
         ResourceNotFoundException,
       );
     });

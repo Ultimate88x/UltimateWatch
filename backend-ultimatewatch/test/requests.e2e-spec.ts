@@ -14,6 +14,7 @@ import { RequestsService } from 'src/requests/requests.service';
 import { App } from 'supertest/types';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { ResourceNotFoundException } from 'src/common/exceptions/resource-not-found-exception';
+import { SeedService } from 'src/common/seed/seed.service';
 
 describe('RequestsController (e2e)', () => {
   let app: INestApplication;
@@ -43,6 +44,11 @@ describe('RequestsController (e2e)', () => {
       .useValue(mockRequestsService)
       .overrideGuard(AuthGuard)
       .useValue(mockAuthGuard)
+      .overrideProvider(SeedService)
+      .useValue({
+        onApplicationBootstrap: jest.fn(),
+        runSeed: jest.fn(),
+      })
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -77,7 +83,7 @@ describe('RequestsController (e2e)', () => {
         .send(validBody)
         .expect(HttpStatus.CREATED)
         .expect((res) => {
-          expect(res.body.message).toBe('Friend request sent successfully!');
+          expect(res.body.message).toBe('Request sent successfully!');
           expect(mockRequestsService.createFriendRequest).toHaveBeenCalled();
         });
     });
@@ -116,7 +122,7 @@ describe('RequestsController (e2e)', () => {
     });
   });
 
-  describe('/requests/received (GET)', () => {
+  describe('/requests/friend-request/received (GET)', () => {
     it('should return 200 and a list of pending received requests', () => {
       const mockData = [
         {
@@ -132,13 +138,13 @@ describe('RequestsController (e2e)', () => {
       );
 
       return request(app.getHttpServer() as App)
-        .get('/requests/received')
+        .get('/requests/friend-request/received')
         .expect(HttpStatus.OK)
         .expect((res) => {
           expect(res.body).toEqual(mockData);
           expect(
             mockRequestsService.getPendingReceivedFriendRequestsFromUser,
-          ).toHaveBeenCalled();
+          ).toHaveBeenCalledWith(1, 1, 10);
         });
     });
 
@@ -148,12 +154,12 @@ describe('RequestsController (e2e)', () => {
       );
 
       return request(app.getHttpServer() as App)
-        .get('/requests/received')
+        .get('/requests/friend-request/received')
         .expect(HttpStatus.INTERNAL_SERVER_ERROR);
     });
   });
 
-  describe('/requests/sent (GET)', () => {
+  describe('/requests/friend-request/sent (GET)', () => {
     it('should return 200 and a list of pending sent requests', () => {
       const mockData = [
         {
@@ -169,13 +175,13 @@ describe('RequestsController (e2e)', () => {
       );
 
       return request(app.getHttpServer() as App)
-        .get('/requests/sent')
+        .get('/requests/friend-request/sent')
         .expect(HttpStatus.OK)
         .expect((res) => {
           expect(res.body).toEqual(mockData);
           expect(
             mockRequestsService.getPendingSentFriendRequestsFromUser,
-          ).toHaveBeenCalled();
+          ).toHaveBeenCalledWith(1, 1, 10);
         });
     });
 
@@ -185,7 +191,7 @@ describe('RequestsController (e2e)', () => {
       );
 
       return request(app.getHttpServer() as App)
-        .get('/requests/sent')
+        .get('/requests/friend-request/sent')
         .expect(HttpStatus.INTERNAL_SERVER_ERROR);
     });
   });
@@ -202,11 +208,11 @@ describe('RequestsController (e2e)', () => {
         .send({ accept: true })
         .expect(HttpStatus.OK)
         .expect((res) => {
-          expect(res.body.message).toBe('Friend request succesfully accepted!');
+          expect(res.body.message).toBe('Request successfully accepted!');
           expect(mockRequestsService.resolveFriendRequest).toHaveBeenCalledWith(
             requestId,
             true,
-            expect.any(Number),
+            1,
           );
         });
     });
@@ -219,11 +225,11 @@ describe('RequestsController (e2e)', () => {
         .send({ accept: false })
         .expect(HttpStatus.OK)
         .expect((res) => {
-          expect(res.body.message).toBe('Friend request succesfully rejected!');
+          expect(res.body.message).toBe('Request successfully rejected!');
           expect(mockRequestsService.resolveFriendRequest).toHaveBeenCalledWith(
             requestId,
             false,
-            expect.any(Number),
+            1,
           );
         });
     });
@@ -240,7 +246,7 @@ describe('RequestsController (e2e)', () => {
         });
     });
 
-    it('should return 403 if the service throws a ForbiddenException', () => {
+    it('should return 400 if the service throws a BadRequestException', () => {
       const forbiddenMsg = 'You are not authorized to resolve this request';
       mockRequestsService.resolveFriendRequest.mockRejectedValue(
         new BadRequestException(forbiddenMsg),
@@ -328,7 +334,7 @@ describe('RequestsController (e2e)', () => {
         .delete(url)
         .expect(HttpStatus.OK)
         .expect((res) => {
-          expect(res.body.message).toBe('Succesfully removed!');
+          expect(res.body.message).toBe('Successfully removed!');
           expect(mockRequestsService.deleteFriend).toHaveBeenCalledWith(
             username,
             1,

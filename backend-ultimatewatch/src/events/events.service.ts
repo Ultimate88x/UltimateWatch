@@ -41,6 +41,7 @@ import { FriendInviteItemDto } from './dto/friend-invite-item-dto';
 import { FriendInviteResponseDto } from './dto/friend-invite-response-dto';
 import { Request } from 'src/requests/entities/request.entity';
 import { EventInviteRequest } from 'src/requests/entities/event-invite-request.entity';
+import { EventAccessRequest } from 'src/requests/entities/event-access-request.entity';
 
 interface SubMediaEventWithSort extends SubMediaEventDto {
   sortKey: string;
@@ -742,8 +743,6 @@ export class EventsService {
       );
     }
 
-    await this.membersService.getByUserIdAndEventId(userId, eventId);
-
     const receiverIsMemberOfEvent: boolean =
       !!(await this.membersService.findByUserIdAndEventId(userId, eventId));
 
@@ -752,6 +751,29 @@ export class EventsService {
     }
 
     await this.requestsService.createEventAccessRequest(userId, eventId);
+  }
+
+  async discardAccessRequestToEvent(
+    userId: number,
+    requestId: number,
+  ): Promise<void> {
+    const request: EventAccessRequest =
+      await this.requestsService.findEventAccessRequestById(requestId);
+
+    const isSender: boolean = request.sender.id === userId;
+
+    if (!isSender) {
+      const eventOwner: Member | undefined = request.event.members.find(
+        (member: Member) => member.role === MemberRole.OWNER,
+      );
+      const isEventOwner: boolean = eventOwner?.user.id === userId;
+
+      if (!isEventOwner) {
+        throw new ForbiddenException('You cannot delete this request');
+      }
+    }
+
+    await this.requestsService.deleteRequest(requestId);
   }
 
   async getFormattedResultsByEvent(

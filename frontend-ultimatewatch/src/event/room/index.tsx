@@ -54,7 +54,7 @@ export default function EventRoom() {
       }
 
       if (!response.ok) {
-        toast.error(data?.message || `Error: ${response.status}`);
+        toast.error(data?.message || 'Failed to fetch user member');
         return;
       }
 

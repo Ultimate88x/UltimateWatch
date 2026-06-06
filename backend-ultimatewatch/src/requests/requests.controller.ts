@@ -111,6 +111,18 @@ export class RequestsController {
     );
   }
 
+  @Get('event-access-request/sent/:eventId')
+  @UseGuards(AuthGuard)
+  async findActiveEventAccessRequestToEventId(
+    @GetUser('userId') userId: number,
+    @Param('eventId') eventId: string,
+  ): Promise<number | null> {
+    return await this.requestsService.findActiveEventAccessRequestToEventId(
+      userId,
+      +eventId,
+    );
+  }
+
   @Delete('event-invite/:eventId/:otherUserId')
   @UseGuards(AuthGuard)
   async deleteEventInviteRequest(

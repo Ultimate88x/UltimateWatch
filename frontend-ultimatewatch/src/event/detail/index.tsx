@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { Member } from '../../types/member';
 import { EmptyState } from '../../components/EmptyState';
-import { Film, Calendar, Users, Info, Shield, ChevronLeft, ChevronRight, Trophy, LogOut, Play, UserPlus } from 'lucide-react';
+import { Film, Calendar, Users, Info, Shield, ChevronLeft, ChevronRight, Trophy, LogOut, Play, UserPlus, Trash } from 'lucide-react';
 import { Button } from '../../components/Button';
 import { getRelativeDate } from '../../components/utilities/RelativeDate';
 import { useAdvancedNavigation } from '../../components/utilities/SmartNavigate';
@@ -39,13 +39,18 @@ export default function EventDetail() {
   const [votedMediaIds, setVotedMediaIds] = useState<number[]>([]);
   const [isVoteLoading, setIsVoteLoading] = useState(false);
 
+  const [accessRequestId, setAccessRequestId] = useState<number | null>(null);
+
   const [showResults, setShowResults] = useState(false);
 
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+  const [isDeleteRequestModalOpen, setIsDeleteRequestModalOpen] = useState(false);
   const [isSuggestModalOpen, setIsSuggestModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   
+  const [isActionLoading, setIsActionLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchEvent = React.useCallback(async () => {
@@ -140,6 +145,40 @@ export default function EventDetail() {
     }
   }, [id, page]);
 
+  const fetchAccessRequest = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:3000/requests/event-access-request/sent/${id}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+            },
+          }
+      );
+
+      let data = null;
+      
+      const text = await response.text();
+      if (text) {
+        data = JSON.parse(text);
+      }
+
+      if (!response.ok) {
+        toast.error(data.message || "Failed to fetch if event access request exists");
+        return;
+      }
+
+      if (data) {
+        setAccessRequestId(data);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error';
+      toast.error(message);
+    };
+  }, [id]);
+
   useEffect(() => {
     const checkCanSeeEvent = async () => {
       try {
@@ -207,6 +246,7 @@ export default function EventDetail() {
   }, [id, mediaList]);
 
   const handleJoinEvent = async () => {
+    setIsActionLoading(true);
     try {
       const response = await fetch(
         `http://localhost:3000/events/join/${id}`,
@@ -222,6 +262,7 @@ export default function EventDetail() {
 
       if (!response.ok) {
         toast.error(data.message || "Failed to join event");
+        setIsActionLoading(false);
         return;
       }
 
@@ -229,11 +270,45 @@ export default function EventDetail() {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error';
       toast.error(message);
-      setIsLoading(false);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleRequestAccess = async () => {
+    setIsActionLoading(true);
+    try {
+      const response = await fetch(
+        `http://localhost:3000/events/request-access/${id}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.message || "Failed to request access to event");
+        setIsActionLoading(false);
+        return;
+      }
+
+      toast.success(data.message);
+
+      fetchAccessRequest();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error';
+      toast.error(message);
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
   const handleLeaveEvent = async () => {
+    setIsActionLoading(true);
     try {
       const response = await fetch(
         `http://localhost:3000/events/leave/${id}`,
@@ -248,7 +323,8 @@ export default function EventDetail() {
       const data = await response.json();
 
       if (!response.ok) {
-        toast.error(data.message || "Failed to join event");
+        toast.error(data.message || "Failed to leave event");
+        setIsActionLoading(false);
         return;
       }
 
@@ -258,7 +334,40 @@ export default function EventDetail() {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error';
       toast.error(message);
-      setIsLoading(false);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleDeleteRequestAccess = async () => {
+    setIsActionLoading(true);
+    try {
+      const response = await fetch(
+        `http://localhost:3000/events/access-request/${accessRequestId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.message || "Failed to delete request to event");
+        setIsActionLoading(false);
+        return;
+      }
+
+      toast.success(data.message);
+
+      setAccessRequestId(null);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error';
+      toast.error(message);
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
@@ -299,8 +408,9 @@ export default function EventDetail() {
     if (event) {
       fetchMedia();
       fetchMembers();
+      fetchAccessRequest();
     }
-  }, [event, fetchMedia, fetchMembers]);
+  }, [event, fetchMedia, fetchMembers, fetchAccessRequest]);
 
   const getEventStatusUI = (status: string) => {
     switch (status) {
@@ -568,15 +678,35 @@ export default function EventDetail() {
               <h4 className="text-2xl font-black uppercase italic tracking-tighter">{event.status === 'finished' ? 'Marathon Complete!' : 'Ready for the marathon?'}</h4>
               <p className="text-white/80 text-xs font-bold leading-tight">{event.status === 'finished' ? 'The marathon has ended.' : 'Join the session to interact with the community.'}</p>
               <div className="w-full">
-                {!isMember ? (
+                {!isMember && event.visibility !== EventVisibilityEnum.REQUEST_ONLY ? (
                   <Button 
                     variant="solid-accent" 
                     onClick={() => setIsJoinModalOpen(true)}
                     className="w-full bg-white text-purple-main hover:bg-white/60 py-6 rounded-2xl font-black shadow-lg"
-                    disabled={event.status === 'finished' || event.visibility === EventVisibilityEnum.PRIVATE}
+                    disabled={event.status === 'finished' || event.visibility === EventVisibilityEnum.PRIVATE || isActionLoading}
                   >
                     Become a Member
                   </Button>
+                ) : !isMember && event.visibility === EventVisibilityEnum.REQUEST_ONLY ? (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="solid-accent"
+                      onClick={() => setIsRequestModalOpen(true)}
+                      className="w-full bg-white text-purple-main hover:bg-white/60 py-6 rounded-2xl font-black shadow-lg"
+                      disabled={event.status === 'finished' || isActionLoading || !!accessRequestId}
+                    >
+                      Request Access
+                    </Button>
+
+                    {accessRequestId && (<Button
+                      variant="danger"
+                      onClick={() => setIsDeleteRequestModalOpen(true)}
+                      icon={Trash}
+                      className="w-auto! pl-5 pr-3.5 py-6 rounded-2xl border border-white/10"
+                      disabled={isActionLoading}
+                      title="Delete Access Request"
+                    />)}
+                  </div>
                 ) : (
                   <div className="flex items-center gap-2">
                     <Button 
@@ -594,7 +724,7 @@ export default function EventDetail() {
                       onClick={() => setIsLeaveModalOpen(true)}
                       icon={LogOut}
                       className="w-auto! px-4 py-6 rounded-2xl border border-white/10"
-                      disabled={event.status === 'finished'}
+                      disabled={event.status === 'finished' || isActionLoading}
                       title="Leave Event"
                     />
                   </div>
@@ -779,6 +909,18 @@ export default function EventDetail() {
       />
 
       <ConfirmModal
+        isOpen={isRequestModalOpen}
+        onClose={() => setIsRequestModalOpen(false)}
+        onConfirm={handleRequestAccess}
+        title="Request Access"
+        description="You are about ask for access to join this event. If accepted, you'll be able participate in the live session."
+        confirmText="Let's Go!"
+        cancelText="Not now"
+        variant="accent"
+        icon={Play}
+      />
+
+      <ConfirmModal
         isOpen={isLeaveModalOpen}
         onClose={() => setIsLeaveModalOpen(false)}
         onConfirm={handleLeaveEvent}
@@ -786,6 +928,17 @@ export default function EventDetail() {
         description="You are about to leave this event. Are you sure?"
         confirmText="Yes, Leave"
         cancelText="Don't Leave"
+        variant="danger"
+      />
+
+      <ConfirmModal
+        isOpen={isDeleteRequestModalOpen}
+        onClose={() => setIsDeleteRequestModalOpen(false)}
+        onConfirm={handleDeleteRequestAccess}
+        title="Delete Access Request"
+        description="You are about to delete your request to join this event. Are you sure?"
+        confirmText="Yes, Delete"
+        cancelText="Don't Delete"
         variant="danger"
       />
     </div>

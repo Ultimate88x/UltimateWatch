@@ -162,7 +162,7 @@ export class SeedService implements OnApplicationBootstrap {
       eventDate: new Date(new Date(Date.now() + 600000).setSeconds(0, 0)),
       maxMembers: 5,
       mediaIds: [1429, 105248, 114410],
-      visibility: EventVisibility.PUBLIC,
+      visibility: EventVisibility.REQUEST_ONLY,
     });
 
     await this.eventService.createStandardEvent(standardEvent, testAdmin.id);

@@ -96,6 +96,23 @@ export class RequestsService {
     return request;
   }
 
+  async findEventAccessRequestById(id: number): Promise<EventAccessRequest> {
+    const request = await this.eventAccessRequestRepository.findOne({
+      where: { id },
+      relations: ['sender', 'event', 'event.members'],
+    });
+
+    if (!request) {
+      throw new ResourceNotFoundException(
+        'Active Request',
+        'ID',
+        id.toString(),
+      );
+    }
+
+    return request;
+  }
+
   async findActiveFriendRequestBetweenUsers(
     userId1: number,
     userId2: number,
@@ -145,7 +162,7 @@ export class RequestsService {
     userId: number,
     eventId: number,
   ): Promise<Request | null> {
-    const request = await this.eventInviteRequestsRepository.findOne({
+    const request = await this.eventAccessRequestRepository.findOne({
       where: [
         {
           sender: { id: userId },
@@ -156,6 +173,18 @@ export class RequestsService {
     });
 
     return request;
+  }
+
+  async findActiveEventAccessRequestToEventId(
+    userId: number,
+    eventId: number,
+  ): Promise<number | null> {
+    const request = await this.findActiveEventAccessRequestToEvent(
+      userId,
+      eventId,
+    );
+
+    return request ? request.id : null;
   }
 
   async findEventInviteRequestBetweenUsers(
@@ -411,8 +440,8 @@ export class RequestsService {
     senderId: number,
     eventId: number,
   ): Promise<void> {
-    const existingRequest: Request | null =
-      await this.findActiveEventAccessRequestToEvent(senderId, eventId);
+    const existingRequest: boolean =
+      !!(await this.findActiveEventAccessRequestToEvent(senderId, eventId));
 
     if (existingRequest) {
       throw new BadRequestException(

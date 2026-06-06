@@ -45,11 +45,14 @@ import { EventMetricsModule } from './event-metrics/event-metrics.module';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
-        host: configService.get<string>('DB_HOST'),
+        host: configService.get<string>('DB_HOST', 'localhost'),
         port: configService.get<number>('DB_PORT', 5432),
-        username: 'ultimate_watch_user',
-        password: 'ultimate_watch_password',
-        database: 'ultimate_watch_db',
+        username: configService.get<string>(
+          'DB_USERNAME',
+          'ultimate_watch_user',
+        ),
+        password: configService.get<string>('DB_PASSWORD', ''),
+        database: configService.get<string>('DB_DATABASE', 'ultimate_watch_db'),
         autoLoadEntities: true,
         synchronize: true,
       }),

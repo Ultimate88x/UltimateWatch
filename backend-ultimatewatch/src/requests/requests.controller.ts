@@ -137,4 +137,17 @@ export class RequestsController {
     );
     return { message: 'Successfully deleted!' };
   }
+
+  @Delete('access-request/:requestId')
+  @UseGuards(AuthGuard)
+  async deleteAccessRequestToEvent(
+    @GetUser('userId') userId: number,
+    @Param('requestId') requestId: string,
+  ) {
+    await this.requestsService.deleteAccessRequestToEvent(userId, +requestId);
+
+    return {
+      message: `Request successfully dismissed!`,
+    };
+  }
 }

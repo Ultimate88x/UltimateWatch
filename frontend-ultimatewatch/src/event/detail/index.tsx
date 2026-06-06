@@ -343,7 +343,7 @@ export default function EventDetail() {
     setIsActionLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:3000/events/access-request/${accessRequestId}`,
+        `http://localhost:3000/requests/access-request/${accessRequestId}`,
         {
           method: 'DELETE',
           headers: {

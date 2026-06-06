@@ -19,6 +19,8 @@ import { CreateEventInviteRequestDto } from './dto/create-event-invite-request-d
 import { EventInvitationRequestDto } from './dto/event-invitation-request-dto';
 import { EventStatus } from 'src/common/enums/event.status.enum';
 import { EventAccessRequest } from './entities/event-access-request.entity';
+import { Member } from 'src/members/entities/member.entity';
+import { MemberRole } from 'src/common/enums/member.role.enum';
 
 @Injectable()
 export class RequestsService {
@@ -509,6 +511,29 @@ export class RequestsService {
     }
 
     await this.deleteRequest(request.id);
+  }
+
+  async deleteAccessRequestToEvent(
+    userId: number,
+    requestId: number,
+  ): Promise<void> {
+    const request: EventAccessRequest =
+      await this.findEventAccessRequestById(requestId);
+
+    const isSender: boolean = request.sender.id === userId;
+
+    if (!isSender) {
+      const eventOwner: Member | undefined = request.event.members.find(
+        (member: Member) => member.role === MemberRole.OWNER,
+      );
+      const isEventOwner: boolean = eventOwner?.user.id === userId;
+
+      if (!isEventOwner) {
+        throw new ForbiddenException('You cannot delete this request');
+      }
+    }
+
+    await this.deleteRequest(requestId);
   }
 
   async resolveRequest(request: Request, accept: boolean): Promise<boolean> {

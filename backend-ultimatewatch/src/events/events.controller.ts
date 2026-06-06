@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
   Param,
   Patch,
@@ -211,19 +210,6 @@ export class EventsController {
 
     return {
       message: `Request successfully ${accept ? 'accepted' : 'rejected'}!`,
-    };
-  }
-
-  @Delete('access-request/:requestId')
-  @UseGuards(AuthGuard)
-  async discardAccessRequestToEvent(
-    @GetUser('userId') userId: number,
-    @Param('requestId') requestId: string,
-  ) {
-    await this.eventsService.discardAccessRequestToEvent(userId, +requestId);
-
-    return {
-      message: `Request successfully dismissied!`,
     };
   }
 }

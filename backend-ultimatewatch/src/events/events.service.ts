@@ -455,8 +455,20 @@ export class EventsService {
           owner.user.id,
         );
 
-      case EventVisibility.PRIVATE:
-        return false;
+      case EventVisibility.PRIVATE: {
+        const existsInvite: boolean =
+          !!(await this.requestsService.findActiveEventInviteRequestBetweenUsers(
+            owner.user.id,
+            userId,
+            eventId,
+          ));
+
+        const isMember: boolean = event.members.some(
+          (member: Member) => member.user.id === userId,
+        );
+
+        return existsInvite || isMember;
+      }
 
       case EventVisibility.REQUEST_ONLY:
       case EventVisibility.PUBLIC:

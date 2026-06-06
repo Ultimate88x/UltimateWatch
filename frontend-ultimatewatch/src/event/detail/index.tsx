@@ -17,6 +17,7 @@ import type { AddMedia } from '../../types/add-media-item';
 import { Modal } from '../../components/Modal';
 import { SearchForMedia } from '../../components/content/SearchForMedia';
 import { InviteFriendsModal } from '../../components/event/InviteFriendsModal';
+import { EventVisibilityEnum } from '../../enums/EventVisibility';
 
 export default function EventDetail() {
   const { smartNavigate } = useAdvancedNavigation();
@@ -572,7 +573,7 @@ export default function EventDetail() {
                     variant="solid-accent" 
                     onClick={() => setIsJoinModalOpen(true)}
                     className="w-full bg-white text-purple-main hover:bg-white/60 py-6 rounded-2xl font-black shadow-lg"
-                    disabled={event.status === 'finished'}
+                    disabled={event.status === 'finished' || event.visibility === EventVisibilityEnum.PRIVATE}
                   >
                     Become a Member
                   </Button>

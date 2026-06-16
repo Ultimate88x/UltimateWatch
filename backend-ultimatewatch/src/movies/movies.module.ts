@@ -23,5 +23,6 @@ import { CacheModule } from '@nestjs/cache-manager';
   ],
   providers: [MoviesService],
   controllers: [MoviesController],
+  exports: [MoviesService],
 })
 export class MoviesModule {}

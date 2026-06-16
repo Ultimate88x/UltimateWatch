@@ -33,7 +33,7 @@ export class EmailService {
         email: fromEmail,
         name: fromName,
       },
-      subject: 'Password Reset Request - MovieApp',
+      subject: 'Password Reset Request - UltimateWatch',
       text: `Hi ${username}, you requested to reset your password. Please click the following link to proceed: ${recoveryLink}. If you did not make this request, please ignore this email.`,
       html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #f0f0f0; padding: 30px; border-radius: 12px;">

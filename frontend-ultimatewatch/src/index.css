@@ -1,19 +1,18 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght=0,14..32,100..900;1,14..32,100..900&display=swap");
 @import "tailwindcss";
 
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+@theme {
+  --color-blue-background: #0B1020;
+  --color-purple-main: #8B5CF6;
+  --color-red-danger: #FF3131;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  --font-sans: "Inter", system-ui, sans-serif;
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --color-background: #ffffff;
+  --color-text: #213547;
+  
+  --color-background-dark: #242424;
+  --color-text-dark: rgba(255, 255, 255, 0.87);
 }
 
 html, body {
@@ -22,27 +21,6 @@ html, body {
   min-height: 100%;
   overflow-y: auto; 
   overflow-x: hidden;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
-}
-
-@theme {
-  --color-blue-background: #0B1020;
-  --color-purple-main: #8B5CF6;
-  --color-red-danger: #FF3131;
-
-  --font-inter: "Inter", inter; 
 }
 
 @utility media-scrollbar {

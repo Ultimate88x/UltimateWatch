@@ -50,6 +50,8 @@ export default function EventDetail() {
   const [showResults, setShowResults] = useState(false);
 
   const [kickedMember, setKickedMember] = useState<Member | null>(null);
+  const [changedRoleMember, setChangedRoleMember] = useState<Member | null>(null);
+  const [newRole, setNewRole] = useState<MemberRole | null>(null);
 
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
@@ -61,6 +63,7 @@ export default function EventDetail() {
   const [isDeleteEventModalOpen, setIsDeleteEventModalOpen] = useState(false);
   const [isEditEventModalOpen, setIsEditEventModalOpen] = useState(false);
   const [isKickingMemberModalOpen, setIsKickingMemberModalOpen] = useState(false);
+  const [isChangingRoleModalOpen, setIsChangingRoleModalOpen] = useState(false);
   const [isEventStatisticsModalOpen, setIsEventStatisticsModalOpen] = useState(false);
   
   const [isActionLoading, setIsActionLoading] = useState(false);
@@ -516,9 +519,7 @@ export default function EventDetail() {
     }
   };
 
-    const handleChangeRole = async (targetMember: Member, role: MemberRole) => {
-    if (!window.confirm(`Are you sure you want to kick ${targetMember.name}?`)) return;
-
+    const handleChangeRole = async () => {
     setIsActionLoading(true);
     try {
       const response = await fetch(
@@ -530,9 +531,9 @@ export default function EventDetail() {
             Authorization: `Bearer ${localStorage.getItem('token')}`,
           },
           body: JSON.stringify({
-            targetUserId: targetMember.userId,
+            targetUserId: changedRoleMember?.userId,
             eventId: id,
-            role
+            role: newRole
           }),
         }
       );
@@ -1073,7 +1074,11 @@ export default function EventDetail() {
                                     .map((role) => (
                                       <button
                                         key={role}
-                                        onClick={() => handleChangeRole(m, role)}
+                                        onClick={() => {
+                                          setChangedRoleMember(m);
+                                          setNewRole(role);
+                                          setIsChangingRoleModalOpen(true);
+                                        }}
                                         className="p-1.5 text-[7px] font-black uppercase text-white/40 hover:text-purple-main hover:bg-purple-main/10 rounded-md transition-all cursor-pointer"
                                         title={`Make ${role}`}
                                       >
@@ -1247,6 +1252,21 @@ export default function EventDetail() {
         description="You are about to kick this member from the event. Are you sure?"
         confirmText="Yes, Kick"
         cancelText="Don't Kick"
+        variant="danger"
+      />
+
+      <ConfirmModal
+        isOpen={isChangingRoleModalOpen}
+        onClose={() => { 
+          setChangedRoleMember(null);
+          setNewRole(null);
+          setIsChangingRoleModalOpen(false)
+        }}
+        onConfirm={handleChangeRole}
+        title="Change Role"
+        description="You are about to change this member's role. Are you sure?"
+        confirmText="Yes, Change Role"
+        cancelText="Don't Change Role"
         variant="danger"
       />
 

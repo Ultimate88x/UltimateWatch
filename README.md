@@ -28,13 +28,30 @@ cd UltimateWatch
 ```
 
 ### Step 2: Database Configuration
-It is necessary to initialize a database in PostgreSQL. To do this, you can access the interactive psql console or use a graphical administration tool (such as pgAdmin). The creation commands are as follows:
+It is necessary to initialize a database in PostgreSQL. To do this, you can access the interactive psql console or use a graphical administration tool (such as pgAdmin). Connect as the `postgres` superuser and execute the following commands:
 
+If psql is going to be used, introduce the following command:
+
+```sql
+psql -U postgres
 ```
+
+Then, always execute:
+
+```sql
 CREATE DATABASE ultimate_watch_db;
-CREATE USER ultimate_watch_user WITH PASSWORD 'your_password_';
+CREATE USER ultimate_watch_user WITH PASSWORD 'your_password';
 GRANT ALL PRIVILEGES ON DATABASE ultimate_watch_db TO ultimate_watch_user;
+\c ultimate_watch_db
+GRANT ALL PRIVILEGES ON SCHEMA public TO ultimate_watch_user;
+ALTER SCHEMA public OWNER TO ultimate_watch_user;
+GRANT USAGE, CREATE ON SCHEMA public TO ultimate_watch_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO ultimate_watch_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO ultimate_watch_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO ultimate_watch_user;
 ```
+
+> **Note:** The `\c ultimate_watch_db` command switches the active connection to the new database. If you are using a graphical tool such as pgAdmin or DBeaver, run the first three commands first, then switch the active database to `ultimate_watch_db` and run the remaining commands.
 
 ### Step 3: Backend Configuration and Startup
 The backend is developed on the NestJS framework. The repository includes a template file containing all the necessary environment variables.
@@ -43,8 +60,8 @@ The backend is developed on the NestJS framework. The repository includes a temp
 Navigate to the corresponding directory, generate the configuration file from the provided example, and install the required Node modules:
 
 ```
-cd backend-ultimatewatch
 cp .env.example .env
+cd backend-ultimatewatch
 npm install
 ```
 

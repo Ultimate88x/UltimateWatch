@@ -380,7 +380,7 @@ export default function EventDetail() {
 
       toast.success(data.message);
 
-      fetchMember();
+      setMember(null);
       fetchEvent();
       if (event?.visibility === EventVisibilityEnum.REQUEST_ONLY) fetchAccessRequest();
     } catch (error) {
@@ -658,7 +658,7 @@ export default function EventDetail() {
             <span className="text-purple-main/45 text-sm mb-2 tracking-[0.5em] font-black italic non-italic">
               {event.type.replace('_', ' ')} // {getEventStatusUI(event.status).label}
             </span>
-            <div>
+            <div className="text-white/80">
               {event.name.split(' ')[0]} <span className="text-purple-main/45">{event.name.split(' ').slice(1).join(' ')}</span>
             </div>
           </h1>
@@ -861,7 +861,7 @@ export default function EventDetail() {
               <div className="absolute -right-4 -top-4 opacity-10 group-hover:rotate-12 transition-transform duration-700">
                 <Shield size={160} />
               </div>
-              <h4 className="text-2xl font-black uppercase italic tracking-tighter">{event.status === 'finished' ? 'Marathon Complete!' : 'Ready for the marathon?'}</h4>
+              <h4 className="text-2xl font-black text-white/90 uppercase italic tracking-tighter">{event.status === 'finished' ? 'Marathon Complete!' : 'Ready for the marathon?'}</h4>
               <p className="text-white/80 text-xs font-bold leading-tight">{event.status === 'finished' ? 'The marathon has ended.' : 'Join the session to interact with the community.'}</p>
               <div className="w-full">
                 {!member && event.visibility !== EventVisibilityEnum.REQUEST_ONLY ? (
@@ -1056,7 +1056,7 @@ export default function EventDetail() {
                               </div>
                               
                               <div className="flex flex-col min-w-0 text-left">
-                                <span className="text-[11px] font-black uppercase italic truncate group-hover:text-purple-300 transition-colors leading-none mb-1">
+                                <span className="text-[11px] font-black text-white/80 uppercase italic truncate group-hover:text-purple-300 transition-colors leading-none mb-1">
                                   {m.name}
                                 </span>
                                 <span className={`text-[8px] font-bold uppercase tracking-tighter ${m.role === 'moderator' ? 'text-blue-400' : 'text-white/20'}`}>

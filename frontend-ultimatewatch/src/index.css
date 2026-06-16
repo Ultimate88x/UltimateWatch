@@ -10,9 +10,15 @@
 
   --color-background: #ffffff;
   --color-text: #213547;
-  
-  --color-background-dark: #242424;
-  --color-text-dark: rgba(255, 255, 255, 0.87);
+}
+
+@variant dark (&:where(.dark, .dark *));
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: #242424;
+    --color-text: rgba(255, 255, 255, 0.87);
+  }
 }
 
 html, body {
@@ -21,6 +27,9 @@ html, body {
   min-height: 100%;
   overflow-y: auto; 
   overflow-x: hidden;
+  background-color: var(--color-background);
+  color: var(--color-text);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 @utility media-scrollbar {
